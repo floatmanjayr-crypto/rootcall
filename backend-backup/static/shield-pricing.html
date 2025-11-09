@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BadBot Call Shield - Choose Your Plan</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f9fafb; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        
+        nav { background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); padding: 20px; }
+        nav h1 { color: #7c3aed; font-size: 24px; }
+        
+        .hero { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 60px 20px; text-align: center; }
+        .hero h2 { font-size: 48px; margin-bottom: 16px; }
+        .hero p { font-size: 20px; opacity: 0.9; }
+        
+        .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; margin-top: 40px; }
+        
+        .pricing-card { background: white; border-radius: 16px; padding: 40px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border: 3px solid #ddd; transition: transform 0.3s; }
+        .pricing-card:hover { transform: scale(1.05); }
+        .pricing-card.popular { border-color: #7c3aed; box-shadow: 0 8px 16px rgba(124,58,237,0.3); }
+        
+        .badge { background: linear-gradient(90deg, #fbbf24, #f59e0b); color: #000; padding: 8px 16px; text-align: center; font-weight: bold; margin: -40px -40px 20px; border-radius: 16px 16px 0 0; }
+        
+        .tier { color: #10b981; font-size: 12px; font-weight: bold; margin-bottom: 8px; }
+        .plan-name { font-size: 28px; font-weight: bold; margin-bottom: 16px; }
+        .price { font-size: 48px; font-weight: bold; color: #7c3aed; margin-bottom: 8px; }
+        .price span { font-size: 20px; color: #666; }
+        .ideal-for { color: #666; font-style: italic; margin-bottom: 24px; font-size: 14px; }
+        
+        .features { list-style: none; margin-bottom: 32px; }
+        .features li { padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
+        .features li:before { content: "✓ "; color: #10b981; font-weight: bold; margin-right: 8px; }
+        
+        .subscribe-btn { width: 100%; padding: 16px; background: linear-gradient(90deg, #7c3aed, #6d28d9); color: white; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; }
+        .subscribe-btn:hover { background: linear-gradient(90deg, #6d28d9, #5b21b6); }
+        
+        .loading { text-align: center; padding: 60px 20px; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #7c3aed; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; }
+        .modal.active { display: flex; align-items: center; justify-content: center; }
+        .modal-content { background: white; padding: 40px; border-radius: 16px; text-align: center; max-width: 400px; }
+        
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="container">
+            <h1>BadBot Call Shield</h1>
+        </div>
+    </nav>
+
+    <div class="hero">
+        <div class="container">
+            <h2>Professional Call Protection</h2>
+            <p>AI-Powered Shield Against Spam, Scams & Unwanted Calls</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p style="margin-top: 20px; color: #666;">Loading plans...</p>
+        </div>
+        
+        <div id="pricing-grid" class="pricing-grid hidden"></div>
+    </div>
+
+    <div id="checkout-modal" class="modal">
+        <div class="modal-content">
+            <div class="spinner"></div>
+            <h3 style="margin-top: 20px;">Redirecting to Checkout...</h3>
+            <p style="color: #666; margin-top: 10px;">Please wait...</p>
+        </div>
+    </div>
+
+    <script>
+        const API = 'http://localhost:8000';
+        const user = JSON.parse(localStorage.getItem('user') || 'null');
+
+        async function loadPlans() {
+            try {
+                const response = await fetch(API + '/api/payments/plans');
+                const plans = await response.json();
+                
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('pricing-grid').classList.remove('hidden');
+                
+                const grid = document.getElementById('pricing-grid');
+                grid.innerHTML = plans.map(plan => `
+                    <div class="pricing-card ${plan.popular ? 'popular' : ''}">
+                        ${plan.popular ? '<div class="badge">BEST SELLER</div>' : ''}
+                        <div class="tier">${plan.tier}</div>
+                        <div class="plan-name">${plan.name}</div>
+                        <div class="price">$${plan.price}<span>/mo</span></div>
+                        <div class="ideal-for">${plan.ideal_for}</div>
+                        <ul class="features">
+                            ${plan.features.map(f => `<li>${f}</li>`).join('')}
+                        </ul>
+                        <button class="subscribe-btn" onclick="selectPlan('${plan.id}')">
+                            ${user ? 'Subscribe Now' : 'Sign Up to Subscribe'}
+                        </button>
+                    </div>
+                `).join('');
+            } catch (err) {
+                console.error('Error:', err);
+                document.getElementById('loading').innerHTML = '<p style="color: red;">Error loading plans. Please refresh.</p>';
+            }
+        }
+
+        async function selectPlan(tier) {
+            if (!user) {
+                localStorage.setItem('selected_plan', tier);
+                window.location.href = '/static/login.html';
+                return;
+            }
+
+            document.getElementById('checkout-modal').classList.add('active');
+
+            try {
+                const response = await fetch(API + '/api/payments/create-checkout', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ tier: tier, user_id: user.id })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    window.location.href = data.checkout_url;
+                } else {
+                    document.getElementById('checkout-modal').classList.remove('active');
+                    alert('Error: ' + data.detail);
+                }
+            } catch (err) {
+                document.getElementById('checkout-modal').classList.remove('active');
+                alert('Error: ' + err.message);
+            }
+        }
+
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('success') === 'true') {
+            alert('Payment successful! Your protection is now active.');
+            setTimeout(() => window.location.href = '/static/client-portal.html', 2000);
+        } else if (params.get('canceled') === 'true') {
+            alert('Payment was canceled.');
+        }
+
+        const selectedPlan = localStorage.getItem('selected_plan');
+        if (selectedPlan && user) {
+            localStorage.removeItem('selected_plan');
+            setTimeout(() => selectPlan(selectedPlan), 500);
+        }
+
+        loadPlans();
+    </script>
+</body>
+</html>

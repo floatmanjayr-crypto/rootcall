@@ -1,0 +1,9 @@
+{
+  "connection_name": "retell-inbound-1761326327",
+  "outbound_voice_profile_id": "2812737864519911048",
+  "external_sip_connection": {
+    "sip_uri": "sip:sip.retellai.com",
+    "transport_protocol": "TCP",
+    "sip_authentication": "disabled"
+  }
+}

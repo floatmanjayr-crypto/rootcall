@@ -1,0 +1,54 @@
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0* Host api.retellai.com:443 was resolved.
+* IPv6: (none)
+* IPv4: 3.33.169.178, 13.248.202.14
+*   Trying 3.33.169.178:443...
+* schannel: disabled automatic use of client certificate
+* ALPN: curl offers http/1.1
+* ALPN: server accepted http/1.1
+* Connected to api.retellai.com (3.33.169.178) port 443
+* using HTTP/1.x
+> GET /v2/list-phone-numbers HTTP/1.1
+> Host: api.retellai.com
+> User-Agent: curl/8.14.1
+> Accept: */*
+> Authorization: Bearer your_retell_api_key
+> 
+* Request completely sent off
+* schannel: remote party requests renegotiation
+* schannel: renegotiating SSL/TLS connection
+* schannel: SSL/TLS connection renegotiated
+< HTTP/1.1 404 Not Found
+< Date: Sun, 26 Oct 2025 06:29:12 GMT
+< Content-Type: text/html; charset=utf-8
+< Content-Length: 160
+< Connection: keep-alive
+< Access-Control-Allow-Origin: *
+< Content-Security-Policy: default-src 'none'
+< Cross-Origin-Opener-Policy: same-origin
+< Cross-Origin-Resource-Policy: same-origin
+< Origin-Agent-Cluster: ?1
+< Referrer-Policy: no-referrer
+< Strict-Transport-Security: max-age=31536000; includeSubDomains
+< X-Content-Type-Options: nosniff
+< X-DNS-Prefetch-Control: off
+< X-Download-Options: noopen
+< X-Frame-Options: SAMEORIGIN
+< X-Permitted-Cross-Domain-Policies: none
+< X-XSS-Protection: 0
+< Vary: Accept-Encoding
+< 
+{ [160 bytes data]
+100   160  100   160    0     0    258      0 --:--:-- --:--:-- --:--:--   260<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Error</title>
+</head>
+<body>
+<pre>Cannot GET /v2/list-phone-numbers</pre>
+</body>
+</html>
+
+* Connection #0 to host api.retellai.com left intact

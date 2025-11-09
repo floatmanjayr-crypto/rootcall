@@ -1,0 +1,6 @@
+{
+  "connection_name": "retell-inbound",
+  "external_sip_connection": {
+    "sip_uri": "sip:sip.retellai.com;transport=tcp"
+  }
+}

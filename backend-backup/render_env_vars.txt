@@ -1,0 +1,35 @@
+============================================
+RENDER ENVIRONMENT VARIABLES
+Copy these when setting up your web service
+============================================
+
+DATABASE_URL=
+(You'll get this from the PostgreSQL database you create in step 2)
+
+JWT_SECRET_KEY=rootcall_super_secret_jwt_key_2025_change_this_in_production
+
+JWT_ALGORITHM=HS256
+
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+TELNYX_API_KEY=
+(Paste your Telnyx key here)
+
+RETELL_API_KEY=
+(Paste your Retell AI key here)
+
+STRIPE_SECRET_KEY=
+(Your TEST key: sk_test_51...)
+
+STRIPE_ESSENTIAL_PRICE_ID=
+(From when you created products)
+
+STRIPE_FAMILY_PRICE_ID=
+(From when you created products)
+
+STRIPE_GUARDIAN_PRICE_ID=
+(From when you created products)
+
+BASE_URL=https://rootcall-backend.onrender.com
+
+============================================

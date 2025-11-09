@@ -1,0 +1,1 @@
+{"errors":[{"code":"10015","title":"Bad Request","detail":"can't be blank","source":{"pointer":"/external_sip_connection"},"meta":{"url":"https://developers.telnyx.com/docs/overview/errors/10015"}}]}

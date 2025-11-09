@@ -1,0 +1,58 @@
+{
+  "version": 0,
+  "s2s_model": "gpt-4o-realtime",
+  "model_temperature": 0.2,
+  "model_high_priority": true,
+  "tool_call_strict_mode": true,
+
+  "start_speaker": "agent",
+  "begin_message": "Hello, this is BadBot, the security screener for the business. May I have your name and the reason for your call?",
+
+  "general_prompt": "You are BadBot, a voice screening AI that answers all inbound calls. Your goal is to detect spoofed, scam, or high-risk callers while letting legitimate callers through. Ask for name, organization and purpose; do one light verification (ticket ID, account ref, or a callback number you can read back). Never disclose sensitive info. If the caller is evasive, pushes for sensitive info, or conflicts in story appear, treat as high risk. Keep replies short (no more than two short sentences). If low risk and legitimate purpose, transfer. If high risk, end the call politely.",
+
+  "general_tools": [
+    {
+      "type": "transfer_call",
+      "name": "transfer_to_retell_audit",
+      "description": "Transfer the caller to the client’s Retell DID for human/agent handling.",
+      "transfer_destination": {
+        "type": "predefined",
+        "number": "REPLACE_ME_WITH_RETELL_AUDIT_NUMBER"
+      },
+      "transfer_option": {
+        "type": "cold_transfer",
+        "show_transferee_as_caller": false
+      }
+    },
+    {
+      "type": "end_call",
+      "name": "end_call",
+      "description": "Politely end the call when scam/spoof risk is high."
+    }
+  ],
+
+  "states": [
+    {
+      "name": "verification_phase",
+      "state_prompt": "Greet, capture name/org/purpose. Ask one lightweight verification. If caller refuses verification or pushes for sensitive info, mark as high risk.",
+      "edges": [
+        {
+          "destination_state_name": "transfer_or_terminate",
+          "description": "Continue after enough signal to decide."
+        }
+      ]
+    },
+    {
+      "name": "transfer_or_terminate",
+      "state_prompt": "If low risk and purpose is legitimate, call tool transfer_to_retell_audit. If high risk, call tool end_call with a brief polite line."
+    }
+  ],
+
+  "starting_state": "verification_phase",
+  "begin_after_user_silence_ms": 2000,
+
+  "default_dynamic_variables": {
+    "company_name": "Runner-B AI Solutions",
+    "agent_name": "BadBot"
+  }
+}

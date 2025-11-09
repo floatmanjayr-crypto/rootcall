@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.database import engine, Base
-from app.routers import badbot_portal
+from app.routers import rootcall_portal
 from app.routers import payments, number_management, auth, admin
 
 # Import routers
@@ -22,7 +22,7 @@ from app.routers import bulk as bulk_router
 from app.routers.retell_inbound import router as retell_inbound_router
 from app.api.v1 import provision_finalize
 from app.routers import agent_templates
-from app.routers.badbot_screen import router as badbot_screen_router
+from app.routers.rootcall_screen import router as rootcall_screen_router
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -56,9 +56,9 @@ app.include_router(telnyx_router.router)
 app.include_router(bulk_router.router)
 app.include_router(provision_finalize.router)
 app.include_router(outbound_calls.router)
-app.include_router(badbot_portal.router)
+app.include_router(rootcall_portal.router)
 app.include_router(agent_templates.router)
-app.include_router(badbot_screen_router)  # BadBot Call Screening
+app.include_router(rootcall_screen_router)  # BadBot Call Screening
 app.include_router(payments.router)
 app.include_router(number_management.router)
 app.include_router(auth.router)

@@ -1,6 +1,6 @@
 """
 BadBot Configuration Model
-Save as: app/models/badbot_config.py
+Save as: app/models/rootcall_config.py
 
 Stores BadBot screening configuration per phone number
 Replaces hardcoded CLIENT_LINES dictionary
@@ -11,9 +11,9 @@ from datetime import datetime
 from app.database import Base
 
 
-class BadBotConfig(Base):
+class RootCallConfig(Base):
     """BadBot screening configuration for a phone number"""
-    __tablename__ = "badbot_configs"
+    __tablename__ = "rootcall_configs"
     
     id = Column(Integer, primary_key=True, index=True)
     phone_number_id = Column(Integer, ForeignKey("phone_numbers.id"), unique=True, nullable=False)
@@ -49,8 +49,8 @@ class BadBotConfig(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
-    phone_number = relationship("PhoneNumber", backref="badbot_config")
-    user = relationship("User", backref="badbot_configs")
+    phone_number = relationship("PhoneNumber", backref="rootcall_config")
+    user = relationship("User", backref="rootcall_configs")
 
 
 class TrustedContact(Base):
@@ -58,7 +58,7 @@ class TrustedContact(Base):
     __tablename__ = "trusted_contacts"
     
     id = Column(Integer, primary_key=True, index=True)
-    badbot_config_id = Column(Integer, ForeignKey("badbot_configs.id"), nullable=False)
+    rootcall_config_id = Column(Integer, ForeignKey("rootcall_configs.id"), nullable=False)
     
     # Contact details
     name = Column(String, nullable=False)
@@ -78,5 +78,5 @@ class TrustedContact(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
-    badbot_config = relationship("BadBotConfig", backref="trusted_contacts_list")# [PASTE THE CONTENT FROM badbot_config_model.py HERE]
+    rootcall_config = relationship("RootCallConfig", backref="trusted_contacts_list")# [PASTE THE CONTENT FROM rootcall_config_model.py HERE]
 

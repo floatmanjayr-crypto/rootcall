@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 """
-BadBot Client Portal API Routes - REAL DATA
+RootCall Client Portal API Routes - REAL DATA
 """
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from app.database import get_db
-from app.models.badbot_config import BadBotConfig
+from app.models.rootcall_config import RootCallConfig
 from app.models.phone_number import PhoneNumber
 from app.models.user import User
-from app.models.badbot_call_log import BadBotCallLog
+from app.models.rootcall_call_log import RootCallCallLog
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime, timedelta
 
-router = APIRouter(tags=["BadBot Portal"])
+router = APIRouter(tags=["RootCall Portal"])
 
 class ConfigUpdate(BaseModel):
     sms_alerts_enabled: Optional[bool] = None
@@ -26,9 +26,9 @@ class TrustedContactAdd(BaseModel):
     phone_number: str
     name: Optional[str] = None
 
-@router.get("/api/badbot/stats/{client_id}")
+@router.get("/api/rootcall/stats/{client_id}")
 async def get_stats(client_id: int, db: Session = Depends(get_db)):
-    """Get REAL BadBot protection stats"""
+    """Get REAL RootCall protection stats"""
     # Get all phone numbers for this user
     phones = db.query(PhoneNumber).filter(PhoneNumber.user_id == client_id).all()
     phone_ids = [p.id for p in phones]
@@ -42,23 +42,23 @@ async def get_stats(client_id: int, db: Session = Depends(get_db)):
         }
     
     # Count by action
-    spam_blocked = db.query(BadBotCallLog).filter(
-        BadBotCallLog.phone_number_id.in_(phone_ids),
-        BadBotCallLog.action == "spam_blocked"
+    spam_blocked = db.query(RootCallCallLog).filter(
+        RootCallCallLog.phone_number_id.in_(phone_ids),
+        RootCallCallLog.action == "spam_blocked"
     ).count()
     
-    calls_screened = db.query(BadBotCallLog).filter(
-        BadBotCallLog.phone_number_id.in_(phone_ids),
-        BadBotCallLog.action == "screened"
+    calls_screened = db.query(RootCallCallLog).filter(
+        RootCallCallLog.phone_number_id.in_(phone_ids),
+        RootCallCallLog.action == "screened"
     ).count()
     
-    trusted_forwarded = db.query(BadBotCallLog).filter(
-        BadBotCallLog.phone_number_id.in_(phone_ids),
-        BadBotCallLog.action == "trusted_forwarded"
+    trusted_forwarded = db.query(RootCallCallLog).filter(
+        RootCallCallLog.phone_number_id.in_(phone_ids),
+        RootCallCallLog.action == "trusted_forwarded"
     ).count()
     
-    total_calls = db.query(BadBotCallLog).filter(
-        BadBotCallLog.phone_number_id.in_(phone_ids)
+    total_calls = db.query(RootCallCallLog).filter(
+        RootCallCallLog.phone_number_id.in_(phone_ids)
     ).count()
     
     return {
@@ -68,7 +68,7 @@ async def get_stats(client_id: int, db: Session = Depends(get_db)):
         "total_calls": total_calls
     }
 
-@router.get("/api/badbot/calls/{client_id}")
+@router.get("/api/rootcall/calls/{client_id}")
 async def get_recent_calls(client_id: int, db: Session = Depends(get_db)):
     """Get REAL recent call activity"""
     phones = db.query(PhoneNumber).filter(PhoneNumber.user_id == client_id).all()
@@ -78,9 +78,9 @@ async def get_recent_calls(client_id: int, db: Session = Depends(get_db)):
         return []
     
     # Get last 20 calls
-    logs = db.query(BadBotCallLog).filter(
-        BadBotCallLog.phone_number_id.in_(phone_ids)
-    ).order_by(BadBotCallLog.timestamp.desc()).limit(20).all()
+    logs = db.query(RootCallCallLog).filter(
+        RootCallCallLog.phone_number_id.in_(phone_ids)
+    ).order_by(RootCallCallLog.timestamp.desc()).limit(20).all()
     
     return [
         {
@@ -93,9 +93,9 @@ async def get_recent_calls(client_id: int, db: Session = Depends(get_db)):
         for log in logs
     ]
 
-@router.get("/api/badbot/config/{client_id}")
+@router.get("/api/rootcall/config/{client_id}")
 async def get_config(client_id: int, db: Session = Depends(get_db)):
-    """Get BadBot configuration"""
+    """Get RootCall configuration"""
     user = db.query(User).filter(User.id == client_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="Client not found")
@@ -104,7 +104,7 @@ async def get_config(client_id: int, db: Session = Depends(get_db)):
     if not phone:
         raise HTTPException(status_code=404, detail="No phone number")
     
-    config = db.query(BadBotConfig).filter(BadBotConfig.phone_number_id == phone.id).first()
+    config = db.query(RootCallConfig).filter(RootCallConfig.phone_number_id == phone.id).first()
     if not config:
         raise HTTPException(status_code=404, detail="No config")
     
@@ -121,14 +121,14 @@ async def get_config(client_id: int, db: Session = Depends(get_db)):
         ]
     }
 
-@router.patch("/api/badbot/config/{client_id}")
+@router.patch("/api/rootcall/config/{client_id}")
 async def update_config(client_id: int, updates: ConfigUpdate, db: Session = Depends(get_db)):
-    """Update BadBot configuration"""
+    """Update RootCall configuration"""
     phone = db.query(PhoneNumber).filter(PhoneNumber.user_id == client_id).first()
     if not phone:
         raise HTTPException(status_code=404)
     
-    config = db.query(BadBotConfig).filter(BadBotConfig.phone_number_id == phone.id).first()
+    config = db.query(RootCallConfig).filter(RootCallConfig.phone_number_id == phone.id).first()
     if not config:
         raise HTTPException(status_code=404)
     
@@ -144,14 +144,14 @@ async def update_config(client_id: int, updates: ConfigUpdate, db: Session = Dep
     db.commit()
     return {"success": True}
 
-@router.post("/api/badbot/trusted-contacts/{client_id}")
+@router.post("/api/rootcall/trusted-contacts/{client_id}")
 async def add_trusted_contact(client_id: int, contact: TrustedContactAdd, db: Session = Depends(get_db)):
     """Add trusted contact"""
     phone = db.query(PhoneNumber).filter(PhoneNumber.user_id == client_id).first()
     if not phone:
         raise HTTPException(status_code=404)
     
-    config = db.query(BadBotConfig).filter(BadBotConfig.phone_number_id == phone.id).first()
+    config = db.query(RootCallConfig).filter(RootCallConfig.phone_number_id == phone.id).first()
     if not config:
         raise HTTPException(status_code=404)
     
@@ -164,14 +164,14 @@ async def add_trusted_contact(client_id: int, contact: TrustedContactAdd, db: Se
     
     return {"success": True}
 
-@router.delete("/api/badbot/trusted-contacts/{client_id}/{phone_number}")
+@router.delete("/api/rootcall/trusted-contacts/{client_id}/{phone_number}")
 async def remove_trusted_contact(client_id: int, phone_number: str, db: Session = Depends(get_db)):
     """Remove trusted contact"""
     phone = db.query(PhoneNumber).filter(PhoneNumber.user_id == client_id).first()
     if not phone:
         raise HTTPException(status_code=404)
     
-    config = db.query(BadBotConfig).filter(BadBotConfig.phone_number_id == phone.id).first()
+    config = db.query(RootCallConfig).filter(RootCallConfig.phone_number_id == phone.id).first()
     if not config:
         raise HTTPException(status_code=404)
     
@@ -182,7 +182,7 @@ async def remove_trusted_contact(client_id: int, phone_number: str, db: Session 
     return {"success": True}
 
 
-@router.get("/api/badbot/export/{client_id}")
+@router.get("/api/rootcall/export/{client_id}")
 async def export_calls(client_id: int, db: Session = Depends(get_db)):
     """Export call logs as CSV"""
     from fastapi.responses import StreamingResponse
@@ -195,9 +195,9 @@ async def export_calls(client_id: int, db: Session = Depends(get_db)):
     if not phone_ids:
         raise HTTPException(status_code=404)
     
-    logs = db.query(BadBotCallLog).filter(
-        BadBotCallLog.phone_number_id.in_(phone_ids)
-    ).order_by(BadBotCallLog.timestamp.desc()).all()
+    logs = db.query(RootCallCallLog).filter(
+        RootCallCallLog.phone_number_id.in_(phone_ids)
+    ).order_by(RootCallCallLog.timestamp.desc()).all()
     
     output = io.StringIO()
     writer = csv.writer(output)
@@ -216,5 +216,5 @@ async def export_calls(client_id: int, db: Session = Depends(get_db)):
     return StreamingResponse(
         iter([output.getvalue()]),
         media_type="text/csv",
-        headers={"Content-Disposition": "attachment; filename=badbot_calls.csv"}
+        headers={"Content-Disposition": "attachment; filename=rootcall_calls.csv"}
     )

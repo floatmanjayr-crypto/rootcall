@@ -7,7 +7,7 @@ from app.models.client_mapping import ClientMapping
 from app.models.bulk_campaign import BulkCampaign, CampaignRecipient, CampaignTemplate
 from app.models.subscription import Subscription, UserFeature, UsageLog
 from app.models.ivr import IVRFlow, IVRNode, IVRAction, IVRCallLog, BusinessHours
-from app.models.badbot_config import BadBotConfig, TrustedContact
+from app.models.rootcall_config import BadBotConfig, TrustedContact
 __all__ = [
     "User", "PhoneNumber", "Call", "Recording", "AIAgent",
     "ClientMapping", "BulkCampaign", "CampaignRecipient", "CampaignTemplate",

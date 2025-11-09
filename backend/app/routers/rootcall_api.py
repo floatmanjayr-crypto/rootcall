@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models.badbot_config import BadBotConfig
+from app.models.rootcall_config import RootCallConfig
 from app.models.phone_number import PhoneNumber
 from pydantic import BaseModel
 from typing import List, Optional
 
-router = APIRouter(prefix="/api/badbot", tags=["BadBot API"])
+router = APIRouter(prefix="/api/rootcall", tags=["BadBot API"])
 
 class ConfigUpdate(BaseModel):
     sms_alerts_enabled: Optional[bool] = None
@@ -23,8 +23,8 @@ async def get_config(db: Session = Depends(get_db)):
     # TODO: Get user_id from auth token
     user_id = 1  # Placeholder
     
-    config = db.query(BadBotConfig).filter(
-        BadBotConfig.user_id == user_id
+    config = db.query(RootCallConfig).filter(
+        RootCallConfig.user_id == user_id
     ).first()
     
     if not config:
@@ -49,8 +49,8 @@ async def update_config(
     """Update BadBot configuration"""
     user_id = 1  # Placeholder
     
-    config = db.query(BadBotConfig).filter(
-        BadBotConfig.user_id == user_id
+    config = db.query(RootCallConfig).filter(
+        RootCallConfig.user_id == user_id
     ).first()
     
     if not config:
@@ -84,8 +84,8 @@ async def add_trusted_contact(
     """Add trusted contact"""
     user_id = 1
     
-    config = db.query(BadBotConfig).filter(
-        BadBotConfig.user_id == user_id
+    config = db.query(RootCallConfig).filter(
+        RootCallConfig.user_id == user_id
     ).first()
     
     if not config:
@@ -108,8 +108,8 @@ async def remove_trusted_contact(
     """Remove trusted contact"""
     user_id = 1
     
-    config = db.query(BadBotConfig).filter(
-        BadBotConfig.user_id == user_id
+    config = db.query(RootCallConfig).filter(
+        RootCallConfig.user_id == user_id
     ).first()
     
     if not config:

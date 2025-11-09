@@ -5,7 +5,7 @@ from fastapi import APIRouter, Request, Response
 from app.services.client_config import get_client_config
 import httpx
 
-log = logging.getLogger("badbot")
+log = logging.getLogger("rootcall")
 
 async def send_sms_alert(to_number: str, message: str, from_number: str = "+18135478530"):
     """Send SMS alert"""
@@ -32,7 +32,7 @@ async def send_sms_alert(to_number: str, message: str, from_number: str = "+1813
             log.error("[SMS] Error: %s", e)
             return False
 
-router = APIRouter(prefix="/telnyx/badbot", tags=["BadBot Screen"])
+router = APIRouter(prefix="/telnyx/rootcall", tags=["BadBot Screen"])
 
 TELNYX_API_KEY = os.getenv("TELNYX_API_KEY", "").strip()
 TELNYX_SMS_FROM = os.getenv("TELNYX_SMS_FROM", "").strip()

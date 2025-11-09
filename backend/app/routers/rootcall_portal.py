@@ -218,3 +218,11 @@ async def export_calls(client_id: int, db: Session = Depends(get_db)):
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=rootcall_calls.csv"}
     )
+
+
+from fastapi.responses import FileResponse
+
+@router.get("/", response_class=FileResponse)
+async def landing_page():
+    """Serve RootCall landing page"""
+    return FileResponse("static/index.html")

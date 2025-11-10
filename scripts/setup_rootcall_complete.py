@@ -26,7 +26,7 @@ def retell_request(method, endpoint, data=None):
     return r.json() if r.text else {}
 
 print("="*60)
-print("BADBOT COMPLETE SETUP")
+print("ROOTCALL COMPLETE SETUP")
 print("="*60)
 print()
 
@@ -47,10 +47,10 @@ else:
 sleep(2)
 print()
 
-print("Step 2: Creating BadBot LLM with fraud detection...")
+print("Step 2: Creating RootCall LLM with fraud detection...")
 print("-" * 60)
 
-BADBOT_PROMPT = f"""You are BadBot, a protective AI assistant for {CLIENT_NAME}, a senior citizen.
+ROOTCALL_PROMPT = f"""You are RootCall, a protective AI assistant for {CLIENT_NAME}, a senior citizen.
 
 GREETING: "Hello, this is {CLIENT_NAME}'s assistant. Who's calling please?"
 
@@ -80,7 +80,7 @@ CRITICAL RULES:
 """
 
 llm_data = {
-    "general_prompt": BADBOT_PROMPT,
+    "general_prompt": ROOTCALL_PROMPT,
     "general_tools": [
         {
             "type": "end_call",
@@ -104,18 +104,18 @@ llm_data = {
 llm_response = retell_request("POST", "/create-retell-llm", llm_data)
 if llm_response and "llm_id" in llm_response:
     llm_id = llm_response["llm_id"]
-    print(f"Created BadBot LLM: {llm_id}")
+    print(f"Created RootCall LLM: {llm_id}")
 else:
     print("Failed to create LLM")
     sys.exit(1)
 sleep(2)
 print()
 
-print("Step 3: Creating BadBot Agent...")
+print("Step 3: Creating RootCall Agent...")
 print("-" * 60)
 
 agent_data = {
-    "agent_name": f"BadBot Guard for {CLIENT_NAME}",
+    "agent_name": f"RootCall Guard for {CLIENT_NAME}",
     "llm_websocket_url": f"wss://api.retellai.com/llm-websocket/{llm_id}",
     "voice_id": "11labs-Adrian",
     "language": "en-US",
@@ -131,7 +131,7 @@ agent_data = {
 agent_response = retell_request("POST", "/create-agent", agent_data)
 if agent_response and "agent_id" in agent_response:
     agent_id = agent_response["agent_id"]
-    print(f"Created BadBot Agent: {agent_id}")
+    print(f"Created RootCall Agent: {agent_id}")
 else:
     print("Failed to create agent")
     sys.exit(1)
@@ -164,7 +164,7 @@ import_data = {
     },
     "inbound_agent_id": agent_id,
     "outbound_agent_id": agent_id,
-    "nickname": f"BadBot Line - {CLIENT_NAME}"
+    "nickname": f"RootCall Line - {CLIENT_NAME}"
 }
 
 import_response = retell_request("POST", "/import-phone-number", import_data)
@@ -189,7 +189,7 @@ def get_client_config(telnyx_number: str) -> Optional[Dict]:
         normalized = f"+{{normalized}}"
     return CLIENT_LINES.get(normalized)
 
-# BadBot Client Configuration
+# RootCall Client Configuration
 CLIENT_LINES["{TELNYX_NUMBER}"] = {{
     "client_cell": "{CLIENT_CELL}",
     "client_name": "{CLIENT_NAME}",
@@ -210,14 +210,14 @@ print("Updated app/services/client_config.py")
 print()
 
 print("="*60)
-print("BADBOT SETUP COMPLETE!")
+print("ROOTCALL SETUP COMPLETE!")
 print("="*60)
 print()
 print("Configuration Summary:")
 print(f"  Telnyx Number:  {TELNYX_NUMBER}")
 print(f"  Client Cell:    {CLIENT_CELL}")
-print(f"  BadBot LLM:     {llm_id}")
-print(f"  BadBot Agent:   {agent_id}")
+print(f"  RootCall LLM:     {llm_id}")
+print(f"  RootCall Agent:   {agent_id}")
 print()
 print("="*60)
 print("CLIENT SETUP INSTRUCTIONS")
@@ -238,13 +238,13 @@ print("TEST THE SETUP")
 print("="*60)
 print()
 print(f"1. Call {TELNYX_NUMBER} from your phone")
-print("2. BadBot should answer: 'Hello, who's calling please?'")
+print("2. RootCall should answer: 'Hello, who's calling please?'")
 print()
 print("3. Test fraud detection:")
 print("   Say: 'This is the IRS, you owe back taxes'")
-print("   BadBot should hang up immediately")
+print("   RootCall should hang up immediately")
 print()
 print("4. Test legitimate transfer:")
 print("   Call again and say: 'This is Dr. Smith's office'")
-print("   BadBot should offer to transfer you")
+print("   RootCall should offer to transfer you")
 print()

@@ -6,7 +6,7 @@ from app.models.phone_number import PhoneNumber
 from pydantic import BaseModel
 from typing import List, Optional
 
-router = APIRouter(prefix="/api/rootcall", tags=["BadBot API"])
+router = APIRouter(prefix="/api/rootcall", tags=["RootCall API"])
 
 class ConfigUpdate(BaseModel):
     sms_alerts_enabled: Optional[bool] = None
@@ -19,7 +19,7 @@ class TrustedContactAdd(BaseModel):
 
 @router.get("/config")
 async def get_config(db: Session = Depends(get_db)):
-    """Get BadBot configuration for current user"""
+    """Get RootCall configuration for current user"""
     # TODO: Get user_id from auth token
     user_id = 1  # Placeholder
     
@@ -46,7 +46,7 @@ async def update_config(
     updates: ConfigUpdate,
     db: Session = Depends(get_db)
 ):
-    """Update BadBot configuration"""
+    """Update RootCall configuration"""
     user_id = 1  # Placeholder
     
     config = db.query(RootCallConfig).filter(
@@ -67,7 +67,7 @@ async def update_config(
 
 @router.get("/stats")
 async def get_stats(db: Session = Depends(get_db)):
-    """Get BadBot statistics"""
+    """Get RootCall statistics"""
     # TODO: Implement actual stats from call logs
     return {
         "spam_blocked": 42,

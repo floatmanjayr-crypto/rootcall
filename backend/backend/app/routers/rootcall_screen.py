@@ -32,11 +32,11 @@ async def send_sms_alert(to_number: str, message: str, from_number: str = "+1813
             log.error("[SMS] Error: %s", e)
             return False
 
-router = APIRouter(prefix="/telnyx/rootcall", tags=["BadBot Screen"])
+router = APIRouter(prefix="/telnyx/rootcall", tags=["RootCall Screen"])
 
 TELNYX_API_KEY = os.getenv("TELNYX_API_KEY", "").strip()
 TELNYX_SMS_FROM = os.getenv("TELNYX_SMS_FROM", "").strip()
-DRY_RUN = os.getenv("BADBOT_DRY_RUN", "").strip() == "1"
+DRY_RUN = os.getenv("ROOTCALL_DRY_RUN", "").strip() == "1"
 
 # Telnyx webhook signature verification (optional but recommended)
 TELNYX_PUBLIC_KEY = os.getenv("TELNYX_PUBLIC_KEY", "").strip()
@@ -186,7 +186,7 @@ async def telnyx_hangup(ccid: str):
 @router.post("/webhook", status_code=200)
 async def screen_call(request: Request):
     """
-    Main BadBot screening webhook - NO AUTHENTICATION REQUIRED
+    Main RootCall screening webhook - NO AUTHENTICATION REQUIRED
     This endpoint receives webhooks directly from Telnyx
     """
     
@@ -258,7 +258,7 @@ async def screen_call(request: Request):
             
             # Send SMS alert
             if cfg.get("sms_alerts_enabled") and cfg.get("alert_on_spam"):
-                await send_sms_alert(client_cell, f"[BadBot] SPAM BLOCKED: {cnam or from_num}")
+                await send_sms_alert(client_cell, f"[RootCall] SPAM BLOCKED: {cnam or from_num}")
             
             await telnyx_hangup(ccid)
             return {"status": "spam_blocked"}
@@ -269,7 +269,7 @@ async def screen_call(request: Request):
             
             # Alert about trusted contact
             if cfg.get("sms_alerts_enabled"):
-                await send_sms_alert(client_cell, f"[BadBot] Trusted contact {cnam or from_num} calling")
+                await send_sms_alert(client_cell, f"[RootCall] Trusted contact {cnam or from_num} calling")
             
             await telnyx_transfer(ccid, client_cell)
             return {"status": "trusted_forwarded"}
@@ -282,7 +282,7 @@ async def screen_call(request: Request):
                  cfg.get("sms_alerts_enabled"), cfg.get("alert_on_unknown"), client_cell)
         if cfg.get("sms_alerts_enabled") and cfg.get("alert_on_unknown"):
             log.info("[SMS] Sending unknown caller alert to %s", client_cell)
-            await send_sms_alert(client_cell, f"[BadBot] Unknown caller {cnam or from_num} being screened")
+            await send_sms_alert(client_cell, f"[RootCall] Unknown caller {cnam or from_num} being screened")
         else:
             log.warning("[SMS] Alert skipped - alerts not enabled or no client_cell")
         
@@ -338,13 +338,13 @@ async def screen_call(request: Request):
             if cfg.get("sms_alerts_enabled") and cfg.get("alert_on_spam"):
                 await send_sms_alert(
                     client_cell, 
-                    f"[BadBot] SPAM BLOCKED: {cnam or 'Unknown'} ({from_num})",
-                    to_num  # Send from the BadBot number
+                    f"[RootCall] SPAM BLOCKED: {cnam or 'Unknown'} ({from_num})",
+                    to_num  # Send from the RootCall number
                 )
                 if caregiver:
                     await send_sms_alert(
                         caregiver,
-                        f"[BadBot] Spam blocked for {cfg.get('client_name')}: {from_num}"
+                        f"[RootCall] Spam blocked for {cfg.get('client_name')}: {from_num}"
                     )
             
             await telnyx_hangup(ccid)
@@ -358,7 +358,7 @@ async def screen_call(request: Request):
             if cfg.get("sms_alerts_enabled"):
                 await send_sms_alert(
                     client_cell,
-                    f"[BadBot] Trusted contact {cnam or from_num} calling now",
+                    f"[RootCall] Trusted contact {cnam or from_num} calling now",
                     to_num
                 )
             
@@ -369,14 +369,14 @@ async def screen_call(request: Request):
         # 3) Unknown -> Transfer DIRECTLY to client (bypass Retell for now)
         log.info("[UNKNOWN] Transferring %s DIRECTLY to client: %s", from_num, client_cell)
         if client_cell:
-            send_sms_alert(client_cell, f"[BadBot] Unknown caller {from_num} - transferred")
+            send_sms_alert(client_cell, f"[RootCall] Unknown caller {from_num} - transferred")
             result = await telnyx_transfer(ccid, client_cell)
             return {"status": "unknown_transferred_direct", "from": from_num, "to": client_cell, "result": result}
         
         # 4) Fallback - forward with alert
         if client_cell:
             log.info("[FALLBACK] Forwarding %s to %s", from_num, client_cell)
-            send_sms_alert(client_cell, f"[BadBot] Unknown caller {from_num} forwarded")
+            send_sms_alert(client_cell, f"[RootCall] Unknown caller {from_num} forwarded")
             result = await telnyx_transfer(ccid, client_cell)
             return {"status": "unknown_forwarded", "from": from_num, "to": client_cell, "result": result}
         
@@ -397,7 +397,7 @@ async def health_check():
     """Health check - no auth required"""
     return {
         "status": "ok",
-        "service": "BadBot Call Screening",
+        "service": "RootCall Call Screening",
         "dry_run": DRY_RUN,
         "has_api_key": bool(TELNYX_API_KEY)
     }

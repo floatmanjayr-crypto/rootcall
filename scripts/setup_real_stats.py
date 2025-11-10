@@ -5,20 +5,20 @@ Setup Real Call Logging and Stats
 import subprocess
 
 print("="*60)
-print("SETTING UP REAL BADBOT STATS")
+print("SETTING UP REAL ROOTCALL STATS")
 print("="*60)
 
 # 1. Create the model
-print("\n1. Creating BadBotCallLog model...")
+print("\n1. Creating RootCallCallLog model...")
 model_code = '''"""
-BadBot Call Logs Model
+RootCall Call Logs Model
 """
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.sql import func
 from app.database import Base
 
-class BadBotCallLog(Base):
-    __tablename__ = "badbot_call_logs"
+class RootCallCallLog(Base):
+    __tablename__ = "rootcall_call_logs"
     
     id = Column(Integer, primary_key=True, index=True)
     phone_number_id = Column(Integer, ForeignKey("phone_numbers.id"))
@@ -30,30 +30,30 @@ class BadBotCallLog(Base):
     timestamp = Column(DateTime(timezone=True), server_default=func.now())
 '''
 
-with open('app/models/badbot_call_log.py', 'w') as f:
+with open('app/models/rootcall_call_log.py', 'w') as f:
     f.write(model_code)
 print("   ✓ Model created")
 
-# 2. Update badbot_portal.py to use real stats
+# 2. Update rootcall_portal.py to use real stats
 print("\n2. Updating API to use real stats...")
 
 portal_code = '''# -*- coding: utf-8 -*-
 """
-BadBot Client Portal API Routes - REAL DATA
+RootCall Client Portal API Routes - REAL DATA
 """
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from app.database import get_db
-from app.models.badbot_config import BadBotConfig
+from app.models.rootcall_config import RootCallConfig
 from app.models.phone_number import PhoneNumber
 from app.models.user import User
-from app.models.badbot_call_log import BadBotCallLog
+from app.models.rootcall_call_log import RootCallCallLog
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime, timedelta
 
-router = APIRouter(tags=["BadBot Portal"])
+router = APIRouter(tags=["RootCall Portal"])
 
 class ConfigUpdate(BaseModel):
     sms_alerts_enabled: Optional[bool] = None
@@ -65,9 +65,9 @@ class TrustedContactAdd(BaseModel):
     phone_number: str
     name: Optional[str] = None
 
-@router.get("/api/badbot/stats/{client_id}")
+@router.get("/api/rootcall/stats/{client_id}")
 async def get_stats(client_id: int, db: Session = Depends(get_db)):
-    """Get REAL BadBot protection stats"""
+    """Get REAL RootCall protection stats"""
     # Get all phone numbers for this user
     phones = db.query(PhoneNumber).filter(PhoneNumber.user_id == client_id).all()
     phone_ids = [p.id for p in phones]
@@ -81,23 +81,23 @@ async def get_stats(client_id: int, db: Session = Depends(get_db)):
         }
     
     # Count by action
-    spam_blocked = db.query(BadBotCallLog).filter(
-        BadBotCallLog.phone_number_id.in_(phone_ids),
-        BadBotCallLog.action == "spam_blocked"
+    spam_blocked = db.query(RootCallCallLog).filter(
+        RootCallCallLog.phone_number_id.in_(phone_ids),
+        RootCallCallLog.action == "spam_blocked"
     ).count()
     
-    calls_screened = db.query(BadBotCallLog).filter(
-        BadBotCallLog.phone_number_id.in_(phone_ids),
-        BadBotCallLog.action == "screened"
+    calls_screened = db.query(RootCallCallLog).filter(
+        RootCallCallLog.phone_number_id.in_(phone_ids),
+        RootCallCallLog.action == "screened"
     ).count()
     
-    trusted_forwarded = db.query(BadBotCallLog).filter(
-        BadBotCallLog.phone_number_id.in_(phone_ids),
-        BadBotCallLog.action == "trusted_forwarded"
+    trusted_forwarded = db.query(RootCallCallLog).filter(
+        RootCallCallLog.phone_number_id.in_(phone_ids),
+        RootCallCallLog.action == "trusted_forwarded"
     ).count()
     
-    total_calls = db.query(BadBotCallLog).filter(
-        BadBotCallLog.phone_number_id.in_(phone_ids)
+    total_calls = db.query(RootCallCallLog).filter(
+        RootCallCallLog.phone_number_id.in_(phone_ids)
     ).count()
     
     return {
@@ -107,7 +107,7 @@ async def get_stats(client_id: int, db: Session = Depends(get_db)):
         "total_calls": total_calls
     }
 
-@router.get("/api/badbot/calls/{client_id}")
+@router.get("/api/rootcall/calls/{client_id}")
 async def get_recent_calls(client_id: int, db: Session = Depends(get_db)):
     """Get REAL recent call activity"""
     phones = db.query(PhoneNumber).filter(PhoneNumber.user_id == client_id).all()
@@ -117,9 +117,9 @@ async def get_recent_calls(client_id: int, db: Session = Depends(get_db)):
         return []
     
     # Get last 20 calls
-    logs = db.query(BadBotCallLog).filter(
-        BadBotCallLog.phone_number_id.in_(phone_ids)
-    ).order_by(BadBotCallLog.timestamp.desc()).limit(20).all()
+    logs = db.query(RootCallCallLog).filter(
+        RootCallCallLog.phone_number_id.in_(phone_ids)
+    ).order_by(RootCallCallLog.timestamp.desc()).limit(20).all()
     
     return [
         {
@@ -132,9 +132,9 @@ async def get_recent_calls(client_id: int, db: Session = Depends(get_db)):
         for log in logs
     ]
 
-@router.get("/api/badbot/config/{client_id}")
+@router.get("/api/rootcall/config/{client_id}")
 async def get_config(client_id: int, db: Session = Depends(get_db)):
-    """Get BadBot configuration"""
+    """Get RootCall configuration"""
     user = db.query(User).filter(User.id == client_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="Client not found")
@@ -143,7 +143,7 @@ async def get_config(client_id: int, db: Session = Depends(get_db)):
     if not phone:
         raise HTTPException(status_code=404, detail="No phone number")
     
-    config = db.query(BadBotConfig).filter(BadBotConfig.phone_number_id == phone.id).first()
+    config = db.query(RootCallConfig).filter(RootCallConfig.phone_number_id == phone.id).first()
     if not config:
         raise HTTPException(status_code=404, detail="No config")
     
@@ -160,14 +160,14 @@ async def get_config(client_id: int, db: Session = Depends(get_db)):
         ]
     }
 
-@router.patch("/api/badbot/config/{client_id}")
+@router.patch("/api/rootcall/config/{client_id}")
 async def update_config(client_id: int, updates: ConfigUpdate, db: Session = Depends(get_db)):
-    """Update BadBot configuration"""
+    """Update RootCall configuration"""
     phone = db.query(PhoneNumber).filter(PhoneNumber.user_id == client_id).first()
     if not phone:
         raise HTTPException(status_code=404)
     
-    config = db.query(BadBotConfig).filter(BadBotConfig.phone_number_id == phone.id).first()
+    config = db.query(RootCallConfig).filter(RootCallConfig.phone_number_id == phone.id).first()
     if not config:
         raise HTTPException(status_code=404)
     
@@ -183,14 +183,14 @@ async def update_config(client_id: int, updates: ConfigUpdate, db: Session = Dep
     db.commit()
     return {"success": True}
 
-@router.post("/api/badbot/trusted-contacts/{client_id}")
+@router.post("/api/rootcall/trusted-contacts/{client_id}")
 async def add_trusted_contact(client_id: int, contact: TrustedContactAdd, db: Session = Depends(get_db)):
     """Add trusted contact"""
     phone = db.query(PhoneNumber).filter(PhoneNumber.user_id == client_id).first()
     if not phone:
         raise HTTPException(status_code=404)
     
-    config = db.query(BadBotConfig).filter(BadBotConfig.phone_number_id == phone.id).first()
+    config = db.query(RootCallConfig).filter(RootCallConfig.phone_number_id == phone.id).first()
     if not config:
         raise HTTPException(status_code=404)
     
@@ -203,14 +203,14 @@ async def add_trusted_contact(client_id: int, contact: TrustedContactAdd, db: Se
     
     return {"success": True}
 
-@router.delete("/api/badbot/trusted-contacts/{client_id}/{phone_number}")
+@router.delete("/api/rootcall/trusted-contacts/{client_id}/{phone_number}")
 async def remove_trusted_contact(client_id: int, phone_number: str, db: Session = Depends(get_db)):
     """Remove trusted contact"""
     phone = db.query(PhoneNumber).filter(PhoneNumber.user_id == client_id).first()
     if not phone:
         raise HTTPException(status_code=404)
     
-    config = db.query(BadBotConfig).filter(BadBotConfig.phone_number_id == phone.id).first()
+    config = db.query(RootCallConfig).filter(RootCallConfig.phone_number_id == phone.id).first()
     if not config:
         raise HTTPException(status_code=404)
     
@@ -221,27 +221,27 @@ async def remove_trusted_contact(client_id: int, phone_number: str, db: Session 
     return {"success": True}
 '''
 
-with open('app/routers/badbot_portal.py', 'w') as f:
+with open('app/routers/rootcall_portal.py', 'w') as f:
     f.write(portal_code)
 print("   ✓ API updated with real stats")
 
-# 3. Add logging to badbot_screen.py
+# 3. Add logging to rootcall_screen.py
 print("\n3. Adding call logging to webhook...")
 
-with open('app/routers/badbot_screen.py', 'r') as f:
+with open('app/routers/rootcall_screen.py', 'r') as f:
     content = f.read()
 
 # Add import
-if 'BadBotCallLog' not in content:
+if 'RootCallCallLog' not in content:
     content = content.replace(
-        'from app.models.badbot_config import BadBotConfig',
-        'from app.models.badbot_config import BadBotConfig\nfrom app.models.badbot_call_log import BadBotCallLog'
+        'from app.models.rootcall_config import RootCallConfig',
+        'from app.models.rootcall_config import RootCallConfig\nfrom app.models.rootcall_call_log import RootCallCallLog'
     )
     print("   ✓ Added import")
 
 # Add logging after spam block
 spam_log = '''            # Log spam block
-            log_entry = BadBotCallLog(
+            log_entry = RootCallCallLog(
                 phone_number_id=phone_id,
                 from_number=from_num,
                 caller_name=cnam,
@@ -254,7 +254,7 @@ spam_log = '''            # Log spam block
             
             await telnyx_hangup(ccid)'''
 
-if 'BadBotCallLog' in content and 'spam_blocked' not in content:
+if 'RootCallCallLog' in content and 'spam_blocked' not in content:
     content = content.replace(
         'await telnyx_hangup(ccid)\n            return {"status": "spam_blocked"}',
         spam_log + '\n            return {"status": "spam_blocked"}'
@@ -263,7 +263,7 @@ if 'BadBotCallLog' in content and 'spam_blocked' not in content:
 
 # Add logging for screening
 screening_log = '''        # Log screening
-        log_entry = BadBotCallLog(
+        log_entry = RootCallCallLog(
             phone_number_id=phone_id,
             from_number=from_num,
             caller_name=cnam,
@@ -285,7 +285,7 @@ if 'screened' not in content:
 
 # Add logging for trusted forward
 trusted_log = '''            # Log trusted forward
-            log_entry = BadBotCallLog(
+            log_entry = RootCallCallLog(
                 phone_number_id=phone_id,
                 from_number=from_num,
                 caller_name=cnam,
@@ -305,14 +305,14 @@ if 'trusted_forwarded' not in content:
     )
     print("   ✓ Added trusted forward logging")
 
-with open('app/routers/badbot_screen.py', 'w') as f:
+with open('app/routers/rootcall_screen.py', 'w') as f:
     f.write(content)
 
 print("\n4. Creating database table...")
 
 # Create SQL
 sql = '''
-CREATE TABLE IF NOT EXISTS badbot_call_logs (
+CREATE TABLE IF NOT EXISTS rootcall_call_logs (
     id SERIAL PRIMARY KEY,
     phone_number_id INTEGER REFERENCES phone_numbers(id),
     from_number VARCHAR(20) NOT NULL,
@@ -323,14 +323,14 @@ CREATE TABLE IF NOT EXISTS badbot_call_logs (
     timestamp TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_badbot_logs_phone ON badbot_call_logs(phone_number_id);
-CREATE INDEX IF NOT EXISTS idx_badbot_logs_timestamp ON badbot_call_logs(timestamp);
+CREATE INDEX IF NOT EXISTS idx_rootcall_logs_phone ON rootcall_call_logs(phone_number_id);
+CREATE INDEX IF NOT EXISTS idx_rootcall_logs_timestamp ON rootcall_call_logs(timestamp);
 '''
 
-with open('create_badbot_logs.sql', 'w') as f:
+with open('create_rootcall_logs.sql', 'w') as f:
     f.write(sql)
 
-print("   ✓ SQL file created: create_badbot_logs.sql")
+print("   ✓ SQL file created: create_rootcall_logs.sql")
 
 print("\n" + "="*60)
 print("SETUP COMPLETE!")
@@ -338,7 +338,7 @@ print("="*60)
 print("\nNext steps:")
 print("1. Run SQL migration:")
 print("   Get database URL from .env and run:")
-print("   psql <your-db-url> < create_badbot_logs.sql")
+print("   psql <your-db-url> < create_rootcall_logs.sql")
 print("")
 print("2. Server will reload automatically")
 print("3. Make test calls to +18135478530")
@@ -351,6 +351,6 @@ with open('.env', 'r') as f:
         if 'DATABASE_URL' in line:
             db_url = line.split('=', 1)[1].strip()
             print(f"\nQuick command:")
-            print(f'psql "{db_url}" < create_badbot_logs.sql')
+            print(f'psql "{db_url}" < create_rootcall_logs.sql')
             break
 

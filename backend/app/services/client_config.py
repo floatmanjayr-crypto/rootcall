@@ -1,7 +1,7 @@
 """
 Updated Client Config Service - Database-driven
 Replace: app/services/client_config.py
-Reads BadBot configuration from database instead of hardcoded CLIENT_LINES
+Reads RootCall configuration from database instead of hardcoded CLIENT_LINES
 """
 from typing import Dict, Optional
 from sqlalchemy.orm import Session
@@ -10,7 +10,7 @@ from app.models.rootcall_config import RootCallConfig
 from app.models.phone_number import PhoneNumber
 import logging
 
-log = logging.getLogger("badbot")
+log = logging.getLogger("rootcall")
 
 # Legacy hardcoded config for backward compatibility (optional)
 CLIENT_LINES: Dict[str, Dict] = {
@@ -26,7 +26,7 @@ CLIENT_LINES: Dict[str, Dict] = {
 
 def get_client_config(telnyx_number: str, db: Session = None) -> Optional[Dict]:
     """
-    Get BadBot configuration for a phone number
+    Get RootCall configuration for a phone number
     First checks database, falls back to hardcoded CLIENT_LINES for backward compatibility
     
     Args:
@@ -76,7 +76,7 @@ def get_client_config(telnyx_number: str, db: Session = None) -> Optional[Dict]:
                 log.info(f"[DB CONFIG] Loaded config for {normalized}: {config.client_name}")
                 return result
             else:
-                log.warning(f"[DB CONFIG] No BadBot config found for phone {phone.id}")
+                log.warning(f"[DB CONFIG] No RootCall config found for phone {phone.id}")
                 
     except Exception as e:
         log.error(f"[DB CONFIG] Error loading config for {normalized}: {e}")

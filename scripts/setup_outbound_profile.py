@@ -34,7 +34,7 @@ if response.status_code == 200:
             "https://api.telnyx.com/v2/outbound_voice_profiles",
             headers={"Authorization": f"Bearer {TELNYX_API_KEY}"},
             json={
-                "name": "BadBot Outbound Profile",
+                "name": "RootCall Outbound Profile",
                 "traffic_type": "conversational",
                 "service_plan": "global",
                 "concurrent_call_limit": 10

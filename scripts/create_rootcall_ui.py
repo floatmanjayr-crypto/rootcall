@@ -1,35 +1,35 @@
 # -*- coding: utf-8 -*-
 """
-Create BadBot Client Portal UI
+Create RootCall Client Portal UI
 Complete dashboard for managing call screening
 """
 import os
 
 print("="*60)
-print("CREATING BADBOT CLIENT PORTAL")
+print("CREATING ROOTCALL CLIENT PORTAL")
 print("="*60)
 
 # Create frontend directory structure
-os.makedirs('../frontend/src/pages/badbot', exist_ok=True)
-os.makedirs('../frontend/src/components/badbot', exist_ok=True)
+os.makedirs('../frontend/src/pages/rootcall', exist_ok=True)
+os.makedirs('../frontend/src/components/rootcall', exist_ok=True)
 os.makedirs('../frontend/src/hooks', exist_ok=True)
 
-print("\n1. Creating BadBot Dashboard Page...")
+print("\n1. Creating RootCall Dashboard Page...")
 
-# Main BadBot Dashboard
+# Main RootCall Dashboard
 dashboard_code = '''import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Shield, Phone, Users, Settings, TrendingUp, AlertTriangle } from 'lucide-react';
-import { useBadBotConfig } from '@/hooks/useBadBotConfig';
+import { useRootCallConfig } from '@/hooks/useRootCallConfig';
 
-export default function BadBotDashboard() {
-  const { config, stats, loading, updateConfig } = useBadBotConfig();
+export default function RootCallDashboard() {
+  const { config, stats, loading, updateConfig } = useRootCallConfig();
 
   if (loading) {
     return <div className="flex items-center justify-center h-screen">
-      <div className="text-lg">Loading your BadBot protection...</div>
+      <div className="text-lg">Loading your RootCall protection...</div>
     </div>;
   }
 
@@ -40,7 +40,7 @@ export default function BadBotDashboard() {
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2">
             <Shield className="text-blue-600" />
-            BadBot Protection
+            RootCall Protection
           </h1>
           <p className="text-gray-600 mt-1">
             AI-powered call screening for {config?.client_name}
@@ -265,20 +265,20 @@ function RecentCallsTable({ calls }) {
 }
 '''
 
-with open('../frontend/src/pages/badbot/Dashboard.tsx', 'w') as f:
+with open('../frontend/src/pages/rootcall/Dashboard.tsx', 'w') as f:
     f.write(dashboard_code)
 
 print("✓ Created Dashboard.tsx")
 
-print("\n2. Creating BadBot API Hook...")
+print("\n2. Creating RootCall API Hook...")
 
-# Create custom hook for BadBot API
+# Create custom hook for RootCall API
 hook_code = '''import { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-export function useBadBotConfig() {
+export function useRootCallConfig() {
   const [config, setConfig] = useState(null);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -291,7 +291,7 @@ export function useBadBotConfig() {
 
   const fetchConfig = async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/badbot/config`);
+      const response = await axios.get(`${API_URL}/api/rootcall/config`);
       setConfig(response.data);
     } catch (err) {
       setError(err.message);
@@ -302,7 +302,7 @@ export function useBadBotConfig() {
 
   const fetchStats = async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/badbot/stats`);
+      const response = await axios.get(`${API_URL}/api/rootcall/stats`);
       setStats(response.data);
     } catch (err) {
       console.error('Failed to fetch stats:', err);
@@ -311,7 +311,7 @@ export function useBadBotConfig() {
 
   const updateConfig = async (updates) => {
     try {
-      const response = await axios.patch(`${API_URL}/api/badbot/config`, updates);
+      const response = await axios.patch(`${API_URL}/api/rootcall/config`, updates);
       setConfig(response.data);
       return true;
     } catch (err) {
@@ -322,7 +322,7 @@ export function useBadBotConfig() {
 
   const addTrustedContact = async (phoneNumber) => {
     try {
-      await axios.post(`${API_URL}/api/badbot/trusted-contacts`, {
+      await axios.post(`${API_URL}/api/rootcall/trusted-contacts`, {
         phone_number: phoneNumber
       });
       fetchConfig();
@@ -335,7 +335,7 @@ export function useBadBotConfig() {
 
   const removeTrustedContact = async (phoneNumber) => {
     try {
-      await axios.delete(`${API_URL}/api/badbot/trusted-contacts/${phoneNumber}`);
+      await axios.delete(`${API_URL}/api/rootcall/trusted-contacts/${phoneNumber}`);
       fetchConfig();
       return true;
     } catch (err) {
@@ -357,23 +357,23 @@ export function useBadBotConfig() {
 }
 '''
 
-with open('../frontend/src/hooks/useBadBotConfig.ts', 'w') as f:
+with open('../frontend/src/hooks/useRootCallConfig.ts', 'w') as f:
     f.write(hook_code)
 
-print("✓ Created useBadBotConfig.ts")
+print("✓ Created useRootCallConfig.ts")
 
 print("\n3. Creating Backend API Endpoints...")
 
-# Create BadBot API router
+# Create RootCall API router
 api_code = '''from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models.badbot_config import BadBotConfig
+from app.models.rootcall_config import RootCallConfig
 from app.models.phone_number import PhoneNumber
 from pydantic import BaseModel
 from typing import List, Optional
 
-router = APIRouter(prefix="/api/badbot", tags=["BadBot API"])
+router = APIRouter(prefix="/api/rootcall", tags=["RootCall API"])
 
 class ConfigUpdate(BaseModel):
     sms_alerts_enabled: Optional[bool] = None
@@ -386,12 +386,12 @@ class TrustedContactAdd(BaseModel):
 
 @router.get("/config")
 async def get_config(db: Session = Depends(get_db)):
-    """Get BadBot configuration for current user"""
+    """Get RootCall configuration for current user"""
     # TODO: Get user_id from auth token
     user_id = 1  # Placeholder
     
-    config = db.query(BadBotConfig).filter(
-        BadBotConfig.user_id == user_id
+    config = db.query(RootCallConfig).filter(
+        RootCallConfig.user_id == user_id
     ).first()
     
     if not config:
@@ -413,11 +413,11 @@ async def update_config(
     updates: ConfigUpdate,
     db: Session = Depends(get_db)
 ):
-    """Update BadBot configuration"""
+    """Update RootCall configuration"""
     user_id = 1  # Placeholder
     
-    config = db.query(BadBotConfig).filter(
-        BadBotConfig.user_id == user_id
+    config = db.query(RootCallConfig).filter(
+        RootCallConfig.user_id == user_id
     ).first()
     
     if not config:
@@ -434,7 +434,7 @@ async def update_config(
 
 @router.get("/stats")
 async def get_stats(db: Session = Depends(get_db)):
-    """Get BadBot statistics"""
+    """Get RootCall statistics"""
     # TODO: Implement actual stats from call logs
     return {
         "spam_blocked": 42,
@@ -451,8 +451,8 @@ async def add_trusted_contact(
     """Add trusted contact"""
     user_id = 1
     
-    config = db.query(BadBotConfig).filter(
-        BadBotConfig.user_id == user_id
+    config = db.query(RootCallConfig).filter(
+        RootCallConfig.user_id == user_id
     ).first()
     
     if not config:
@@ -475,8 +475,8 @@ async def remove_trusted_contact(
     """Remove trusted contact"""
     user_id = 1
     
-    config = db.query(BadBotConfig).filter(
-        BadBotConfig.user_id == user_id
+    config = db.query(RootCallConfig).filter(
+        RootCallConfig.user_id == user_id
     ).first()
     
     if not config:
@@ -490,25 +490,25 @@ async def remove_trusted_contact(
 '''
 
 os.makedirs('app/routers', exist_ok=True)
-with open('app/routers/badbot_api.py', 'w') as f:
+with open('app/routers/rootcall_api.py', 'w') as f:
     f.write(api_code)
 
-print("✓ Created badbot_api.py")
+print("✓ Created rootcall_api.py")
 
 print("\n" + "="*60)
-print("BADBOT CLIENT PORTAL CREATED!")
+print("ROOTCALL CLIENT PORTAL CREATED!")
 print("="*60)
 print("\nFiles created:")
 print("  Frontend:")
-print("    - frontend/src/pages/badbot/Dashboard.tsx")
-print("    - frontend/src/hooks/useBadBotConfig.ts")
+print("    - frontend/src/pages/rootcall/Dashboard.tsx")
+print("    - frontend/src/hooks/useRootCallConfig.ts")
 print("  Backend:")
-print("    - app/routers/badbot_api.py")
+print("    - app/routers/rootcall_api.py")
 print("\nNext steps:")
 print("  1. Add router to main.py:")
-print("     from app.routers.badbot_api import router as badbot_api_router")
-print("     app.include_router(badbot_api_router)")
+print("     from app.routers.rootcall_api import router as rootcall_api_router")
+print("     app.include_router(rootcall_api_router)")
 print("  2. Start frontend dev server")
-print("  3. Navigate to /badbot/dashboard")
+print("  3. Navigate to /rootcall/dashboard")
 print("="*60)
 

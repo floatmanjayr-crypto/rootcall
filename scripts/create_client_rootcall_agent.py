@@ -2,8 +2,8 @@
 import os
 import requests
 
-def create_badbot_agent_for_client(client_name, client_cell):
-    """Create a Retell agent for a new BadBot client"""
+def create_rootcall_agent_for_client(client_name, client_cell):
+    """Create a Retell agent for a new RootCall client"""
     
     with open('.env', 'r') as f:
         for line in f:
@@ -71,7 +71,7 @@ Keep responses short."""
     
     # Create Agent
     agent_payload = {
-        "agent_name": f"BadBot - {client_name}",
+        "agent_name": f"RootCall - {client_name}",
         "voice_id": "11labs-Adrian",
         "language": "en-US",
         "response_engine": {
@@ -103,10 +103,10 @@ Keep responses short."""
 
 if __name__ == "__main__":
     print("="*60)
-    print("BADBOT AGENT CREATION TEST")
+    print("ROOTCALL AGENT CREATION TEST")
     print("="*60)
     
-    result = create_badbot_agent_for_client("Test Client", "+15555551234")
+    result = create_rootcall_agent_for_client("Test Client", "+15555551234")
     
     if result:
         print(f"\nSUCCESS!")

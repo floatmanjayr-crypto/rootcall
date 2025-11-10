@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Professional BadBot Call Shield Platform
+Professional RootCall Call Shield Platform
 """
 
 print("="*60)
-print("CREATING PROFESSIONAL BADBOT CALL SHIELD")
+print("CREATING PROFESSIONAL ROOTCALL CALL SHIELD")
 print("="*60)
 
 # 1. Create subscription tiers table
@@ -12,7 +12,7 @@ print("\n[1/5] Creating subscription system...")
 
 subscription_sql = """
 -- Subscription Tiers
-CREATE TABLE IF NOT EXISTS badbot_subscription_tiers (
+CREATE TABLE IF NOT EXISTS rootcall_subscription_tiers (
     id SERIAL PRIMARY KEY,
     name VARCHAR(50) NOT NULL,
     price_monthly DECIMAL(10,2) NOT NULL,
@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS badbot_subscription_tiers (
 );
 
 -- Insert default tiers
-INSERT INTO badbot_subscription_tiers (name, price_monthly, max_shield_numbers, max_trusted_contacts, sms_alerts_included, email_alerts_included, call_recording, priority_support)
+INSERT INTO rootcall_subscription_tiers (name, price_monthly, max_shield_numbers, max_trusted_contacts, sms_alerts_included, email_alerts_included, call_recording, priority_support)
 VALUES 
     ('Basic Shield', 9.99, 1, 5, true, false, false, false),
     ('Family Shield', 19.99, 3, 15, true, true, false, false),
@@ -34,10 +34,10 @@ VALUES
 ON CONFLICT DO NOTHING;
 
 -- User subscriptions
-CREATE TABLE IF NOT EXISTS badbot_user_subscriptions (
+CREATE TABLE IF NOT EXISTS rootcall_user_subscriptions (
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(id),
-    tier_id INTEGER REFERENCES badbot_subscription_tiers(id),
+    tier_id INTEGER REFERENCES rootcall_subscription_tiers(id),
     status VARCHAR(20) DEFAULT 'active',
     stripe_subscription_id VARCHAR(255),
     current_period_end TIMESTAMP,
@@ -46,13 +46,13 @@ CREATE TABLE IF NOT EXISTS badbot_user_subscriptions (
 );
 
 -- Shield numbers (rename from phone_numbers concept)
-ALTER TABLE badbot_configs ADD COLUMN IF NOT EXISTS shield_number_nickname VARCHAR(100);
-ALTER TABLE badbot_configs ADD COLUMN IF NOT EXISTS is_primary BOOLEAN DEFAULT false;
+ALTER TABLE rootcall_configs ADD COLUMN IF NOT EXISTS shield_number_nickname VARCHAR(100);
+ALTER TABLE rootcall_configs ADD COLUMN IF NOT EXISTS is_primary BOOLEAN DEFAULT false;
 
-CREATE INDEX IF NOT EXISTS idx_user_subscriptions ON badbot_user_subscriptions(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_subscriptions ON rootcall_user_subscriptions(user_id);
 """
 
-with open('migrate_professional_badbot.sql', 'w') as f:
+with open('migrate_professional_rootcall.sql', 'w') as f:
     f.write(subscription_sql)
 
 print("   OK: Subscription tables created")
@@ -62,21 +62,21 @@ print("\n[2/5] Creating professional API...")
 
 professional_api = '''# -*- coding: utf-8 -*-
 """
-BadBot Call Shield - Professional API
+RootCall Call Shield - Professional API
 """
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func, and_
 from app.database import get_db
-from app.models.badbot_config import BadBotConfig
+from app.models.rootcall_config import RootCallConfig
 from app.models.phone_number import PhoneNumber
 from app.models.user import User
-from app.models.badbot_call_log import BadBotCallLog
+from app.models.rootcall_call_log import RootCallCallLog
 from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime, timedelta
 
-router = APIRouter(tags=["BadBot Call Shield"])
+router = APIRouter(tags=["RootCall Call Shield"])
 
 class ConfigUpdate(BaseModel):
     sms_alerts_enabled: Optional[bool] = None
@@ -106,30 +106,30 @@ async def get_dashboard(client_id: int, db: Session = Depends(get_db)):
     phone_ids = [p.id for p in phones]
     
     # Get configs
-    configs = db.query(BadBotConfig).filter(
-        BadBotConfig.phone_number_id.in_(phone_ids)
+    configs = db.query(RootCallConfig).filter(
+        RootCallConfig.phone_number_id.in_(phone_ids)
     ).all()
     
     # Get stats
-    spam_blocked = db.query(BadBotCallLog).filter(
-        BadBotCallLog.phone_number_id.in_(phone_ids),
-        BadBotCallLog.action == "spam_blocked"
+    spam_blocked = db.query(RootCallCallLog).filter(
+        RootCallCallLog.phone_number_id.in_(phone_ids),
+        RootCallCallLog.action == "spam_blocked"
     ).count()
     
-    calls_screened = db.query(BadBotCallLog).filter(
-        BadBotCallLog.phone_number_id.in_(phone_ids),
-        BadBotCallLog.action == "screened"
+    calls_screened = db.query(RootCallCallLog).filter(
+        RootCallCallLog.phone_number_id.in_(phone_ids),
+        RootCallCallLog.action == "screened"
     ).count()
     
-    trusted_forwarded = db.query(BadBotCallLog).filter(
-        BadBotCallLog.phone_number_id.in_(phone_ids),
-        BadBotCallLog.action == "trusted_forwarded"
+    trusted_forwarded = db.query(RootCallCallLog).filter(
+        RootCallCallLog.phone_number_id.in_(phone_ids),
+        RootCallCallLog.action == "trusted_forwarded"
     ).count()
     
     # Get recent activity
-    recent_calls = db.query(BadBotCallLog).filter(
-        BadBotCallLog.phone_number_id.in_(phone_ids)
-    ).order_by(BadBotCallLog.timestamp.desc()).limit(10).all()
+    recent_calls = db.query(RootCallCallLog).filter(
+        RootCallCallLog.phone_number_id.in_(phone_ids)
+    ).order_by(RootCallCallLog.timestamp.desc()).limit(10).all()
     
     # Build shield numbers list
     shield_numbers = []
@@ -227,19 +227,19 @@ async def get_stats(client_id: int, db: Session = Depends(get_db)):
     if not phone_ids:
         return {"spam_blocked": 0, "calls_screened": 0, "trusted_forwarded": 0, "total_calls": 0}
     
-    spam_blocked = db.query(BadBotCallLog).filter(
-        BadBotCallLog.phone_number_id.in_(phone_ids),
-        BadBotCallLog.action == "spam_blocked"
+    spam_blocked = db.query(RootCallCallLog).filter(
+        RootCallCallLog.phone_number_id.in_(phone_ids),
+        RootCallCallLog.action == "spam_blocked"
     ).count()
     
-    calls_screened = db.query(BadBotCallLog).filter(
-        BadBotCallLog.phone_number_id.in_(phone_ids),
-        BadBotCallLog.action == "screened"
+    calls_screened = db.query(RootCallCallLog).filter(
+        RootCallCallLog.phone_number_id.in_(phone_ids),
+        RootCallCallLog.action == "screened"
     ).count()
     
-    trusted_forwarded = db.query(BadBotCallLog).filter(
-        BadBotCallLog.phone_number_id.in_(phone_ids),
-        BadBotCallLog.action == "trusted_forwarded"
+    trusted_forwarded = db.query(RootCallCallLog).filter(
+        RootCallCallLog.phone_number_id.in_(phone_ids),
+        RootCallCallLog.action == "trusted_forwarded"
     ).count()
     
     return {
@@ -249,7 +249,7 @@ async def get_stats(client_id: int, db: Session = Depends(get_db)):
         "total_calls": spam_blocked + calls_screened + trusted_forwarded
     }
 
-# Keep existing endpoints from badbot_portal.py
+# Keep existing endpoints from rootcall_portal.py
 # ... (config, trusted contacts, calls, export)
 '''
 
@@ -264,7 +264,7 @@ print("\n[3/5] Creating premium portal...")
 premium_portal = '''<!DOCTYPE html>
 <html>
 <head>
-    <title>BadBot Call Shield - Protection Dashboard</title>
+    <title>RootCall Call Shield - Protection Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -283,7 +283,7 @@ premium_portal = '''<!DOCTYPE html>
                 <div>
                     <h1 class="text-3xl font-bold flex items-center">
                         <i class="fas fa-shield-alt mr-3"></i>
-                        BadBot Call Shield
+                        RootCall Call Shield
                     </h1>
                     <p class="text-purple-200 mt-1">Professional Call Protection Platform</p>
                 </div>
@@ -439,7 +439,7 @@ premium_portal = '''<!DOCTYPE html>
                         <i class="fas fa-bolt mr-2"></i>Quick Actions
                     </h3>
                     <div class="space-y-3">
-                        <a href="/api/badbot/export/1" class="block px-4 py-3 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg transition text-center font-medium">
+                        <a href="/api/rootcall/export/1" class="block px-4 py-3 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg transition text-center font-medium">
                             <i class="fas fa-download mr-2"></i>Export Call History
                         </a>
                         <button onclick="showUpgradeModal()" class="w-full px-4 py-3 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg transition font-medium">
@@ -480,7 +480,7 @@ premium_portal = '''<!DOCTYPE html>
 
     <script>
         const CLIENT_ID = 1;
-        const API = 'http://localhost:8000/api/badbot';
+        const API = 'http://localhost:8000/api/rootcall';
 
         async function loadData() {
             try {
@@ -676,7 +676,7 @@ print("\n[4/5] Creating pricing page...")
 pricing_page = '''<!DOCTYPE html>
 <html>
 <head>
-    <title>BadBot Call Shield - Pricing</title>
+    <title>RootCall Call Shield - Pricing</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -768,10 +768,10 @@ print("\n[5/5] Creating setup summary...")
 
 summary = """
 ╔══════════════════════════════════════════════════════════╗
-║   BADBOT CALL SHIELD - PROFESSIONAL PLATFORM READY!      ║
+║   ROOTCALL CALL SHIELD - PROFESSIONAL PLATFORM READY!      ║
 ╚══════════════════════════════════════════════════════════╝
 
-��� BRAND: BadBot Call Shield
+��� BRAND: RootCall Call Shield
 ��� CONCEPT: Shield Numbers (not phone numbers)
 ��� TIERS: Basic, Family, Premium
 
@@ -790,7 +790,7 @@ summary = """
    - Legacy Portal: http://localhost:8000/static/james-portal.html
 
 ��� NEXT STEPS TO COMPLETE:
-   1. Run SQL migration: psql [db-url] < migrate_professional_badbot.sql
+   1. Run SQL migration: psql [db-url] < migrate_professional_rootcall.sql
    2. Integrate Stripe for subscriptions
    3. Add number purchase flow (Telnyx API)
    4. Add user authentication

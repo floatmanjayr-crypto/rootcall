@@ -15,7 +15,7 @@ CLIENT_CELL = "+17543314009"
 CLIENT_NAME = "Primary Senior Client"
 
 print("="*60)
-print("BADBOT AUTOMATED SETUP")
+print("ROOTCALL AUTOMATED SETUP")
 print("="*60)
 print()
 
@@ -44,10 +44,10 @@ except Exception as e:
 sleep(2)
 print()
 
-print("Step 2: Creating BadBot LLM with fraud detection...")
+print("Step 2: Creating RootCall LLM with fraud detection...")
 print("-" * 60)
 
-BADBOT_PROMPT = f'''You are BadBot, a protective AI assistant for {CLIENT_NAME}, a senior citizen.
+ROOTCALL_PROMPT = f'''You are RootCall, a protective AI assistant for {CLIENT_NAME}, a senior citizen.
 
 GREETING: "Hello, this is {CLIENT_NAME}'s assistant. Who's calling please?"
 
@@ -80,7 +80,7 @@ try:
     # Try different parameter variations based on common Retell API patterns
     try:
         llm_id = retell_service.create_llm(
-            general_prompt=BADBOT_PROMPT,
+            general_prompt=ROOTCALL_PROMPT,
             model="gpt-4o",
             temperature=0.3
         )
@@ -88,13 +88,13 @@ try:
         # Try alternative parameter name
         llm_id = retell_service.create_llm(
             begin_message=None,
-            general_prompt=BADBOT_PROMPT,
+            general_prompt=ROOTCALL_PROMPT,
             model="gpt-4o",
             temperature=0.3
         )
     
     if llm_id:
-        print(f"Created BadBot LLM: {llm_id}")
+        print(f"Created RootCall LLM: {llm_id}")
     else:
         print("Failed to create LLM")
         sys.exit(1)
@@ -109,7 +109,7 @@ except Exception as e:
     RETELL_API_KEY = os.getenv("RETELL_API_KEY")
     
     llm_data = {
-        "general_prompt": BADBOT_PROMPT,
+        "general_prompt": ROOTCALL_PROMPT,
         "model": "gpt-4o",
         "temperature": 0.3
     }
@@ -125,7 +125,7 @@ except Exception as e:
     
     if response.status_code == 200:
         llm_id = response.json().get("llm_id")
-        print(f"Created BadBot LLM via direct API: {llm_id}")
+        print(f"Created RootCall LLM via direct API: {llm_id}")
     else:
         print(f"Failed: {response.text}")
         sys.exit(1)
@@ -133,20 +133,20 @@ except Exception as e:
 sleep(2)
 print()
 
-print("Step 3: Creating BadBot Agent...")
+print("Step 3: Creating RootCall Agent...")
 print("-" * 60)
 
 try:
     # Try to create agent with your service
     agent_id = retell_service.create_agent(
-        name=f"BadBot Guard for {CLIENT_NAME}",
+        name=f"RootCall Guard for {CLIENT_NAME}",
         llm_id=llm_id,
         voice_id="11labs-Adrian",
         language="en-US"
     )
     
     if agent_id:
-        print(f"Created BadBot Agent: {agent_id}")
+        print(f"Created RootCall Agent: {agent_id}")
     else:
         print("Failed to create agent")
         sys.exit(1)
@@ -161,7 +161,7 @@ except Exception as e:
     RETELL_API_KEY = os.getenv("RETELL_API_KEY")
     
     agent_data = {
-        "agent_name": f"BadBot Guard for {CLIENT_NAME}",
+        "agent_name": f"RootCall Guard for {CLIENT_NAME}",
         "llm_websocket_url": f"wss://api.retellai.com/llm-websocket/{llm_id}",
         "voice_id": "11labs-Adrian",
         "language": "en-US",
@@ -182,7 +182,7 @@ except Exception as e:
     
     if response.status_code == 200:
         agent_id = response.json().get("agent_id")
-        print(f"Created BadBot Agent via direct API: {agent_id}")
+        print(f"Created RootCall Agent via direct API: {agent_id}")
     else:
         print(f"Failed: {response.text}")
         sys.exit(1)
@@ -219,11 +219,11 @@ try:
     db = SessionLocal()
     
     ai_agent = AIAgent(
-        name=f"BadBot Guard for {CLIENT_NAME}",
+        name=f"RootCall Guard for {CLIENT_NAME}",
         retell_agent_id=agent_id,
         retell_llm_id=llm_id,
         agent_type="inbound",
-        system_prompt=BADBOT_PROMPT,
+        system_prompt=ROOTCALL_PROMPT,
         voice_model="11labs-Adrian",
         language="en-US",
         is_active=True
@@ -277,7 +277,7 @@ print("Updated app/services/client_config.py")
 print()
 
 print("="*60)
-print("BADBOT SETUP COMPLETE!")
+print("ROOTCALL SETUP COMPLETE!")
 print("="*60)
 print()
 print("Configuration:")

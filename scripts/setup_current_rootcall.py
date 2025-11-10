@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Setup BadBot Config for Current Working Number
+Setup RootCall Config for Current Working Number
 Run once to configure your existing +18135478218 number
 """
 import sys
@@ -8,11 +8,11 @@ sys.path.append(".")
 
 from app.database import SessionLocal
 from app.models.phone_number import PhoneNumber
-from app.models.badbot_config import BadBotConfig
+from app.models.rootcall_config import RootCallConfig
 from app.models.user import User
 
 # Your current working configuration
-BADBOT_NUMBER = "+18135478218"
+ROOTCALL_NUMBER = "+18135478218"
 CLIENT_CELL = "+17543314009"
 CLIENT_NAME = "Primary Senior Client"
 RETELL_AGENT_ID = "agent_cde1ba4c8efa2aba5665a77b91"
@@ -23,16 +23,16 @@ def setup_current_config():
     
     try:
         print("="*50)
-        print("Setting up BadBot for current number")
+        print("Setting up RootCall for current number")
         print("="*50)
-        print(f"\nBadBot Number: {BADBOT_NUMBER}")
+        print(f"\nRootCall Number: {ROOTCALL_NUMBER}")
         print(f"Client Cell: {CLIENT_CELL}")
         print(f"Client Name: {CLIENT_NAME}")
         print()
         
         # Find or create phone number
         phone = db.query(PhoneNumber).filter(
-            PhoneNumber.phone_number == BADBOT_NUMBER
+            PhoneNumber.phone_number == ROOTCALL_NUMBER
         ).first()
         
         if not phone:
@@ -47,8 +47,8 @@ def setup_current_config():
             
             phone = PhoneNumber(
                 user_id=user.id,
-                phone_number=BADBOT_NUMBER,
-                friendly_name=f"BadBot - {CLIENT_NAME}",
+                phone_number=ROOTCALL_NUMBER,
+                friendly_name=f"RootCall - {CLIENT_NAME}",
                 country_code="US",
                 is_active=True,
                 monthly_cost=2.0
@@ -59,13 +59,13 @@ def setup_current_config():
         else:
             print(f"Found existing phone: ID {phone.id}, User: {phone.user_id}")
         
-        # Check if BadBotConfig exists
-        existing = db.query(BadBotConfig).filter(
-            BadBotConfig.phone_number_id == phone.id
+        # Check if RootCallConfig exists
+        existing = db.query(RootCallConfig).filter(
+            RootCallConfig.phone_number_id == phone.id
         ).first()
         
         if existing:
-            print("\nBadBotConfig already exists!")
+            print("\nRootCallConfig already exists!")
             print(f"  Config ID: {existing.id}")
             print(f"  Client: {existing.client_name}")
             print(f"  Active: {existing.is_active}")
@@ -86,9 +86,9 @@ def setup_current_config():
             print("\nSUCCESS: Updated existing config")
         
         else:
-            print("\nCreating new BadBotConfig...")
+            print("\nCreating new RootCallConfig...")
             
-            config = BadBotConfig(
+            config = RootCallConfig(
                 phone_number_id=phone.id,
                 user_id=phone.user_id,
                 client_name=CLIENT_NAME,
@@ -107,7 +107,7 @@ def setup_current_config():
             db.add(config)
             db.commit()
             
-            print("\nSUCCESS: BadBot configured!")
+            print("\nSUCCESS: RootCall configured!")
             print(f"  Config ID: {config.id}")
         
         print("\n" + "="*50)
@@ -115,7 +115,7 @@ def setup_current_config():
         print("="*50)
         print("\nYou can now:")
         print("1. Start the server: uvicorn app.main:app --reload")
-        print("2. Test dashboard: GET /api/v1/badbot/portal/dashboard")
+        print("2. Test dashboard: GET /api/v1/rootcall/portal/dashboard")
         print("3. Add trusted contacts via portal")
         print("4. View call history")
         

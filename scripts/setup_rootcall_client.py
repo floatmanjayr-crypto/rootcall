@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-BadBot Multi-Client Provisioning Script with Auto-Generated SIP
-Usage: python setup_badbot_client.py --name "John Doe" --cell "+19545551234" --number "+18135559999"
+RootCall Multi-Client Provisioning Script with Auto-Generated SIP
+Usage: python setup_rootcall_client.py --name "John Doe" --cell "+19545551234" --number "+18135559999"
 """
 import os, sys, requests, json, argparse, secrets
 from time import sleep
@@ -49,11 +49,11 @@ def generate_sip_credentials(client_name):
     
     return sip_username, sip_password
 
-def provision_badbot_client(client_name, client_cell, telnyx_number, user_id=1, shared_agent=None):
-    """Provision BadBot for a new client"""
+def provision_rootcall_client(client_name, client_cell, telnyx_number, user_id=1, shared_agent=None):
+    """Provision RootCall for a new client"""
     
     print("="*60)
-    print(f"BADBOT PROVISIONING: {client_name}")
+    print(f"ROOTCALL PROVISIONING: {client_name}")
     print("="*60)
     print(f"Client Cell:    {client_cell}")
     print(f"Telnyx Number:  {telnyx_number}")
@@ -77,15 +77,15 @@ def provision_badbot_client(client_name, client_cell, telnyx_number, user_id=1, 
     if shared_agent:
         agent_id = shared_agent
         llm_id = None
-        print("Using shared BadBot agent")
+        print("Using shared RootCall agent")
         print()
     
     # Option 2: Create dedicated agent (personalized)
     else:
-        print("Step 1: Creating dedicated BadBot LLM...")
+        print("Step 1: Creating dedicated RootCall LLM...")
         print("-" * 60)
         
-        BADBOT_PROMPT = f"""You are BadBot, a protective AI assistant for {client_name}. 
+        ROOTCALL_PROMPT = f"""You are RootCall, a protective AI assistant for {client_name}. 
 
 GREETING: "Hello, this is {client_name}'s assistant. Who's calling please?"
 
@@ -115,7 +115,7 @@ CRITICAL RULES:
 """
         
         llm_data = {
-            "general_prompt": BADBOT_PROMPT,
+            "general_prompt": ROOTCALL_PROMPT,
             "general_tools": [
                 {
                     "type": "end_call",
@@ -146,11 +146,11 @@ CRITICAL RULES:
         sleep(1)
         print()
         
-        print("Step 2: Creating dedicated BadBot Agent...")
+        print("Step 2: Creating dedicated RootCall Agent...")
         print("-" * 60)
         
         agent_data = {
-            "agent_name": f"BadBot - {client_name}",
+            "agent_name": f"RootCall - {client_name}",
             "llm_websocket_url": f"wss://api.retellai.com/llm-websocket/{llm_id}",
             "voice_id": "11labs-Adrian",
             "language": "en-US",
@@ -186,7 +186,7 @@ CRITICAL RULES:
         },
         "inbound_agent_id": agent_id,
         "outbound_agent_id": agent_id,
-        "nickname": f"BadBot - {client_name}"
+        "nickname": f"RootCall - {client_name}"
     }
     
     import_response = retell_request("POST", "/import-phone-number", import_data)
@@ -204,7 +204,7 @@ CRITICAL RULES:
     try:
         from app.database import SessionLocal
         from app.models.phone_number import PhoneNumber
-        from app.models.badbot_config import BadBotConfig
+        from app.models.rootcall_config import RootCallConfig
         from app.models.ai_agent import AIAgent
         
         db = SessionLocal()
@@ -218,7 +218,7 @@ CRITICAL RULES:
             phone = PhoneNumber(
                 user_id=user_id,
                 phone_number=telnyx_number,
-                friendly_name=f"BadBot - {client_name}",
+                friendly_name=f"RootCall - {client_name}",
                 country_code="US",
                 is_active=True,
                 monthly_cost=2.0
@@ -233,7 +233,7 @@ CRITICAL RULES:
         if not shared_agent and llm_id:
             agent_record = AIAgent(
                 user_id=user_id,
-                name=f"BadBot - {client_name}",
+                name=f"RootCall - {client_name}",
                 retell_agent_id=agent_id,
                 retell_llm_id=llm_id,
                 is_active=True
@@ -244,18 +244,18 @@ CRITICAL RULES:
             print(f"Created AIAgent: {agent_record.id}")
         
         # Check if config exists
-        config = db.query(BadBotConfig).filter(
-            BadBotConfig.phone_number_id == phone.id
+        config = db.query(RootCallConfig).filter(
+            RootCallConfig.phone_number_id == phone.id
         ).first()
         
         if config:
-            print("Updating existing BadBotConfig...")
+            print("Updating existing RootCallConfig...")
             config.client_name = client_name
             config.client_cell = client_cell
             config.retell_agent_id = agent_id
             config.is_active = True
         else:
-            config = BadBotConfig(
+            config = RootCallConfig(
                 phone_number_id=phone.id,
                 user_id=user_id,
                 client_name=client_name,
@@ -270,7 +270,7 @@ CRITICAL RULES:
                 is_active=True
             )
             db.add(config)
-            print("Created BadBotConfig")
+            print("Created RootCallConfig")
         
         db.commit()
         print("Database saved successfully!")
@@ -289,7 +289,7 @@ CRITICAL RULES:
     print()
     print("Summary:")
     print(f"  Client:        {client_name}")
-    print(f"  BadBot Number: {telnyx_number}")
+    print(f"  RootCall Number: {telnyx_number}")
     print(f"  Client Cell:   {client_cell}")
     print(f"  Agent ID:      {agent_id}")
     if llm_id:
@@ -300,8 +300,8 @@ CRITICAL RULES:
     print(f"  Password: {sip_password}")
     print()
     print("Portal Access:")
-    print("  /api/v1/badbot/portal/dashboard")
-    print("  /api/v1/badbot/portal/trusted-contacts")
+    print("  /api/v1/rootcall/portal/dashboard")
+    print("  /api/v1/rootcall/portal/trusted-contacts")
     print()
     
     return {
@@ -316,7 +316,7 @@ CRITICAL RULES:
     }
 
 def main():
-    parser = argparse.ArgumentParser(description="Provision BadBot for client")
+    parser = argparse.ArgumentParser(description="Provision RootCall for client")
     parser.add_argument("--name", required=True, help="Client name")
     parser.add_argument("--cell", required=True, help="Client cell (+1234567890)")
     parser.add_argument("--number", required=True, help="Telnyx number to use (+1234567890)")
@@ -325,7 +325,7 @@ def main():
     
     args = parser.parse_args()
     
-    result = provision_badbot_client(
+    result = provision_rootcall_client(
         client_name=args.name,
         client_cell=args.cell,
         telnyx_number=args.number,
@@ -335,7 +335,7 @@ def main():
     
     if result:
         # Save config to file
-        filename = f"badbot_{args.number.replace('+', '')}.json"
+        filename = f"rootcall_{args.number.replace('+', '')}.json"
         with open(filename, "w") as f:
             json.dump(result, f, indent=2)
         print(f"Config saved to: {filename}")

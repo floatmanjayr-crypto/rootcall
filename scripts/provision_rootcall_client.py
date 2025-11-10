@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-BadBot Multi-Client Provisioning System
+RootCall Multi-Client Provisioning System
 Option 2: Separate Retell Agent Per Client
 
 Complete flow:
@@ -9,7 +9,7 @@ Complete flow:
 3. Create dedicated Retell Agent for client
 4. Import number to Retell with client's agent
 5. Configure SIP trunk
-6. Create BadBotConfig in database
+6. Create RootCallConfig in database
 """
 import os
 import sys
@@ -21,14 +21,14 @@ from typing import Dict, Optional
 # Configuration
 TELNYX_API_KEY = os.getenv("TELNYX_API_KEY")
 RETELL_API_KEY = os.getenv("RETELL_API_KEY")
-BACKEND_WEBHOOK_URL = os.getenv("BACKEND_WEBHOOK_URL", "https://your-domain.com/telnyx/badbot/webhook")
+BACKEND_WEBHOOK_URL = os.getenv("BACKEND_WEBHOOK_URL", "https://your-domain.com/telnyx/rootcall/webhook")
 
 TELNYX_BASE = "https://api.telnyx.com/v2"
 RETELL_BASE = "https://api.retellai.com"
 
 
-class BadBotProvisioner:
-    """Provision complete BadBot setup for a new client"""
+class RootCallProvisioner:
+    """Provision complete RootCall setup for a new client"""
     
     def __init__(self, client_name: str, client_cell: str, area_code: str = "813"):
         self.client_name = client_name
@@ -41,7 +41,7 @@ class BadBotProvisioner:
         self.retell_agent_id = None
         
         print(f"\n{'='*60}")
-        print(f"BadBot Provisioning for: {client_name}")
+        print(f"RootCall Provisioning for: {client_name}")
         print(f"Client Cell: {client_cell}")
         print(f"Area Code: {area_code}")
         print(f"{'='*60}\n")
@@ -106,9 +106,9 @@ class BadBotProvisioner:
         if response.status_code == 200:
             apps = response.json().get("data", [])
             
-            # Look for existing BadBot trunk
+            # Look for existing RootCall trunk
             for app in apps:
-                if "BadBot" in app.get("friendly_name", ""):
+                if "RootCall" in app.get("friendly_name", ""):
                     connection_id = app["id"]
                     print(f"   âœ… Using existing trunk: {connection_id}")
                     self.telnyx_connection_id = connection_id
@@ -118,7 +118,7 @@ class BadBotProvisioner:
         print("   Creating new SIP trunk...")
         
         trunk_data = {
-            "friendly_name": "BadBot SIP Trunk",
+            "friendly_name": "RootCall SIP Trunk",
             "active": True,
             "webhook_event_url": BACKEND_WEBHOOK_URL,
             "webhook_event_failover_url": "",
@@ -184,8 +184,8 @@ class BadBotProvisioner:
         """Step 4: Create dedicated Retell LLM for client"""
         print("\ní´¹ Step 4: Creating Retell LLM...")
         
-        # Personalized BadBot prompt for this client
-        prompt = f"""You are BadBot, an AI assistant protecting {self.client_name}'s phone line from scams and fraud.
+        # Personalized RootCall prompt for this client
+        prompt = f"""You are RootCall, an AI assistant protecting {self.client_name}'s phone line from scams and fraud.
 
 Your job:
 1. Answer the phone professionally
@@ -253,7 +253,7 @@ Be conversational but brief. Protect {self.client_name} from fraud!"""
         }
         
         agent_data = {
-            "agent_name": f"BadBot - {self.client_name}",
+            "agent_name": f"RootCall - {self.client_name}",
             "llm_id": self.retell_llm_id,
             "voice_id": "11labs-Adrian",  # Professional male voice
             "voice_temperature": 1,
@@ -313,13 +313,13 @@ Be conversational but brief. Protect {self.client_name} from fraud!"""
             print(f"   âœ… Imported to Retell")
     
     def create_database_config(self, user_id: int = 1):
-        """Step 7: Create BadBotConfig in database"""
+        """Step 7: Create RootCallConfig in database"""
         print("\ní´¹ Step 7: Creating database config...")
         
         sys.path.append(".")
         from app.database import SessionLocal
         from app.models.phone_number import PhoneNumber
-        from app.models.badbot_config import BadBotConfig
+        from app.models.rootcall_config import RootCallConfig
         from app.models.ai_agent import AIAgent
         
         db = SessionLocal()
@@ -329,7 +329,7 @@ Be conversational but brief. Protect {self.client_name} from fraud!"""
             phone = PhoneNumber(
                 user_id=user_id,
                 phone_number=self.telnyx_number,
-                friendly_name=f"BadBot - {self.client_name}",
+                friendly_name=f"RootCall - {self.client_name}",
                 country_code="US",
                 telnyx_connection_id=self.telnyx_connection_id,
                 is_active=True,
@@ -343,11 +343,11 @@ Be conversational but brief. Protect {self.client_name} from fraud!"""
             # Create AIAgent record
             agent = AIAgent(
                 user_id=user_id,
-                name=f"BadBot Agent - {self.client_name}",
+                name=f"RootCall Agent - {self.client_name}",
                 description=f"AI call screening for {self.client_name}",
                 retell_agent_id=self.retell_agent_id,
                 retell_llm_id=self.retell_llm_id,
-                system_prompt=f"BadBot AI for {self.client_name}",
+                system_prompt=f"RootCall AI for {self.client_name}",
                 is_active=True
             )
             db.add(agent)
@@ -357,8 +357,8 @@ Be conversational but brief. Protect {self.client_name} from fraud!"""
             
             print(f"   âœ… Created AIAgent: {agent.id}")
             
-            # Create BadBotConfig
-            config = BadBotConfig(
+            # Create RootCallConfig
+            config = RootCallConfig(
                 phone_number_id=phone.id,
                 user_id=user_id,
                 client_name=self.client_name,
@@ -376,7 +376,7 @@ Be conversational but brief. Protect {self.client_name} from fraud!"""
             db.add(config)
             db.commit()
             
-            print(f"   âœ… Created BadBotConfig: {config.id}")
+            print(f"   âœ… Created RootCallConfig: {config.id}")
             
         except Exception as e:
             db.rollback()
@@ -403,7 +403,7 @@ Be conversational but brief. Protect {self.client_name} from fraud!"""
             result = {
                 "success": True,
                 "client_name": self.client_name,
-                "badbot_number": self.telnyx_number,
+                "rootcall_number": self.telnyx_number,
                 "client_cell": self.client_cell,
                 "retell_agent_id": self.retell_agent_id,
                 "retell_llm_id": self.retell_llm_id,
@@ -411,7 +411,7 @@ Be conversational but brief. Protect {self.client_name} from fraud!"""
             }
             
             print("\ní³‹ Summary:")
-            print(f"   BadBot Number: {self.telnyx_number}")
+            print(f"   RootCall Number: {self.telnyx_number}")
             print(f"   Client Cell: {self.client_cell}")
             print(f"   Retell Agent: {self.retell_agent_id}")
             print(f"   Retell LLM: {self.retell_llm_id}")
@@ -422,10 +422,10 @@ Be conversational but brief. Protect {self.client_name} from fraud!"""
             print(f"   3. Test by calling {self.telnyx_number}")
             
             # Save to file
-            with open(f"badbot_provision_{self.telnyx_number.replace('+', '')}.json", "w") as f:
+            with open(f"rootcall_provision_{self.telnyx_number.replace('+', '')}.json", "w") as f:
                 json.dump(result, f, indent=2)
             
-            print(f"\ní²¾ Config saved to: badbot_provision_{self.telnyx_number.replace('+', '')}.json")
+            print(f"\ní²¾ Config saved to: rootcall_provision_{self.telnyx_number.replace('+', '')}.json")
             
             return result
             
@@ -438,7 +438,7 @@ def main():
     """CLI for provisioning"""
     import argparse
     
-    parser = argparse.ArgumentParser(description="Provision BadBot for new client")
+    parser = argparse.ArgumentParser(description="Provision RootCall for new client")
     parser.add_argument("--name", required=True, help="Client name")
     parser.add_argument("--cell", required=True, help="Client cell phone (+1234567890)")
     parser.add_argument("--area-code", default="813", help="Preferred area code")
@@ -446,7 +446,7 @@ def main():
     
     args = parser.parse_args()
     
-    provisioner = BadBotProvisioner(
+    provisioner = RootCallProvisioner(
         client_name=args.name,
         client_cell=args.cell,
         area_code=args.area_code

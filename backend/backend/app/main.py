@@ -69,7 +69,7 @@ app.include_router(provision_finalize.router)
 app.include_router(outbound_calls.router)
 app.include_router(rootcall_portal.router)
 app.include_router(agent_templates.router)
-app.include_router(rootcall_screen_router)  # BadBot Call Screening
+app.include_router(rootcall_screen_router)  # RootCall Call Screening
 app.include_router(payments.router)
 app.include_router(number_management.router)
 app.include_router(auth.router)

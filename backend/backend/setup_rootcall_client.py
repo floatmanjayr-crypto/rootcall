@@ -53,7 +53,7 @@ def provision_rootcall_client(client_name, client_cell, telnyx_number, user_id=1
     """Provision RootCall for a new client"""
     
     print("="*60)
-    print(f"BADBOT PROVISIONING: {client_name}")
+    print(f"ROOTCALL PROVISIONING: {client_name}")
     print("="*60)
     print(f"Client Cell:    {client_cell}")
     print(f"Telnyx Number:  {telnyx_number}")
@@ -85,7 +85,7 @@ def provision_rootcall_client(client_name, client_cell, telnyx_number, user_id=1
         print("Step 1: Creating dedicated RootCall LLM...")
         print("-" * 60)
         
-        BADBOT_PROMPT = f"""You are RootCall, a protective AI assistant for {client_name}. 
+        ROOTCALL_PROMPT = f"""You are RootCall, a protective AI assistant for {client_name}. 
 
 GREETING: "Hello, this is {client_name}'s assistant. Who's calling please?"
 
@@ -115,7 +115,7 @@ CRITICAL RULES:
 """
         
         llm_data = {
-            "general_prompt": BADBOT_PROMPT,
+            "general_prompt": ROOTCALL_PROMPT,
             "general_tools": [
                 {
                     "type": "end_call",

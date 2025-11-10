@@ -1,8 +1,8 @@
 """
-BadBot Configuration Model
+RootCall Configuration Model
 Save as: app/models/rootcall_config.py
 
-Stores BadBot screening configuration per phone number
+Stores RootCall screening configuration per phone number
 Replaces hardcoded CLIENT_LINES dictionary
 """
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, JSON
@@ -12,7 +12,7 @@ from app.database import Base
 
 
 class RootCallConfig(Base):
-    """BadBot screening configuration for a phone number"""
+    """RootCall screening configuration for a phone number"""
     __tablename__ = "rootcall_configs"
     
     id = Column(Integer, primary_key=True, index=True)

@@ -90,13 +90,13 @@ def create_agent_pool(count=10):
     """Create multiple agents for the pool"""
     
     print("="*60)
-    print(f"CREATING {count} BADBOT AGENTS")
+    print(f"CREATING {count} ROOTCALL AGENTS")
     print("="*60)
     
     agents = []
     for i in range(1, count + 1):
         print(f"\nCreating agent {i}/{count}...")
-        result = create_agent_without_transfer(f"BadBot Agent #{i}")
+        result = create_agent_without_transfer(f"RootCall Agent #{i}")
         
         if result:
             agents.append(result)

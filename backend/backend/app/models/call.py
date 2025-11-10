@@ -42,7 +42,7 @@ class Call(Base):
     ai_agent = relationship("AIAgent", back_populates="agent_calls")
     recordings = relationship("Recording", back_populates="call")
 
-# === BadBot screening fields - ADD THESE ===
+# === RootCall screening fields - ADD THESE ===
     
     # Screening results
     is_trusted = Column(Boolean, default=False)  # Was caller on whitelist?
@@ -53,8 +53,8 @@ class Call(Base):
     caller_name = Column(String, nullable=True)  # CNAM or contact name
     spam_score = Column(Integer, nullable=True)  # 0-100 spam likelihood
     
-    # BadBot AI interaction (if went to Retell)
+    # RootCall AI interaction (if went to Retell)
     retell_call_id = Column(String, nullable=True)  # Retell's call ID
-    badbot_transcript = Column(Text, nullable=True)  # What BadBot said/heard
-    scam_detected = Column(Boolean, default=False)  # Did BadBot detect scam?
+    rootcall_transcript = Column(Text, nullable=True)  # What RootCall said/heard
+    scam_detected = Column(Boolean, default=False)  # Did RootCall detect scam?
     scam_type = Column(String, nullable=True)  # irs, bank, tech_support, etc.

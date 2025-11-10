@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Setup SMS alerts for BadBot clients
+Setup SMS alerts for RootCall clients
 """
 import os
 import requests
@@ -48,7 +48,7 @@ print("="*60)
 result = send_telnyx_sms(
     to_number="+17543670370",
     from_number="+18135478530",
-    message="[BadBot] Test: SMS alerts are working!"
+    message="[RootCall] Test: SMS alerts are working!"
 )
 
 if result:

@@ -103,7 +103,7 @@
         }
         
         .number-hero::before {
-            content: 'Ìª°Ô∏è';
+            content: 'Ô∏è';
             position: absolute;
             top: -20px;
             right: -20px;
@@ -570,7 +570,7 @@
 <body>
     <header>
         <div class="nav">
-            <div class="logo">Ìª°Ô∏è RootCall</div>
+            <div class="logo">Ô∏è RootCall</div>
             <div class="user-info">
                 <span class="user-name" id="user-name">Loading...</span>
                 <button class="btn-logout" onclick="logout()">Sign Out</button>
@@ -588,7 +588,7 @@
         <!-- No Payment State -->
         <div id="no-payment" style="display:none;">
             <div class="alert alert-info">
-                <h3>Ìæâ Welcome to RootCall!</h3>
+                <h3> Welcome to RootCall!</h3>
                 <p style="font-size:1.1rem;margin-bottom:20px;">You're one step away from complete phone protection.</p>
                 <p>Complete your payment to receive your dedicated RootCall protection number.</p>
                 <br>
@@ -613,7 +613,7 @@
             <div class="number-hero">
                 <p style="font-size:0.9rem;text-transform:uppercase;letter-spacing:2px;opacity:0.8;">Your RootCall Protection Number</p>
                 <h1 id="rootcall-number">Loading...</h1>
-                <button class="copy-number-btn" onclick="copyNumber()">Ì≥ã Copy Number</button>
+                <button class="copy-number-btn" onclick="copyNumber()"> Copy Number</button>
                 <br>
                 <span class="status-badge">‚óè ACTIVE & PROTECTING</span>
                 <p id="purchased-date" style="margin-top:12px;font-size:0.9rem;">Activated: Loading...</p>
@@ -622,12 +622,12 @@
             <!-- Quick Stats -->
             <div class="stats-grid">
                 <div class="stat-card">
-                    <div class="stat-icon">Ì≥û</div>
+                    <div class="stat-icon"></div>
                     <h3 id="stat-today">0</h3>
                     <p>Calls Today</p>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon">Ì∫´</div>
+                    <div class="stat-icon"></div>
                     <h3 id="stat-blocked">0</h3>
                     <p>Spam Blocked</p>
                 </div>
@@ -637,7 +637,7 @@
                     <p>Calls Forwarded</p>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon">Ì≥ä</div>
+                    <div class="stat-icon"></div>
                     <h3 id="stat-total">0</h3>
                     <p>Total Calls</p>
                 </div>
@@ -645,10 +645,10 @@
 
             <!-- Tab Navigation -->
             <div class="tab-navigation">
-                <button class="tab-btn active" onclick="showTab('overview')">Ì≥ä Overview</button>
-                <button class="tab-btn" onclick="showTab('calls')">Ì≥û Call History</button>
+                <button class="tab-btn active" onclick="showTab('overview')"> Overview</button>
+                <button class="tab-btn" onclick="showTab('calls')"> Call History</button>
                 <button class="tab-btn" onclick="showTab('settings')">‚öôÔ∏è Settings</button>
-                <button class="tab-btn" onclick="showTab('contacts')">Ì±• Trusted Contacts</button>
+                <button class="tab-btn" onclick="showTab('contacts')"> Trusted Contacts</button>
                 <button class="tab-btn" onclick="showTab('fraud')">‚ö†Ô∏è Fraud Alerts</button>
             </div>
 
@@ -658,7 +658,7 @@
                     <div>
                         <!-- Recent Activity -->
                         <div class="card">
-                            <h2>Ì≥û Recent Call Activity</h2>
+                            <h2> Recent Call Activity</h2>
                             <table id="recent-calls-table">
                                 <thead>
                                     <tr>
@@ -671,7 +671,7 @@
                                 <tbody id="recent-calls-body">
                                     <tr>
                                         <td colspan="4" class="empty-state">
-                                            <div class="empty-state-icon">Ì≥≠</div>
+                                            <div class="empty-state-icon"></div>
                                             <p>No calls yet. Share your RootCall number to start protecting yourself!</p>
                                         </td>
                                     </tr>
@@ -681,12 +681,12 @@
 
                         <!-- Quick Setup -->
                         <div class="card">
-                            <h2>Ì∫Ä Quick Setup</h2>
+                            <h2> Quick Setup</h2>
                             <div class="input-group">
                                 <label>Your Real Phone Number (where calls forward to):</label>
                                 <input type="tel" id="quick-forward" placeholder="+1 (555) 123-4567">
                             </div>
-                            <button class="btn" onclick="updateForwarding()">Ì≤æ Save & Activate</button>
+                            <button class="btn" onclick="updateForwarding()"> Save & Activate</button>
                         </div>
                     </div>
 
@@ -707,7 +707,7 @@
 
                         <!-- How It Works -->
                         <div class="card">
-                            <h3>Ì≥± How RootCall Works</h3>
+                            <h3> How RootCall Works</h3>
                             <ol style="line-height:2;padding-left:20px;">
                                 <li>Give out your RootCall number</li>
                                 <li>AI screens every incoming call</li>
@@ -722,7 +722,7 @@
             <!-- Tab: Call History -->
             <div id="tab-calls" class="tab-content">
                 <div class="card">
-                    <h2>Ì≥û Complete Call History</h2>
+                    <h2> Complete Call History</h2>
                     
                     <div style="margin-bottom:20px;display:flex;gap:10px;">
                         <select id="filter-status" style="padding:10px;border-radius:8px;border:2px solid #e0e0e0;">
@@ -748,7 +748,7 @@
                         <tbody id="call-history-body">
                             <tr>
                                 <td colspan="6" class="empty-state">
-                                    <div class="empty-state-icon">Ì≥≠</div>
+                                    <div class="empty-state-icon"></div>
                                     <p>No call history yet</p>
                                 </td>
                             </tr>
@@ -798,7 +798,7 @@
                         <small>Custom message for voicemail</small>
                     </div>
 
-                    <button class="btn" onclick="saveSettings()">Ì≤æ Save All Settings</button>
+                    <button class="btn" onclick="saveSettings()"> Save All Settings</button>
                 </div>
 
                 <div class="card">
@@ -841,14 +841,14 @@
                     <h3 style="margin:30px 0 15px;">Your Trusted Contacts:</h3>
                     <ul id="trusted-list" class="contact-list">
                         <li class="empty-state">
-                            <div class="empty-state-icon">Ì±•</div>
+                            <div class="empty-state-icon"></div>
                             <p>No trusted contacts yet. Add your family and friends above.</p>
                         </li>
                     </ul>
                 </div>
 
                 <div class="card">
-                    <h2>Ì∫´ Blocked Numbers</h2>
+                    <h2> Blocked Numbers</h2>
                     <p style="margin-bottom:25px;color:#666;">Permanently block specific numbers</p>
                     
                     <div class="input-group">
@@ -873,42 +873,42 @@
                     <p style="margin-bottom:25px;color:#666;">Stay informed about the latest phone scams. RootCall automatically blocks these!</p>
 
                     <div class="fraud-item">
-                        <h4>ÌøõÔ∏è IRS/Tax Scam Calls</h4>
+                        <h4>Ô∏è IRS/Tax Scam Calls</h4>
                         <p><strong>What they say:</strong> "You owe back taxes. Pay immediately or face arrest."</p>
                         <p><strong>Red flags:</strong> Threatening language, demands for immediate payment, requests for gift cards/wire transfers</p>
                         <p><strong>Truth:</strong> The IRS NEVER initiates contact by phone. They always send letters first.</p>
                     </div>
 
                     <div class="fraud-item">
-                        <h4>Ì≤ª Tech Support Scams</h4>
+                        <h4> Tech Support Scams</h4>
                         <p><strong>What they say:</strong> "We detected a virus on your computer. Let us fix it remotely."</p>
                         <p><strong>Red flags:</strong> Unsolicited calls claiming to be Microsoft/Apple/Norton</p>
                         <p><strong>Truth:</strong> Tech companies don't make cold calls about viruses. Ever.</p>
                     </div>
 
                     <div class="fraud-item">
-                        <h4>ÌøÜ Prize/Lottery Scams</h4>
+                        <h4> Prize/Lottery Scams</h4>
                         <p><strong>What they say:</strong> "Congratulations! You've won $1 million! Just pay $500 in fees to claim it."</p>
                         <p><strong>Red flags:</strong> You never entered a contest, they ask for money to claim prize</p>
                         <p><strong>Truth:</strong> Real prizes never require upfront payment.</p>
                     </div>
 
                     <div class="fraud-item">
-                        <h4>Ì±¥ Grandparent Scam</h4>
+                        <h4> Grandparent Scam</h4>
                         <p><strong>What they say:</strong> "Grandma, it's me! I'm in trouble and need money urgently."</p>
                         <p><strong>Red flags:</strong> Urgency, requests for secrecy, wire transfer requests</p>
                         <p><strong>Truth:</strong> Always verify by calling your family member back at their known number.</p>
                     </div>
 
                     <div class="fraud-item">
-                        <h4>Ì≤≥ Credit Card/Bank Fraud</h4>
+                        <h4> Credit Card/Bank Fraud</h4>
                         <p><strong>What they say:</strong> "Suspicious activity on your account. Verify your details now."</p>
                         <p><strong>Red flags:</strong> Asking for full card numbers, SSN, or account passwords</p>
                         <p><strong>Truth:</strong> Banks never ask for full credentials over the phone. Hang up and call the number on your card.</p>
                     </div>
 
                     <div class="fraud-item">
-                        <h4>Ì≥± Social Security Scams</h4>
+                        <h4> Social Security Scams</h4>
                         <p><strong>What they say:</strong> "Your SSN has been suspended due to suspicious activity."</p>
                         <p><strong>Red flags:</strong> SSN can't be "suspended," threats of legal action</p>
                         <p><strong>Truth:</strong> Social Security Administration doesn't call about suspensions.</p>
@@ -922,7 +922,7 @@
                     </div>
 
                     <div class="fraud-item">
-                        <h4>Ìø• Medicare/Health Insurance Scams</h4>
+                        <h4> Medicare/Health Insurance Scams</h4>
                         <p><strong>What they say:</strong> "We need to verify your Medicare number to send your new card."</p>
                         <p><strong>Red flags:</strong> Requesting personal info, offering "free" medical equipment</p>
                         <p><strong>Truth:</strong> Medicare will never call asking for your number.</p>
@@ -947,7 +947,7 @@
     <div id="provision-modal" class="modal">
         <div class="modal-content">
             <span class="modal-close" onclick="closeProvisionModal()">&times;</span>
-            <h2 style="color:var(--green);margin-bottom:20px;">Ì≥û Get Your RootCall Number</h2>
+            <h2 style="color:var(--green);margin-bottom:20px;"> Get Your RootCall Number</h2>
             
             <div class="input-group">
                 <label>Preferred Area Code (optional):</label>
@@ -967,7 +967,7 @@
             </div>
 
             <button class="btn" onclick="provisionNumber()" style="width:100%;" id="provision-btn">
-                Ì∫Ä Provision My Number Now
+                 Provision My Number Now
             </button>
 
             <div id="provision-status" style="margin-top:20px;display:none;">
@@ -1012,7 +1012,7 @@
         // Load Dashboard
         async function loadDashboard() {
             try {
-                const response = await fetch(`${API}/api/rootcall/dashboard`, {
+                const response = await fetch(`' + API + '/api/rootcall/dashboard`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -1120,7 +1120,7 @@
             message.textContent = 'Step 1/4: Searching for available numbers...';
 
             try {
-                const response = await fetch(`${API}/api/rootcall/provision`, {
+                const response = await fetch(`' + API + '/api/rootcall/provision`, {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`,
@@ -1160,7 +1160,7 @@
             }
 
             try {
-                const response = await fetch(`${API}/api/rootcall/update-forwarding?forwarding_number=${encodeURIComponent(number)}`, {
+                const response = await fetch(`' + API + '/api/rootcall/update-forwarding?forwarding_number=' + encodeURIComponent(number) + '`, {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`
@@ -1192,7 +1192,7 @@
             }
 
             try {
-                const response = await fetch(`${API}/api/rootcall/add-trusted-contact?phone_number=${encodeURIComponent(number)}&name=${encodeURIComponent(name || 'Contact')}`, {
+                const response = await fetch(`' + API + '/api/rootcall/add-trusted-contact?phone_number=' + encodeURIComponent(number) + '&name=' + encodeURIComponent(name || 'Contact') + '`, {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`
@@ -1221,7 +1221,7 @@
             if (!contacts || contacts.length === 0) {
                 list.innerHTML = `
                     <li class="empty-state">
-                        <div class="empty-state-icon">Ì±•</div>
+                        <div class="empty-state-icon"></div>
                         <p>No trusted contacts yet. Add your family and friends above.</p>
                     </li>
                 `;
@@ -1258,7 +1258,7 @@
             tbody.innerHTML = `
                 <tr>
                     <td colspan="6" class="empty-state">
-                        <div class="empty-state-icon">Ì≥≠</div>
+                        <div class="empty-state-icon"></div>
                         <p>No call history yet. Calls will appear here once you start receiving them.</p>
                     </td>
                 </tr>

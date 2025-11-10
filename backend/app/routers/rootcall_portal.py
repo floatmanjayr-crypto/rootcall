@@ -522,3 +522,55 @@ async def add_trusted_contact_auth(
     
     return {"message": "Contact added", "contacts": config.trusted_contacts}
 
+
+# Update the existing provision endpoint to support area code
+@router.post("/api/rootcall/provision")
+async def manual_provision(
+    request: dict,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Manual provisioning with area code selection (payment verified)"""
+    from app.routers.stripe_webhooks import auto_provision_rootcall
+    
+    # Check if user already has a number
+    existing = db.query(PhoneNumber).filter(
+        PhoneNumber.user_id == current_user.id,
+        PhoneNumber.is_active == True
+    ).first()
+    
+    if existing:
+        raise HTTPException(status_code=400, detail="You already have an active number")
+    
+    # Check if user has subscription (payment completed)
+    from app.models.subscription import Subscription
+    subscription = db.query(Subscription).filter(
+        Subscription.user_id == current_user.id,
+        Subscription.is_active == True
+    ).first()
+    
+    if not subscription:
+        raise HTTPException(
+            status_code=403, 
+            detail="Please complete payment first"
+        )
+    
+    # Get preferred area code
+    area_code = request.get('area_code', '813')
+    
+    # Provision the number with personalized agent
+    try:
+        result = await auto_provision_rootcall(
+            user_id=current_user.id,
+            user_name=current_user.full_name,
+            user_email=current_user.email,
+            db=db,
+            preferred_area_code=area_code
+        )
+        
+        return {
+            **result,
+            "message": f"Welcome {current_user.full_name}! Your RootCall protection is now active. Your AI assistant knows you by name and is ready to screen calls."
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Provisioning failed: {str(e)}")

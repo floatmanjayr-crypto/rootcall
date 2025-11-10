@@ -40,7 +40,7 @@ async def create_checkout_session(data: CreateCheckout, db: Session = Depends(ge
                 'quantity': 1,
             }],
             mode='subscription',
-            success_url='https://getrootcall.com/success?session_id={CHECKOUT_SESSION_ID}',
+            success_url='https://getrootcall.com/success.html?session_id={CHECKOUT_SESSION_ID}',
             cancel_url='https://getrootcall.com/',
             metadata={
                 'user_id': str(data.user_id),

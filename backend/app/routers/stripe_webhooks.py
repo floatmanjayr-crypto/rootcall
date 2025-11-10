@@ -54,7 +54,7 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
             log.error(f"User {user_id} not found")
             return {"status": "error", "message": "User not found"}
 
-        log.info(f"��� Payment successful for {user.full_name} ({user.email})")
+        log.info(f"í¾ Payment successful for {user.full_name} ({user.email})")
 
         # Auto-provision RootCall service with personalized agent
         try:
@@ -65,14 +65,14 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
                 db=db
             )
 
-            log.info(f"✅ Auto-provisioning complete for {user.full_name}")
-            log.info(f"��� RootCall Number: {result.get('rootcall_number')}")
-            log.info(f"��� AI Agent: {result.get('agent_id')} (knows user as {user.full_name})")
+            log.info(f"â Auto-provisioning complete for {user.full_name}")
+            log.info(f"í³ RootCall Number: {result.get('rootcall_number')}")
+            log.info(f"í´ AI Agent: {result.get('agent_id')} (knows user as {user.full_name})")
 
             # TODO: Send welcome email with number
 
         except Exception as e:
-            log.error(f"❌ Auto-provisioning failed: {e}")
+            log.error(f"â Auto-provisioning failed: {e}")
             # Still return 200 to Stripe, but log the error
 
     return {"status": "success"}
@@ -86,27 +86,27 @@ async def auto_provision_rootcall(user_id: int, user_name: str, user_email: str,
     - Configures immediate call protection
     """
 
-    log.info(f"��� Auto-provisioning RootCall for {user_name}...")
+    log.info(f"íº Auto-provisioning RootCall for {user_name}...")
 
     # Step 1: Purchase Telnyx number
     log.info("  [1/6] Purchasing Telnyx number...")
     phone_number = purchase_telnyx_number(area_code="813")  # Default to Tampa
-    log.info(f"      ✅ Purchased: {phone_number}")
+    log.info(f"      â Purchased: {phone_number}")
 
     # Step 2: Create Retell LLM with PERSONALIZED prompt
     log.info(f"  [2/6] Creating personalized AI agent for {user_name}...")
     llm_id = create_retell_llm(user_name)
-    log.info(f"      ✅ LLM Created: {llm_id}")
+    log.info(f"      â LLM Created: {llm_id}")
 
     # Step 3: Create Retell Agent
     log.info(f"  [3/6] Creating Retell Agent...")
     agent_id = create_retell_agent(user_name, llm_id)
-    log.info(f"      ✅ Agent Created: {agent_id}")
+    log.info(f"      â Agent Created: {agent_id}")
 
     # Step 4: Import number to Retell
     log.info(f"  [4/6] Importing {phone_number} to Retell...")
     import_to_retell(phone_number, agent_id)
-    log.info(f"      ✅ Number imported and active")
+    log.info(f"      â Number imported and active")
 
     # Step 5: Save to database
     log.info("  [5/6] Saving configuration to database...")
@@ -155,8 +155,8 @@ async def auto_provision_rootcall(user_id: int, user_name: str, user_email: str,
     db.add(config)
     db.commit()
 
-    log.info(f"      ✅ Database saved")
-    log.info(f"  [6/6] ��� RootCall protection is now ACTIVE for {user_name}!")
+    log.info(f"      â Database saved")
+    log.info(f"  [6/6] í¾ RootCall protection is now ACTIVE for {user_name}!")
 
     return {
         "success": True,

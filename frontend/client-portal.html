@@ -128,6 +128,24 @@
             margin-top: 10px;
         }
         
+        .copy-number-btn {
+            background: rgba(255,255,255,0.2);
+            border: 2px solid white;
+            color: white;
+            padding: 12px 30px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 20px;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+        
+        .copy-number-btn:hover {
+            background: white;
+            color: var(--green);
+        }
+        
         /* Navigation Tabs */
         .tab-navigation {
             display: flex;
@@ -453,6 +471,25 @@
             border-left: 5px solid #2196f3;
         }
         
+        .alert-warning {
+            background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%);
+            border-left: 5px solid var(--warning);
+        }
+        
+        /* Provision Card */
+        .provision-card {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            border: 2px solid var(--accent);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .provision-card h3 {
+            color: #2e7d32;
+            margin-bottom: 20px;
+        }
+        
         /* Empty State */
         .empty-state {
             text-align: center;
@@ -464,6 +501,41 @@
             font-size: 4rem;
             margin-bottom: 15px;
             opacity: 0.5;
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-close {
+            float: right;
+            font-size: 2rem;
+            cursor: pointer;
+            color: #999;
         }
         
         /* Responsive */
@@ -513,8 +585,8 @@
             <p>Loading your protection dashboard...</p>
         </div>
 
-        <!-- No Number State -->
-        <div id="no-number" style="display:none;">
+        <!-- No Payment State -->
+        <div id="no-payment" style="display:none;">
             <div class="alert alert-info">
                 <h3>Ìæâ Welcome to RootCall!</h3>
                 <p style="font-size:1.1rem;margin-bottom:20px;">You're one step away from complete phone protection.</p>
@@ -524,12 +596,25 @@
             </div>
         </div>
 
+        <!-- Payment Complete but No Number (provision failed) -->
+        <div id="pending-provision" style="display:none;">
+            <div class="alert alert-warning">
+                <h3>‚è≥ Setting Up Your Protection...</h3>
+                <p style="margin-bottom:20px;">Your payment was successful! We're provisioning your RootCall number now.</p>
+                <p style="font-size:0.9rem;color:#666;">This usually takes 30-60 seconds. If it's been longer, click below to manually provision.</p>
+                <br>
+                <button class="btn" onclick="showProvisionModal()">ÔøΩÔøΩ Get My Number Now</button>
+            </div>
+        </div>
+
         <!-- Main Dashboard -->
         <div id="dashboard" style="display:none;">
             <!-- Hero Number Display -->
             <div class="number-hero">
                 <p style="font-size:0.9rem;text-transform:uppercase;letter-spacing:2px;opacity:0.8;">Your RootCall Protection Number</p>
                 <h1 id="rootcall-number">Loading...</h1>
+                <button class="copy-number-btn" onclick="copyNumber()">Ì≥ã Copy Number</button>
+                <br>
                 <span class="status-badge">‚óè ACTIVE & PROTECTING</span>
                 <p id="purchased-date" style="margin-top:12px;font-size:0.9rem;">Activated: Loading...</p>
             </div>
@@ -717,7 +802,7 @@
                 </div>
 
                 <div class="card">
-                    <h2>Ì≥ä Usage & Billing</h2>
+                    <h2>ÔøΩÔøΩ Usage & Billing</h2>
                     <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
                         <div>
                             <strong>Current Plan:</strong><br>
@@ -858,10 +943,45 @@
         </div>
     </div>
 
+    <!-- Manual Provision Modal -->
+    <div id="provision-modal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeProvisionModal()">&times;</span>
+            <h2 style="color:var(--green);margin-bottom:20px;">Ì≥û Get Your RootCall Number</h2>
+            
+            <div class="input-group">
+                <label>Preferred Area Code (optional):</label>
+                <input type="text" id="area-code" placeholder="813" maxlength="3">
+                <small>Enter your preferred 3-digit area code, or leave blank for automatic</small>
+            </div>
+
+            <div style="background:var(--ivory);padding:15px;border-radius:12px;margin:20px 0;">
+                <p style="font-size:0.9rem;color:#666;">
+                    <strong>What happens next:</strong><br>
+                    1. We'll purchase a phone number from Telnyx<br>
+                    2. Set up your AI screening agent<br>
+                    3. Activate your protection immediately<br>
+                    <br>
+                    This takes about 30 seconds.
+                </p>
+            </div>
+
+            <button class="btn" onclick="provisionNumber()" style="width:100%;" id="provision-btn">
+                Ì∫Ä Provision My Number Now
+            </button>
+
+            <div id="provision-status" style="margin-top:20px;display:none;">
+                <div class="spinner" style="width:30px;height:30px;"></div>
+                <p id="provision-message" style="text-align:center;margin-top:10px;">Provisioning...</p>
+            </div>
+        </div>
+    </div>
+
     <script>
         const API = 'https://rootcall.onrender.com';
         let userData = null;
         let currentTab = 'overview';
+        let userPhoneNumber = '';
 
         // Check authentication
         const token = localStorage.getItem('token');
@@ -873,23 +993,17 @@
         function showTab(tabName) {
             currentTab = tabName;
             
-            // Hide all tabs
             document.querySelectorAll('.tab-content').forEach(tab => {
                 tab.classList.remove('active');
             });
             
-            // Remove active from all buttons
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
             
-            // Show selected tab
             document.getElementById('tab-' + tabName).classList.add('active');
-            
-            // Activate button
             event.target.classList.add('active');
             
-            // Load data if needed
             if (tabName === 'calls') {
                 loadCallHistory();
             }
@@ -916,24 +1030,32 @@
                 document.getElementById('loading').style.display = 'none';
 
                 if (!data.has_number) {
-                    document.getElementById('no-number').style.display = 'block';
+                    // Check if user has paid but provisioning failed
+                    const user = JSON.parse(localStorage.getItem('user') || '{}');
+                    if (user.has_subscription || data.has_subscription) {
+                        // Payment successful but no number - show manual provision
+                        document.getElementById('pending-provision').style.display = 'block';
+                    } else {
+                        // No payment yet - show payment prompt
+                        document.getElementById('no-payment').style.display = 'block';
+                    }
                     document.getElementById('user-name').textContent = data.user.name;
                 } else {
+                    // Has number - show full dashboard
                     document.getElementById('dashboard').style.display = 'block';
                     document.getElementById('user-name').textContent = data.user.name;
+                    userPhoneNumber = data.phone.number;
                     document.getElementById('rootcall-number').textContent = formatPhoneNumber(data.phone.number);
                     
                     const purchasedDate = new Date(data.phone.purchased_at);
                     document.getElementById('purchased-date').textContent = 
                         `Activated: ${purchasedDate.toLocaleDateString()}`;
 
-                    // Load stats
                     document.getElementById('stat-today').textContent = data.stats.calls_today;
                     document.getElementById('stat-blocked').textContent = data.stats.calls_blocked;
                     document.getElementById('stat-forwarded').textContent = data.stats.calls_forwarded;
                     document.getElementById('stat-total').textContent = data.stats.total_calls;
 
-                    // Load config
                     if (data.config) {
                         const forwardNum = data.config.forwarding_number || '';
                         document.getElementById('forwarding-number').value = forwardNum;
@@ -954,6 +1076,78 @@
                 return `(${match[1]}) ${match[2]}-${match[3]}`;
             }
             return num;
+        }
+
+        // OPTION 1: Copy Number Button
+        function copyNumber() {
+            const number = userPhoneNumber;
+            
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(number).then(() => {
+                    alert('‚úÖ Number copied to clipboard!\n\n' + formatPhoneNumber(number));
+                });
+            } else {
+                // Fallback for older browsers
+                const input = document.createElement('input');
+                input.value = number;
+                document.body.appendChild(input);
+                input.select();
+                document.execCommand('copy');
+                document.body.removeChild(input);
+                alert('‚úÖ Number copied to clipboard!\n\n' + formatPhoneNumber(number));
+            }
+        }
+
+        // OPTION 2: Manual Provision Modal
+        function showProvisionModal() {
+            document.getElementById('provision-modal').classList.add('active');
+        }
+
+        function closeProvisionModal() {
+            document.getElementById('provision-modal').classList.remove('active');
+        }
+
+        // OPTION 3: Provision with Area Code Selection
+        async function provisionNumber() {
+            const areaCode = document.getElementById('area-code').value || '813';
+            const btn = document.getElementById('provision-btn');
+            const status = document.getElementById('provision-status');
+            const message = document.getElementById('provision-message');
+
+            btn.disabled = true;
+            btn.textContent = 'Provisioning...';
+            status.style.display = 'block';
+            message.textContent = 'Step 1/4: Searching for available numbers...';
+
+            try {
+                const response = await fetch(`${API}/api/rootcall/provision`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        area_code: areaCode
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    message.textContent = '‚úÖ Success! Your number is ready!';
+                    setTimeout(() => {
+                        closeProvisionModal();
+                        location.reload();
+                    }, 2000);
+                } else {
+                    throw new Error(data.detail || 'Provisioning failed');
+                }
+            } catch (error) {
+                console.error('Provisioning error:', error);
+                message.textContent = '‚ùå Error: ' + error.message;
+                btn.disabled = false;
+                btn.textContent = 'Try Again';
+            }
         }
 
         async function updateForwarding() {
@@ -1060,7 +1254,6 @@
         }
 
         function loadCallHistory() {
-            // Mock data for now
             const tbody = document.getElementById('call-history-body');
             tbody.innerHTML = `
                 <tr>

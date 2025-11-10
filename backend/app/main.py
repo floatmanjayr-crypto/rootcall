@@ -8,7 +8,7 @@ from pathlib import Path
 from app.config import settings
 from app.database import engine, Base
 from app.routers import rootcall_portal
-from app.routers import payments, number_management, auth, admin
+from app.routers import payments, number_management, auth, admin, stripe_webhooks
 
 # Import routers
 from app.routers import (

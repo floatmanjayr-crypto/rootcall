@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from app.database import get_db
+from app.models.user import User
 from app.models.rootcall_config import RootCallConfig
 from app.models.phone_number import PhoneNumber
 from app.models.user import User
@@ -349,3 +350,175 @@ async def provision_rootcall_number(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
+
+# ============================================
+# USER-AUTHENTICATED ENDPOINTS (JWT Required)
+# ============================================
+
+from app.core.security import get_current_user
+
+@router.get("/api/rootcall/my-number")
+async def get_my_number(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get current user's provisioned RootCall number"""
+    
+    # Find user's phone number
+    phone = db.query(PhoneNumber).filter(
+        PhoneNumber.user_id == current_user.id,
+        PhoneNumber.is_active == True
+    ).first()
+    
+    if not phone:
+        return {
+            "has_number": False,
+            "message": "No active RootCall number found. Please complete payment to get started."
+        }
+    
+    # Get associated config
+    config = db.query(RootCallConfig).filter(
+        RootCallConfig.phone_number_id == phone.id
+    ).first()
+    
+    return {
+        "has_number": True,
+        "number": phone.phone_number,
+        "friendly_name": phone.friendly_name,
+        "purchased_at": phone.purchased_at.isoformat(),
+        "monthly_cost": phone.monthly_cost,
+        "config": {
+            "screening_enabled": config.is_active if config else True,
+            "forwarding_number": config.client_cell if config else None,
+            "trusted_contacts": config.trusted_contacts if config else [],
+            "sms_alerts_enabled": config.sms_alerts_enabled if config else True
+        } if config else None
+    }
+
+
+@router.get("/api/rootcall/dashboard")
+async def get_dashboard(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get complete dashboard data for current user"""
+    
+    # Get user's phone number
+    phone = db.query(PhoneNumber).filter(
+        PhoneNumber.user_id == current_user.id,
+        PhoneNumber.is_active == True
+    ).first()
+    
+    if not phone:
+        return {
+            "has_number": False,
+            "user": {
+                "name": current_user.full_name,
+                "email": current_user.email
+            }
+        }
+    
+    # Get config
+    config = db.query(RootCallConfig).filter(
+        RootCallConfig.phone_number_id == phone.id
+    ).first()
+    
+    # Get recent call stats (mock for now - you can add real call logs later)
+    return {
+        "has_number": True,
+        "user": {
+            "name": current_user.full_name,
+            "email": current_user.email
+        },
+        "phone": {
+            "number": phone.phone_number,
+            "friendly_name": phone.friendly_name,
+            "purchased_at": phone.purchased_at.isoformat(),
+            "status": "active" if phone.is_active else "inactive"
+        },
+        "config": {
+            "screening_enabled": config.is_active if config else True,
+            "forwarding_number": config.client_cell if config else None,
+            "trusted_contacts": config.trusted_contacts if config else [],
+            "sms_alerts": config.sms_alerts_enabled if config else True,
+            "auto_block_spam": config.auto_block_spam if config else True
+        } if config else None,
+        "stats": {
+            "calls_today": 0,
+            "calls_blocked": 0,
+            "calls_forwarded": 0,
+            "total_calls": 0
+        }
+    }
+
+
+@router.post("/api/rootcall/update-forwarding")
+async def update_forwarding_number(
+    forwarding_number: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Update where calls should be forwarded"""
+    
+    phone = db.query(PhoneNumber).filter(
+        PhoneNumber.user_id == current_user.id
+    ).first()
+    
+    if not phone:
+        raise HTTPException(status_code=404, detail="No phone number found")
+    
+    config = db.query(RootCallConfig).filter(
+        RootCallConfig.phone_number_id == phone.id
+    ).first()
+    
+    if config:
+        config.client_cell = forwarding_number
+    else:
+        config = RootCallConfig(
+            phone_number_id=phone.id,
+            user_id=current_user.id,
+            client_name=current_user.full_name,
+            client_cell=forwarding_number,
+            retell_agent_id=phone.ai_agent.retell_agent_id if phone.ai_agent else "",
+            retell_did=phone.phone_number
+        )
+        db.add(config)
+    
+    db.commit()
+    
+    return {"message": "Forwarding number updated", "number": forwarding_number}
+
+
+@router.post("/api/rootcall/add-trusted-contact")
+async def add_trusted_contact_auth(
+    phone_number: str,
+    name: str = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Add a trusted contact (whitelist)"""
+    
+    phone = db.query(PhoneNumber).filter(
+        PhoneNumber.user_id == current_user.id
+    ).first()
+    
+    if not phone:
+        raise HTTPException(status_code=404, detail="No phone number found")
+    
+    config = db.query(RootCallConfig).filter(
+        RootCallConfig.phone_number_id == phone.id
+    ).first()
+    
+    if not config:
+        raise HTTPException(status_code=404, detail="Configuration not found")
+    
+    # Add to trusted contacts list
+    if not config.trusted_contacts:
+        config.trusted_contacts = []
+    
+    if phone_number not in config.trusted_contacts:
+        config.trusted_contacts.append(phone_number)
+        db.commit()
+    
+    return {"message": "Contact added", "contacts": config.trusted_contacts}
+

@@ -355,7 +355,7 @@ async def provision_rootcall_number(
 # USER-AUTHENTICATED ENDPOINTS (JWT Required)
 # ============================================
 
-from app.core.security import get_current_user
+from app.core.deps import get_current_user
 
 @router.get("/api/rootcall/my-number")
 async def get_my_number(

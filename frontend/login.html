@@ -207,7 +207,7 @@
                     localStorage.setItem('token', data.access_token);
                     localStorage.setItem('user', JSON.stringify(data.user));
                     showMessage('Account created! Redirecting...');
-                    setTimeout(() => window.location.href = '/static/shield-pricing.html', 1500);
+                    setTimeout(() => window.location.href = '/client-portal.html', 1500);
                 } else {
                     showMessage(data.detail || 'Signup failed', true);
                 }
@@ -235,7 +235,7 @@
                     localStorage.setItem('token', data.access_token);
                     localStorage.setItem('user', JSON.stringify(data.user));
                     showMessage('Welcome back! Redirecting...');
-                    setTimeout(() => window.location.href = '/static/client-portal.html', 1500);
+                    setTimeout(() => window.location.href = '/client-portal.html', 1500);
                 } else {
                     showMessage(data.detail || 'Login failed', true);
                 }

@@ -1,0 +1,283 @@
+import httpx  # type: ignore
+from fastapi import APIRouter, HTTPException, Depends, Request, Query
+from sqlalchemy.orm import Session
+from pydantic import BaseModel
+from app.config import settings
+from app.database import get_db
+from app.models.client_mapping import ClientMapping
+
+TELNYX_API_KEY = settings.TELNYX_API_KEY
+VOICE_WEBHOOK = settings.TELNYX_VOICE_WEBHOOK_URL
+MSG_WEBHOOK = settings.TELNYX_MSG_WEBHOOK_URL
+TELNYX_BASE = "https://api.telnyx.com/v2"
+
+router = APIRouter(prefix="/telnyx", tags=["telnyx"])
+
+if not TELNYX_API_KEY:
+    raise RuntimeError("Missing TELNYX_API_KEY in environment")
+
+HEADERS = {"Authorization": f"Bearer {TELNYX_API_KEY}"}
+HEADERS_JSON = {**HEADERS, "Content-Type": "application/json"}
+
+
+class CreateClientBody(BaseModel):
+    client_id: str
+    voice_connection_name: str = "Voice App"
+    messaging_profile_name: str = "Messaging Profile"
+
+
+class PurchaseNumberBody(BaseModel):
+    client_id: str
+    phone_number: str  # E.164 e.g. +19545551234
+
+
+async def _client() -> httpx.AsyncClient:
+    return httpx.AsyncClient(timeout=30)
+
+
+@router.post("/clients/create")
+async def create_client(body: CreateClientBody, db: Session = Depends(get_db)):
+    """
+    Creates:
+      - Call Control Application (for voice) with your voice webhook URL
+      - Messaging Profile (for SMS/MMS) with your messaging webhook URL
+    Saves the mapping in DB so future purchases can auto-assign.
+    """
+    # guard: duplicate client_id
+    exists = db.query(ClientMapping).filter(ClientMapping.client_id == body.client_id).first()
+    if exists:
+        raise HTTPException(status_code=409, detail="Client already exists")
+
+    # guard: webhook URLs configured
+    if not VOICE_WEBHOOK or not MSG_WEBHOOK:
+        raise HTTPException(status_code=500, detail="Webhook URLs not configured")
+
+    async with await _client() as c:
+        # 1) Call Control Application
+        app_payload = {
+            "application_name": f"{body.voice_connection_name} - {body.client_id}",
+            "webhook_event_url": VOICE_WEBHOOK,
+            "webhook_event_failover_url": VOICE_WEBHOOK,
+            "webhook_api_version": "2",
+            "active": True,
+        }
+        r1 = await c.post(f"{TELNYX_BASE}/call_control_applications", headers=HEADERS_JSON, json=app_payload)
+        if r1.status_code >= 300:
+            raise HTTPException(r1.status_code, f"Create app failed: {r1.text}")
+        app_id = r1.json()["data"]["id"]
+
+        # 2) Messaging Profile
+        msg_payload = {
+            "name": f"{body.messaging_profile_name} - {body.client_id}",
+            "webhook_url": MSG_WEBHOOK,
+            "webhook_failover_url": MSG_WEBHOOK,
+            "webhook_api_version": "2",
+            "whitelisted_destinations": ["US", "CA"],
+        }
+        r2 = await c.post(f"{TELNYX_BASE}/messaging_profiles", headers=HEADERS_JSON, json=msg_payload)
+        if r2.status_code >= 300:
+            raise HTTPException(r2.status_code, f"Create profile failed: {r2.text}")
+        profile_id = r2.json()["data"]["id"]
+
+    # persist mapping
+    mapping = ClientMapping(
+        client_id=body.client_id,
+        voice_connection_id=app_id,
+        messaging_profile_id=profile_id,
+    )
+    db.add(mapping)
+    db.commit()
+
+    return {
+        "success": True,
+        "client_id": body.client_id,
+        "call_control_app_id": app_id,
+        "messaging_profile_id": profile_id,
+        "message": "Client created successfully!",
+    }
+
+
+@router.get("/numbers/search")
+async def search_numbers(
+    area_code: str | None = Query(default=None, description="US NDC / area code, e.g. 954"),
+    country_code: str = Query(default="US"),
+    limit: int = Query(default=10, ge=1, le=50),
+):
+    """
+    Search available numbers (defaults to US + SMS/Voice).
+    Use ?area_code=954 to narrow.
+    """
+    params = {
+        "filter[country_code]": country_code,
+        "filter[features]": "sms,voice",
+        "page[size]": limit,
+    }
+    if area_code:
+        params["filter[national_destination_code]"] = area_code
+
+    async with await _client() as c:
+        r = await c.get(f"{TELNYX_BASE}/available_phone_numbers", headers=HEADERS, params=params)
+
+    if r.status_code >= 300:
+        raise HTTPException(r.status_code, r.text)
+    return r.json()
+
+
+@router.post("/numbers/purchase")
+async def purchase_number(body: PurchaseNumberBody, db: Session = Depends(get_db)):
+    """
+    Purchases a number and assigns it to the client's voice connection and messaging profile.
+    """
+    client = db.query(ClientMapping).filter(ClientMapping.client_id == body.client_id).first()
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found. Create client first.")
+
+    payload = {
+        "phone_numbers": [{"phone_number": body.phone_number}],
+        "connection_id": client.voice_connection_id,
+        "messaging_profile_id": client.messaging_profile_id,
+    }
+
+    async with await _client() as c:
+        r = await c.post(f"{TELNYX_BASE}/phone_numbers", headers=HEADERS_JSON, json=payload)
+
+    if r.status_code >= 300:
+        raise HTTPException(r.status_code, f"Purchase failed: {r.text}")
+
+    return {
+        "success": True,
+        "data": r.json()["data"],
+        "message": f"Number {body.phone_number} purchased and assigned to {body.client_id}",
+    }
+
+
+@router.get("/clients")
+async def list_clients(db: Session = Depends(get_db)):
+    rows = db.query(ClientMapping).all()
+    return {
+        "clients": [
+            {
+                "client_id": r.client_id,
+                "voice_connection_id": r.voice_connection_id,
+                "messaging_profile_id": r.messaging_profile_id,
+            }
+            for r in rows
+        ]
+    }
+
+
+@router.get("/clients/{client_id}")
+async def get_client(client_id: str, db: Session = Depends(get_db)):
+    r = db.query(ClientMapping).filter(ClientMapping.client_id == client_id).first()
+    if not r:
+        raise HTTPException(status_code=404, detail="Client not found")
+    return {
+        "client_id": r.client_id,
+        "voice_connection_id": r.voice_connection_id,
+        "messaging_profile_id": r.messaging_profile_id,
+    }
+
+
+@router.post("/webhooks/voice")
+async def telnyx_voice_webhook(req: Request, db: Session = Depends(get_db)):
+    """Handle Telnyx voice webhooks"""
+    import telnyx
+    from app.models.call import Call
+    from app.models.phone_number import PhoneNumber
+    from app.models.ai_agent import AIAgent
+    from datetime import datetime
+    
+    telnyx.api_key = TELNYX_API_KEY
+    
+    payload = await req.json()
+    print("📞 Telnyx Voice Webhook:", payload)
+    
+    data = payload.get("data", {})
+    event_type = data.get("event_type")
+    event_payload = data.get("payload", {})
+    
+    call_control_id = event_payload.get("call_control_id")
+    from_number = event_payload.get("from")
+    to_number = event_payload.get("to")
+    
+    if event_type == "call.initiated":
+        print(f"📞 Incoming call: {from_number} -> {to_number}")
+        
+        phone = db.query(PhoneNumber).filter(
+            PhoneNumber.phone_number == to_number,
+            PhoneNumber.is_active == True
+        ).first()
+        
+        if not phone:
+            print(f"❌ Phone {to_number} not found")
+            return {"ok": False, "error": "phone_not_found"}
+        
+        call = Call(
+            user_id=phone.user_id,
+            phone_number_id=phone.id,
+            call_control_id=call_control_id,
+            telnyx_call_id=event_payload.get("call_session_id"),
+            direction="inbound",
+            from_number=from_number,
+            to_number=to_number,
+            status="initiated",
+            ai_agent_id=phone.ai_agent_id
+        )
+        db.add(call)
+        db.commit()
+        print(f"✅ Call created: ID {call.id}")
+        
+        try:
+            telnyx.Call.answer(call_control_id)
+            print(f"✅ Answered call")
+        except Exception as e:
+            print(f"❌ Answer error: {e}")
+        
+        if phone.ai_agent_id:
+            agent = db.query(AIAgent).filter(AIAgent.id == phone.ai_agent_id).first()
+            if agent and agent.greeting_message:
+                try:
+                    telnyx.Call.speak(
+                        call_control_id,
+                        payload=agent.greeting_message,
+                        voice="female",
+                        language="en-US"
+                    )
+                    print(f"🤖 Speaking greeting")
+                except Exception as e:
+                    print(f"❌ Speak error: {e}")
+        
+        try:
+            telnyx.Call.record_start(call_control_id, format="mp3", channels="single")
+            print(f"🎙️ Recording started")
+        except Exception as e:
+            print(f"❌ Record error: {e}")
+        
+        return {"ok": True, "call_id": call.id}
+    
+    elif event_type == "call.answered":
+        call = db.query(Call).filter(Call.call_control_id == call_control_id).first()
+        if call:
+            call.status = "answered"
+            call.answered_at = datetime.utcnow()
+            db.commit()
+        print(f"✅ Call answered")
+    
+    elif event_type == "call.hangup":
+        call = db.query(Call).filter(Call.call_control_id == call_control_id).first()
+        if call:
+            call.status = "completed"
+            call.ended_at = datetime.utcnow()
+            if call.answered_at:
+                call.duration = int((call.ended_at - call.answered_at).total_seconds())
+            db.commit()
+        print(f"📴 Call ended")
+    
+    return {"ok": True}
+
+
+@router.post("/webhooks/messaging")
+async def telnyx_msg_webhook(req: Request):
+    payload = await req.json()
+    print("💬 Telnyx Messaging Webhook:", payload)
+    return {"ok": True}

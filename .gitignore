@@ -1,0 +1,42 @@
+venv/
+.env
+.env.*
+node_modules/
+__pycache__/
+*.pyc
+*.raw.json
+.last_*
+.retell_sip_credentials
+.voices.json
+.list_voices.json
+NUL
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# Database
+*.db
+*.sqlite
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+backend/.env
+*.bak
+backend/static/backup/
+archive/

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Purchase Shield Number</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto">
+        <div class="bg-white rounded-xl shadow-lg p-8">
+            <h1 class="text-3xl font-bold mb-6">Purchase Shield Number</h1>
+            
+            <div class="mb-6">
+                <label class="block text-sm font-medium mb-2">Area Code</label>
+                <div class="flex gap-2">
+                    <input type="text" id="area-code" placeholder="813" maxlength="3" 
+                           class="flex-1 px-4 py-3 border rounded-lg">
+                    <button onclick="searchNumbers()" class="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+                        Search
+                    </button>
+                </div>
+            </div>
+
+            <div id="results" class="space-y-4"></div>
+        </div>
+    </div>
+
+    <script>
+        const API = 'http://localhost:8000';
+        const user = JSON.parse(localStorage.getItem('user'));
+
+        async function searchNumbers() {
+            const areaCode = document.getElementById('area-code').value;
+            if (areaCode.length !== 3) {
+                alert('Please enter a 3-digit area code');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API}/api/numbers/search`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({area_code: areaCode, limit: 10})
+                });
+
+                const data = await response.json();
+                
+                const results = document.getElementById('results');
+                results.innerHTML = data.numbers.map(num => `
+                    <div class="border rounded-lg p-4 flex justify-between items-center">
+                        <div>
+                            <div class="font-bold text-lg">${num.phone_number}</div>
+                            <div class="text-sm text-gray-600">${num.region} • $${num.cost}/month</div>
+                        </div>
+                        <button onclick="purchaseNumber('${num.phone_number}')" 
+                                class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                            Purchase
+                        </button>
+                    </div>
+                `).join('');
+            } catch (err) {
+                alert('Error: ' + err.message);
+            }
+        }
+
+        async function purchaseNumber(phoneNumber) {
+            const nickname = prompt('Give this shield number a nickname:');
+            if (!nickname) return;
+
+            try {
+                const response = await fetch(`${API}/api/numbers/purchase`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        phone_number: phoneNumber,
+                        user_id: user.id,
+                        nickname: nickname
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    alert('Shield number purchased successfully!');
+                    window.location.href = '/static/shield-dashboard.html';
+                } else {
+                    alert('Error: ' + data.detail);
+                }
+            } catch (err) {
+                alert('Error: ' + err.message);
+            }
+        }
+    </script>
+</body>
+</html>

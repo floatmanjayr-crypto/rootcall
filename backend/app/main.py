@@ -1,7 +1,11 @@
 from fastapi import FastAPI, Response, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from starlette.middleware.proxy_headers import ProxyHeadersMiddleware
+try:
+    from starlette.middleware.proxy_headers import ProxyHeadersMiddleware
+except Exception:  # starlette may be older; fall back to uvicorn's
+    from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
+
 from jose import jwt
 import os, time
 

@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RootCall Dashboard - Your Protection Command Center</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --green: #0d3d2f;
+            --ivory: #f9f6f3;
+            --accent: #2ecc71;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--ivory);
+            color: var(--green);
+            line-height: 1.6;
+        }
+        
+        /* Header - Match Landing Page */
+        header {
+            background: var(--green);
+            padding: 20px 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+        }
+        
+        .nav {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            color: white;
+        }
+        
+        .user-name {
+            font-weight: 600;
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50px;
+        }
+        
+        .btn-logout {
+            background: rgba(255,255,255,0.2);
+            border: 2px solid white;
+            color: white;
+            padding: 10px 24px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            font-size: 0.95rem;
+        }
+        
+        .btn-logout:hover {
+            background: white;
+            color: var(--green);
+            transform: translateY(-2px);
+        }
+        
+        /* Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        
+        /* Hero Number Display - Match Landing Hero */
+        .number-hero {
+            background: linear-gradient(135deg, var(--green) 0%, #1a5a42 100%);
+            color: white;
+            padding: 60px 40px;
+            border-radius: 20px;
+            text-align: center;
+            margin-bottom: 40px;
+            box-shadow: 0 20px 60px rgba(13, 61, 47, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .number-hero::before {
+            content: 'ÔøΩÔøΩÔ∏è';
+            position: absolute;
+            top: -20px;
+            right: -20px;
+            font-size: 200px;
+            opacity: 0.1;
+        }
+        
+        .number-hero h1 {
+            font-size: 3.5rem;
+            margin: 20px 0;
+            letter-spacing: 3px;
+            font-weight: 800;
+        }
+        
+        .number-hero p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            background: #2ecc71;
+            padding: 8px 20px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            margin-top: 10px;
+        }
+        
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 35px;
+            border-radius: 16px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            transition: all 0.3s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+        }
+        
+        .stat-card h3 {
+            font-size: 3rem;
+            color: var(--green);
+            margin-bottom: 10px;
+            font-weight: 800;
+        }
+        
+        .stat-card p {
+            color: #666;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        
+        /* Cards */
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        
+        .card h2 {
+            margin-bottom: 25px;
+            color: var(--green);
+            font-size: 1.8rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        /* Form Elements */
+        .input-group {
+            margin-bottom: 25px;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: var(--green);
+        }
+        
+        .input-group input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--green);
+            box-shadow: 0 0 0 3px rgba(13, 61, 47, 0.1);
+        }
+        
+        .input-group small {
+            display: block;
+            margin-top: 8px;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        /* Buttons - Match Landing Page */
+        .btn {
+            background: var(--green);
+            color: white;
+            border: none;
+            padding: 15px 35px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 1rem;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(13, 61, 47, 0.3);
+        }
+        
+        .btn:hover {
+            background: #1a5a42;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(13, 61, 47, 0.4);
+        }
+        
+        .btn-secondary {
+            background: var(--ivory);
+            color: var(--green);
+            border: 2px solid var(--green);
+        }
+        
+        .btn-secondary:hover {
+            background: var(--green);
+            color: white;
+        }
+        
+        /* Alerts */
+        .alert {
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+        
+        .alert-info {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border-left: 5px solid #2196f3;
+        }
+        
+        .alert-info h3 {
+            color: #1976d2;
+            margin-bottom: 15px;
+        }
+        
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 80px 20px;
+        }
+        
+        .spinner {
+            border: 4px solid var(--ivory);
+            border-top: 4px solid var(--green);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Contact List */
+        .contact-list {
+            list-style: none;
+        }
+        
+        .contact-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: var(--ivory);
+            margin-bottom: 12px;
+            border-radius: 12px;
+            transition: all 0.3s;
+        }
+        
+        .contact-item:hover {
+            background: #ede9e4;
+        }
+        
+        .btn-remove {
+            background: #ff5252;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .btn-remove:hover {
+            background: #d32f2f;
+        }
+        
+        /* Instructions */
+        .instructions ol {
+            padding-left: 20px;
+            line-height: 2;
+        }
+        
+        .instructions li {
+            margin-bottom: 10px;
+        }
+        
+        .instructions strong {
+            color: var(--green);
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .number-hero h1 {
+                font-size: 2rem;
+            }
+            
+            .stat-card h3 {
+                font-size: 2rem;
+            }
+            
+            .nav {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="nav">
+            <div class="logo">
+                Ìª°Ô∏è RootCall
+            </div>
+            <div class="user-info">
+                <span class="user-name" id="user-name">Loading...</span>
+                <button class="btn-logout" onclick="logout()">Sign Out</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Loading your protection dashboard...</p>
+        </div>
+
+        <div id="no-number" style="display:none;">
+            <div class="alert alert-info">
+                <h3>Ìæâ Welcome to RootCall!</h3>
+                <p style="font-size:1.1rem;margin-bottom:20px;">You're one step away from complete phone protection.</p>
+                <p>Complete your payment to receive your dedicated RootCall protection number.</p>
+                <br>
+                <a href="/index.html#pricing" class="btn">Choose Your Plan</a>
+            </div>
+        </div>
+
+        <div id="dashboard" style="display:none;">
+            <!-- RootCall Number Display -->
+            <div class="number-hero">
+                <p style="font-size:1rem;text-transform:uppercase;letter-spacing:2px;opacity:0.8;">Your RootCall Protection Number</p>
+                <h1 id="rootcall-number">Loading...</h1>
+                <span class="status-badge">‚óè ACTIVE & PROTECTING</span>
+                <p id="purchased-date" style="margin-top:15px;font-size:0.95rem;">Activated: Loading...</p>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3 id="stat-today">0</h3>
+                    <p>Calls Today</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="stat-blocked">0</h3>
+                    <p>Spam Blocked</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="stat-forwarded">0</h3>
+                    <p>Calls Forwarded</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="stat-total">0</h3>
+                    <p>Total Calls</p>
+                </div>
+            </div>
+
+            <!-- Configuration -->
+            <div class="card">
+                <h2>‚öôÔ∏è Protection Settings</h2>
+                
+                <div class="input-group">
+                    <label>Forward Approved Calls To:</label>
+                    <input type="tel" id="forwarding-number" placeholder="+1 (555) 123-4567">
+                    <small>Enter your real phone number where screened calls should be transferred</small>
+                </div>
+
+                <button class="btn" onclick="updateForwarding()">Ì≤æ Save Forwarding Number</button>
+            </div>
+
+            <!-- Trusted Contacts -->
+            <div class="card">
+                <h2>‚úÖ Trusted Contacts</h2>
+                <p style="margin-bottom:25px;color:#666;">These contacts bypass screening and go straight to you</p>
+                
+                <div class="input-group">
+                    <label>Add Trusted Number:</label>
+                    <div style="display:flex;gap:12px;">
+                        <input type="tel" id="trusted-number" placeholder="+1 (555) 123-4567" style="flex:1;">
+                        <button class="btn" onclick="addTrustedContact()">Add Contact</button>
+                    </div>
+                </div>
+
+                <ul id="trusted-list" class="contact-list">
+                    <!-- Populated by JS -->
+                </ul>
+            </div>
+
+            <!-- Instructions -->
+            <div class="card instructions">
+                <h2>Ì≥± How RootCall Protects You</h2>
+                <ol>
+                    <li><strong>Set your forwarding number</strong> above (your real phone number)</li>
+                    <li><strong>Share your RootCall number</strong> instead of your personal number</li>
+                    <li><strong>AI screens every incoming call</strong> automatically</li>
+                    <li><strong>Legitimate calls are forwarded</strong> to your real number</li>
+                    <li><strong>Scammers and spam are blocked</strong> before reaching you</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API = 'https://rootcall.onrender.com';
+        let userData = null;
+
+        // Check authentication
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/login.html';
+        }
+
+        // Fetch dashboard data
+        async function loadDashboard() {
+            try {
+                const response = await fetch(`${API}/api/rootcall/dashboard`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.status === 401) {
+                    localStorage.removeItem('token');
+                    window.location.href = '/login.html';
+                    return;
+                }
+
+                const data = await response.json();
+                userData = data;
+
+                document.getElementById('loading').style.display = 'none';
+
+                if (!data.has_number) {
+                    document.getElementById('no-number').style.display = 'block';
+                    document.getElementById('user-name').textContent = data.user.name;
+                } else {
+                    document.getElementById('dashboard').style.display = 'block';
+                    document.getElementById('user-name').textContent = data.user.name;
+                    document.getElementById('rootcall-number').textContent = formatPhoneNumber(data.phone.number);
+                    
+                    const purchasedDate = new Date(data.phone.purchased_at);
+                    document.getElementById('purchased-date').textContent = 
+                        `Activated: ${purchasedDate.toLocaleDateString()}`;
+
+                    document.getElementById('stat-today').textContent = data.stats.calls_today;
+                    document.getElementById('stat-blocked').textContent = data.stats.calls_blocked;
+                    document.getElementById('stat-forwarded').textContent = data.stats.calls_forwarded;
+                    document.getElementById('stat-total').textContent = data.stats.total_calls;
+
+                    if (data.config) {
+                        document.getElementById('forwarding-number').value = data.config.forwarding_number || '';
+                        loadTrustedContacts(data.config.trusted_contacts || []);
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                alert('Failed to load dashboard. Please try again.');
+            }
+        }
+
+        function formatPhoneNumber(num) {
+            const cleaned = num.replace(/\D/g, '');
+            const match = cleaned.match(/^1?(\d{3})(\d{3})(\d{4})$/);
+            if (match) {
+                return `(${match[1]}) ${match[2]}-${match[3]}`;
+            }
+            return num;
+        }
+
+        async function updateForwarding() {
+            const number = document.getElementById('forwarding-number').value;
+            
+            if (!number) {
+                alert('Please enter a forwarding number');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API}/api/rootcall/update-forwarding?forwarding_number=${encodeURIComponent(number)}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    alert('‚úÖ Forwarding number updated successfully!');
+                } else {
+                    alert('Error: ' + (data.detail || 'Failed to update'));
+                }
+            } catch (error) {
+                console.error('Error updating forwarding:', error);
+                alert('Failed to update. Please try again.');
+            }
+        }
+
+        async function addTrustedContact() {
+            const number = document.getElementById('trusted-number').value;
+            
+            if (!number) {
+                alert('Please enter a phone number');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API}/api/rootcall/add-trusted-contact?phone_number=${encodeURIComponent(number)}&name=Contact`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('trusted-number').value = '';
+                    loadTrustedContacts(data.contacts);
+                    alert('‚úÖ Trusted contact added!');
+                } else {
+                    alert('Error: ' + (data.detail || 'Failed to add'));
+                }
+            } catch (error) {
+                console.error('Error adding contact:', error);
+                alert('Failed to add contact. Please try again.');
+            }
+        }
+
+        function loadTrustedContacts(contacts) {
+            const list = document.getElementById('trusted-list');
+            
+            if (!contacts || contacts.length === 0) {
+                list.innerHTML = '<li style="color:#666;padding:30px;text-align:center;background:var(--ivory);border-radius:12px;">No trusted contacts yet. Add your family and friends above.</li>';
+                return;
+            }
+
+            list.innerHTML = contacts.map(contact => `
+                <li class="contact-item">
+                    <span style="font-weight:600;">${formatPhoneNumber(contact)}</span>
+                    <button class="btn-remove" onclick="removeTrustedContact('${contact}')">Remove</button>
+                </li>
+            `).join('');
+        }
+
+        function removeTrustedContact(number) {
+            alert('Remove functionality coming soon!');
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/login.html';
+        }
+
+        loadDashboard();
+    </script>
+</body>
+</html>

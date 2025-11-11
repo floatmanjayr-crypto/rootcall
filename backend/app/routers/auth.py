@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Response
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from app.database import get_db
@@ -75,7 +75,7 @@ async def signup(data: UserSignup, db: Session = Depends(get_db)):
     }
 
 @router.post("/api/auth/login", response_model=TokenResponse)
-async def login(credentials: LoginRequest, db: Session = Depends(get_db)):
+async def login(credentials: LoginRequest, db: Session = Depends(get_db, response: Response)):
     """
     Login with email and password (JSON format)
     

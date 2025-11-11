@@ -1,0 +1,55 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>RootCall — Client Login</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <link rel="stylesheet" href="./styles.css"/>
+</head>
+<body>
+  <div class="center">
+    <div class="card" style="width:min(560px,94vw)">
+      <h2 style="margin-top:0">Sign in to RootCall</h2>
+      <p class="small">Use your email (or username) and password.</p>
+      <div id="msg" class="notice hidden"></div>
+      <div class="row">
+        <input id="id" class="input" placeholder="Email or username" autocomplete="username" />
+        <input id="pw" type="password" class="input" placeholder="Password" autocomplete="current-password" />
+        <button id="submit" class="btn btn-primary">Sign in</button>
+        <button id="to-landing" class="btn btn-ghost">Back to site</button>
+      </div>
+    </div>
+  </div>
+  <script src="./auth.js"></script>
+  <script>
+    const msg = document.getElementById("msg");
+    function showError(t){ msg.textContent=t; msg.classList.remove("hidden"); }
+    function hideError(){ msg.classList.add("hidden"); }
+
+    // If already logged in and dashboard works, jump
+    (async ()=>{
+      try{
+        await apiFetch("/api/rootcall/dashboard");
+        location.href = "./dashboard.html";
+      }catch(e){}
+    })();
+
+    document.getElementById("to-landing").onclick = () => location.href = "/";
+
+    document.getElementById("submit").onclick = async () => {
+      hideError();
+      const id = document.getElementById("id").value.trim();
+      const pw = document.getElementById("pw").value;
+      if(!id || !pw){ showError("Enter your email/username and password."); return; }
+      try{
+        await loginFlex(id, pw);
+        // verify access
+        await apiFetch("/api/rootcall/dashboard");
+        location.href = "./dashboard.html";
+      }catch(e){
+        showError(e.message || "Login failed");
+      }
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,40 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>RootCall — Client Login</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <link rel="stylesheet" href="./styles.css"/>
+</head>
+<body>
+  <div class="center">
+    <div class="card" style="width:min(560px,94vw)">
+      <h2 style="margin-top:0">Sign in to RootCall</h2>
+      <p class="muted">Use your email and password.</p>
+      <div id="msg" class="notice"></div>
+      <div class="row">
+        <input id="email" class="input" placeholder="Email" autocomplete="username" />
+        <input id="pw" type="password" class="input" placeholder="Password" autocomplete="current-password" />
+        <button id="submit" class="btn">Sign in</button>
+      </div>
+    </div>
+  </div>
+  <script src="./auth.js"></script>
+  <script>
+    const msg = document.getElementById("msg");
+    function showMsg(t,bad=false){ msg.textContent=t; msg.style.display="block"; msg.style.color = bad? "#ffb4b4":"#9ff7c6"; }
+
+    document.getElementById("submit").onclick = async () => {
+      msg.style.display="none";
+      const email = document.getElementById("email").value.trim();
+      const pw = document.getElementById("pw").value;
+      if(!email || !pw){ showMsg("Enter email and password", true); return; }
+      try{
+        await login(email, pw);
+        await apiFetch("/api/rootcall/dashboard"); // verify
+        location.href = "./dashboard.html";
+      }catch(e){ showMsg(e.message || "Login failed", true); }
+    };
+  </script>
+</body>
+</html>

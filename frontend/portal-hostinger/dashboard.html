@@ -1,0 +1,51 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>RootCall — Dashboard</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <link rel="stylesheet" href="./styles.css"/>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h2>RootCall — Client Portal</h2>
+      <div><button id="logout" class="btn">Log out</button></div>
+    </div>
+    <div id="flash" class="notice" style="display:none"></div>
+
+    <div class="grid grid-2">
+      <div class="card">
+        <h3>Today</h3>
+        <div class="muted">Calls and protection summary</div>
+        <div id="today" style="margin-top:10px">Loading…</div>
+      </div>
+      <div class="card">
+        <h3>Account</h3>
+        <div class="muted">Plan & status</div>
+        <div id="acct" style="margin-top:10px">Loading…</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="./auth.js"></script>
+  <script>
+    async function load(){
+      try{
+        const d = await apiFetch("/api/rootcall/dashboard");
+        const s = d.stats || {};
+        document.getElementById('today').innerHTML =
+          '<div>Calls today: <strong>' + (s.calls_today ?? '—') + '</strong></div>' +
+          '<div>Blocked: <strong>' + (s.blocked ?? '—') + '</strong></div>';
+        document.getElementById('acct').innerHTML =
+          '<div>User: <code>' + ((d.user && (d.user.user_id||d.user.id)) || 'current') + '</code></div>' +
+          '<div>Status: <strong>Active</strong></div>';
+      }catch(e){
+        location.href = "./login.html";
+      }
+    }
+    document.getElementById("logout").onclick = ()=>logout();
+    load();
+  </script>
+</body>
+</html>

@@ -37,6 +37,17 @@ app = FastAPI(
     version="1.0.0"
 )
 
+
+# --- CORS for Hostinger frontends ---
+import os
+ALLOWED_ORIGIN = os.getenv('FRONTEND_ORIGIN', '*')  # e.g. https://portal.yourdomain.com
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[ALLOWED_ORIGIN] if ALLOWED_ORIGIN!='*' else ["*"],
+    allow_credentials=False,  # token-in-header only, no cookies cross-origin
+    allow_methods=["GET","POST","PUT","PATCH","DELETE","OPTIONS"],
+    allow_headers=["Authorization","Content-Type"],
+)
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,

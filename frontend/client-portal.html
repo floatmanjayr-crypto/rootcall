@@ -457,11 +457,6 @@
             flex: 1;
         }
 
-        .alert-title {
-            font-weight: 600;
-            margin-bottom: 0.25rem;
-        }
-
         /* No Number State */
         .no-number-state {
             text-align: center;
@@ -536,9 +531,6 @@
         .hidden {
             display: none !important;
         }
-
-        .mb-2 { margin-bottom: 2rem; }
-        .mt-2 { margin-top: 2rem; }
     </style>
 </head>
 <body>
@@ -752,7 +744,7 @@
                 document.getElementById('loading-overlay').classList.add('hidden');
 
                 // Update user info
-                document.getElementById('user-name').textContent = data.user.full_name || data.user.name || 'User';
+                document.getElementById('user-name').textContent = data.user.name || 'User';
                 document.getElementById('user-email').textContent = data.user.email || '';
 
                 // Check if user has a number
@@ -811,7 +803,7 @@
         }
 
         /**
-         * Update forwarding number
+         * Update forwarding number - USES QUERY PARAMS (matches backend)
          */
         async function updateForwarding() {
             const forwardingNumber = document.getElementById('forwarding-number').value.trim();
@@ -822,15 +814,12 @@
             }
 
             try {
-                const response = await fetch(`${API_BASE}/api/rootcall/update-forwarding`, {
+                // Backend expects query param: ?forwarding_number=xxx
+                const response = await fetch(`${API_BASE}/api/rootcall/update-forwarding?forwarding_number=${encodeURIComponent(forwardingNumber)}`, {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        forwarding_number: forwardingNumber
-                    })
+                        'Authorization': `Bearer ${token}`
+                    }
                 });
 
                 const data = await response.json();
@@ -838,7 +827,7 @@
                 if (response.ok) {
                     showAlert('✅ Forwarding number updated successfully!', 'success');
                 } else {
-                    showAlert(data.detail || 'Failed to update forwarding number', 'error');
+                    showAlert(data.detail || data.message || 'Failed to update forwarding number', 'error');
                 }
 
             } catch (error) {
@@ -848,7 +837,7 @@
         }
 
         /**
-         * Add trusted contact
+         * Add trusted contact - USES QUERY PARAMS (matches backend)
          */
         async function addTrustedContact() {
             const phoneNumber = document.getElementById('trusted-phone').value.trim();
@@ -859,26 +848,23 @@
             }
 
             try {
-                const response = await fetch(`${API_BASE}/api/rootcall/add-trusted-contact`, {
+                // Backend expects query params: ?phone_number=xxx&name=yyy
+                const response = await fetch(`${API_BASE}/api/rootcall/add-trusted-contact?phone_number=${encodeURIComponent(phoneNumber)}&name=Trusted Contact`, {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        phone_number: phoneNumber,
-                        name: 'Trusted Contact'
-                    })
+                        'Authorization': `Bearer ${token}`
+                    }
                 });
 
                 const data = await response.json();
 
                 if (response.ok) {
                     document.getElementById('trusted-phone').value = '';
+                    // Backend returns { message: "...", contacts: [...] }
                     loadTrustedContacts(data.contacts || []);
                     showAlert('✅ Trusted contact added successfully!', 'success');
                 } else {
-                    showAlert(data.detail || 'Failed to add trusted contact', 'error');
+                    showAlert(data.detail || data.message || 'Failed to add trusted contact', 'error');
                 }
 
             } catch (error) {
@@ -906,13 +892,14 @@
             container.innerHTML = `
                 <ul class="contact-list">
                     ${contacts.map(contact => {
-                        const phoneNumber = typeof contact === 'string' ? contact : contact.phone_number;
-                        const name = typeof contact === 'object' ? contact.name : 'Contact';
+                        // Backend returns array of phone number strings
+                        const phoneNumber = typeof contact === 'string' ? contact : contact.phone_number || contact;
+                        const name = typeof contact === 'object' ? (contact.name || 'Trusted Contact') : 'Trusted Contact';
                         
                         return `
                             <li class="contact-item">
                                 <div class="contact-info">
-                                    <div class="contact-name">${name || 'Trusted Contact'}</div>
+                                    <div class="contact-name">${name}</div>
                                     <div class="contact-number">${formatPhoneNumber(phoneNumber)}</div>
                                 </div>
                                 <button class="btn btn-danger" onclick="removeTrustedContact('${phoneNumber}')">
@@ -927,37 +914,19 @@
 
         /**
          * Remove trusted contact
+         * NOTE: Backend doesn't have authenticated remove endpoint yet!
+         * This will need to be added to backend or use the client_id version
          */
         async function removeTrustedContact(phoneNumber) {
-            if (!confirm(`Remove ${formatPhoneNumber(phoneNumber)} from trusted contacts?`)) {
-                return;
-            }
-
-            try {
-                const response = await fetch(`${API_BASE}/api/rootcall/remove-trusted-contact`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        phone_number: phoneNumber
-                    })
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    loadDashboard(); // Reload to refresh contacts
-                    showAlert('✅ Contact removed successfully!', 'success');
-                } else {
-                    showAlert(data.detail || 'Failed to remove contact', 'error');
-                }
-
-            } catch (error) {
-                console.error('Remove contact error:', error);
-                showAlert('Error removing contact. Please try again.', 'error');
-            }
+            showAlert('⚠️ Remove feature coming soon! Backend endpoint needs to be added.', 'info');
+            
+            // TODO: Add this endpoint to backend:
+            // @router.post("/api/rootcall/remove-trusted-contact")
+            // async def remove_trusted_contact_auth(
+            //     phone_number: str,
+            //     current_user: User = Depends(get_current_user),
+            //     db: Session = Depends(get_db)
+            // ):
         }
 
         /**

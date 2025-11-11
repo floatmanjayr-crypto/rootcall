@@ -150,3 +150,14 @@ async def get_me(token: str = Depends(oauth2_scheme), db: Session = Depends(get_
         "full_name": user.full_name,
         "is_active": user.is_active
     }
+
+@router.get("/api/auth/debug-config")
+async def debug_config():
+    """Debug endpoint - remove after testing"""
+    from app.config import settings
+    return {
+        "jwt_secret_key_exists": bool(settings.JWT_SECRET_KEY),
+        "jwt_secret_key_length": len(settings.JWT_SECRET_KEY),
+        "jwt_algorithm": settings.JWT_ALGORITHM,
+        "jwt_secret_first_4": settings.JWT_SECRET_KEY[:4] if settings.JWT_SECRET_KEY else None
+    }

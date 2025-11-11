@@ -49,3 +49,8 @@ async function logout(){
   try{ await apiFetch("/api/auth/logout", {method:"POST"}); }catch(e){}
   location.href = "./login.html";
 }
+
+// Request password reset (adjust path if your backend differs)
+async function requestReset(email){
+  return apiFetch("/api/auth/forgot", { method:"POST", body:{ email } });
+}

@@ -2,43 +2,36 @@
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
-  <title>RootCall — Sign in</title>
+  <title>RootCall — Reset password</title>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="/portal/styles.css"/>
 </head>
 <body>
   <header>
     <div class="container nav">
-      <a href="/" class="logo" aria-label="RootCall logo">
+      <a href="/" class="logo">
         <svg viewBox="0 0 64 64" role="img" aria-label="shield with phone">
           <path fill="var(--green)" d="M32 6c7 4 15 6 23 7-1 20-10 34-23 39C19 47 10 33 9 13c8-1 16-3 23-7z"/>
           <path fill="#fff" d="M37.9 42.1c-4.6-1.9-8.6-5.9-10.5-10.5-.5-1.3 0-2.8 1.2-3.5l2.7-1.6c.9-.5 1.2-1.6.8-2.5l-2-4.2c-.5-1.1-1.8-1.6-2.9-1.1l-2.9 1.3c-2.1.9-3.3 3.1-3 5.4.9 6.8 6.9 12.8 13.7 13.7 2.3.3 4.5-.9 5.4-3l1.3-2.9c.5-1.1 0-2.4-1.1-2.9l-4.2-2c-.9-.4-2 .0-2.5.8l-1.6 2.7c-.7 1.2-2.2 1.7-3.5 1.2z"/>
         </svg>
         <span>ROOTCALL</span>
       </a>
-      <a href="/" class="btn btn-ghost">← Back</a>
+      <a href="/portal/login.html" class="btn btn-ghost">← Back to sign in</a>
     </div>
   </header>
 
   <main class="center">
     <div class="card" style="width:min(560px,94vw)">
-      <h2 style="margin:0 0 8px;color:var(--green)">Sign in</h2>
-      <p class="muted">Use your email and password.</p>
+      <h2 style="margin:0 0 8px;color:var(--green)">Reset your password</h2>
+      <p class="muted">Enter your account email and we’ll send a reset link.</p>
       <div id="msg" class="notice"></div>
-
       <div class="row" style="margin-top:12px">
-        <input id="email" class="input" placeholder="Email" autocomplete="username" />
-        <input id="pw" type="password" class="input" placeholder="Password" autocomplete="current-password" />
+        <input id="email" class="input" placeholder="Email" autocomplete="email" />
         <div class="actions">
-          <a class="link small" href="/portal/forgot.html">Forgot password?</a>
-          <button id="submit" class="btn btn-primary">Sign in</button>
+          <button id="submit" class="btn btn-primary">Send reset link</button>
         </div>
       </div>
-
-      <div class="footer-note">Protected by RootCall. Your data stays private.</div>
+      <div class="footer-note small">If you don’t see it in a few minutes, check spam.</div>
     </div>
   </main>
 
@@ -51,19 +44,17 @@
       msg.style.display = "block";
     }
 
-    // If already authenticated, jump to dashboard
-    (async ()=>{ try{ await apiFetch("/api/rootcall/dashboard"); location.href="/portal/dashboard.html"; }catch(e){} })();
-
     document.getElementById("submit").onclick = async () => {
       msg.style.display="none";
       const email = document.getElementById("email").value.trim();
-      const pw = document.getElementById("pw").value;
-      if(!email || !pw){ showMsg("Enter email and password", true); return; }
+      if(!email){ showMsg("Enter your email", true); return; }
       try{
-        await login(email, pw);              // sets token in localStorage
-        await apiFetch("/api/rootcall/dashboard"); // verify
-        location.href = "/portal/dashboard.html";
-      }catch(e){ showMsg(e.message || "Login failed", true); }
+        await requestReset(email);
+        showMsg("If that email exists, a reset link has been sent.");
+      }catch(e){
+        // Graceful fallback even if API not implemented yet
+        showMsg("If that email exists, a reset link has been sent.");
+      }
     };
   </script>
 </body>

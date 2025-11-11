@@ -10,9 +10,9 @@
             --green: #0d3d2f;
             --ivory: #f9f6f3;
         }
-        
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        
+
         body {
             font-family: 'Inter', sans-serif;
             background: linear-gradient(135deg, var(--green) 0%, #1a5a42 100%);
@@ -22,7 +22,7 @@
             justify-content: center;
             padding: 20px;
         }
-        
+
         .login-container {
             background: white;
             border-radius: 20px;
@@ -31,14 +31,14 @@
             width: 100%;
             overflow: hidden;
         }
-        
+
         .login-header {
             background: linear-gradient(135deg, var(--green) 0%, #1a5a42 100%);
             color: white;
             padding: 40px;
             text-align: center;
         }
-        
+
         .login-header h1 {
             font-size: 2rem;
             font-weight: 800;
@@ -48,16 +48,16 @@
             justify-content: center;
             gap: 10px;
         }
-        
+
         .login-header p {
             opacity: 0.9;
             font-size: 1rem;
         }
-        
+
         .login-body {
             padding: 40px;
         }
-        
+
         .tabs {
             display: flex;
             gap: 10px;
@@ -66,7 +66,7 @@
             padding: 6px;
             border-radius: 50px;
         }
-        
+
         .tab {
             flex: 1;
             padding: 12px;
@@ -78,23 +78,23 @@
             color: var(--green);
             transition: all 0.3s;
         }
-        
+
         .tab.active {
             background: var(--green);
             color: white;
         }
-        
+
         .form-group {
             margin-bottom: 20px;
         }
-        
+
         .form-group label {
             display: block;
             margin-bottom: 8px;
             font-weight: 600;
             color: var(--green);
         }
-        
+
         .form-group input {
             width: 100%;
             padding: 15px;
@@ -104,13 +104,13 @@
             transition: all 0.3s;
             font-family: 'Inter', sans-serif;
         }
-        
+
         .form-group input:focus {
             outline: none;
             border-color: var(--green);
             box-shadow: 0 0 0 3px rgba(13, 61, 47, 0.1);
         }
-        
+
         .btn {
             width: 100%;
             padding: 15px;
@@ -124,57 +124,57 @@
             transition: all 0.3s;
             box-shadow: 0 4px 15px rgba(13, 61, 47, 0.3);
         }
-        
+
         .btn:hover {
             background: #1a5a42;
             transform: translateY(-2px);
             box-shadow: 0 6px 25px rgba(13, 61, 47, 0.4);
         }
-        
+
         .message {
             padding: 15px;
             border-radius: 12px;
             margin-bottom: 20px;
             display: none;
         }
-        
+
         .message.success {
             background: #e8f5e9;
             color: #2e7d32;
             border-left: 4px solid #4caf50;
         }
-        
+
         .message.error {
             background: #ffebee;
             color: #c62828;
             border-left: 4px solid #f44336;
         }
-        
+
         .form-footer {
             text-align: center;
             margin-top: 20px;
             color: #666;
         }
-        
+
         .form-footer a {
             color: var(--green);
             text-decoration: none;
             font-weight: 600;
         }
-        
+
         .form-footer a:hover {
             text-decoration: underline;
         }
-        
+
         .hidden {
             display: none !important;
         }
-        
+
         @media (max-width: 500px) {
             .login-header h1 {
                 font-size: 1.5rem;
             }
-            
+
             .login-body {
                 padding: 30px 20px;
             }
@@ -187,53 +187,53 @@
             <h1>Ìª°Ô∏è RootCall</h1>
             <p>Protect your peace of mind</p>
         </div>
-        
+
         <div class="login-body">
             <div class="tabs">
                 <button class="tab active" onclick="showLogin()">Sign In</button>
                 <button class="tab" onclick="showSignup()">Sign Up</button>
             </div>
-            
+
             <div id="message" class="message"></div>
-            
+
             <!-- Login Form -->
             <form id="login-form" onsubmit="login(event)">
                 <div class="form-group">
                     <label for="login-email">Email Address</label>
                     <input type="email" id="login-email" required>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="login-password">Password</label>
                     <input type="password" id="login-password" required>
                 </div>
-                
+
                 <button type="submit" class="btn">Sign In</button>
-                
+
                 <div class="form-footer">
                     Don't have an account? <a href="#" onclick="showSignup(); return false;">Sign up</a>
                 </div>
             </form>
-            
+
             <!-- Signup Form -->
             <form id="signup-form" class="hidden" onsubmit="signup(event)">
                 <div class="form-group">
                     <label for="signup-name">Full Name</label>
                     <input type="text" id="signup-name" required>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="signup-email">Email Address</label>
                     <input type="email" id="signup-email" required>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="signup-password">Password</label>
                     <input type="password" id="signup-password" required minlength="6">
                 </div>
-                
+
                 <button type="submit" class="btn">Create Account</button>
-                
+
                 <div class="form-footer">
                     Already have an account? <a href="#" onclick="showLogin(); return false;">Sign in</a>
                 </div>
@@ -243,7 +243,7 @@
 
     <script>
         const API = 'https://rootcall.onrender.com';
-        
+
         function showSignup() {
             document.getElementById('login-form').classList.add('hidden');
             document.getElementById('signup-form').classList.remove('hidden');
@@ -251,7 +251,7 @@
             document.querySelectorAll('.tab')[0].classList.remove('active');
             document.querySelectorAll('.tab')[1].classList.add('active');
         }
-        
+
         function showLogin() {
             document.getElementById('signup-form').classList.add('hidden');
             document.getElementById('login-form').classList.remove('hidden');
@@ -259,14 +259,14 @@
             document.querySelectorAll('.tab')[1].classList.remove('active');
             document.querySelectorAll('.tab')[0].classList.add('active');
         }
-        
+
         function showMessage(text, isError = false) {
             const msg = document.getElementById('message');
             msg.textContent = text;
             msg.className = 'message ' + (isError ? 'error' : 'success');
             msg.style.display = 'block';
         }
-        
+
         async function signup(e) {
             e.preventDefault();
             try {
@@ -279,9 +279,9 @@
                         password: document.getElementById('signup-password').value
                     })
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (response.ok) {
                     localStorage.setItem('token', data.access_token);
                     localStorage.setItem('user', JSON.stringify(data.user));
@@ -294,22 +294,22 @@
                 showMessage('Error: ' + err.message, true);
             }
         }
-        
+
         async function login(e) {
             e.preventDefault();
             try {
-                const formData = new URLSearchParams();
-                formData.append('username', document.getElementById('login-email').value);
-                formData.append('password', document.getElementById('login-password').value);
-                
+                // FIXED: Send JSON instead of form data
                 const response = await fetch(API + '/api/auth/login', {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                    body: formData
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        email: document.getElementById('login-email').value,
+                        password: document.getElementById('login-password').value
+                    })
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (response.ok) {
                     localStorage.setItem('token', data.access_token);
                     localStorage.setItem('user', JSON.stringify(data.user));

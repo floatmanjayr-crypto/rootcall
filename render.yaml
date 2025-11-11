@@ -1,14 +1,30 @@
 services:
   - type: web
-    name: rootcall
-    runtime: python
-    buildCommand: pip install -r backend/requirements.txt
-    startCommand: cd backend && uvicorn app.main_autofix:app --host 0.0.0.0 --port $PORT
+    name: rootcall-backend
+    env: python
+    region: oregon
+    buildCommand: pip install -r backend/requirements.txt && cd backend && alembic upgrade head
+    startCommand: cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
-      - key: PYTHONPATH
-        value: backend
-      - key: JWT_SECRET
+      - key: DATABASE_URL
+        fromDatabase:
+          name: rootcall-db
+          property: connectionString
+      - key: JWT_SECRET_KEY
         generateValue: true
-      - key: FRONTEND_ORIGIN
-        value: https://rootcall.onrender.com
-    healthCheckPath: /healthz
+      - key: TELNYX_API_KEY
+        sync: false
+      - key: RETELL_API_KEY
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_ESSENTIAL_PRICE_ID
+        sync: false
+      - key: STRIPE_FAMILY_PRICE_ID
+        sync: false
+      - key: STRIPE_GUARDIAN_PRICE_ID
+        sync: false
+databases:
+  - name: rootcall-db
+    databaseName: rootcall
+    user: rootcall

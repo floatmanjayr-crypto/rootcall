@@ -1,108 +1,72 @@
-"""VoIP Platform Main Application"""
-from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
+from fastapi import FastAPI, Response, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from starlette.middleware.proxy_headers import ProxyHeadersMiddleware
+from jose import jwt
+import os, time
 
-import os
-from pathlib import Path
-from app.config import settings
-from app.database import engine, Base
-from app.routers import rootcall_portal
-from app.routers import payments, number_management, auth, admin, stripe_webhooks
+from .deps_autofix import get_current_user
 
-# Import routers
-from app.routers import (
-    provision_inbound,
-    telnyx_webhooks,
-    texml,
-    retell,
-    auto_retell,
-    client_onboarding,
-    outbound_calls
-)
-from app.routers import telnyx as telnyx_router
-from app.routers import bulk as bulk_router
-from app.routers.retell_inbound import router as retell_inbound_router
-from app.api.v1 import provision_finalize
-from app.routers import agent_templates
-from app.routers.rootcall_screen import router as rootcall_screen_router
+JWT_SECRET = os.getenv("JWT_SECRET", "devsecret")
+JWT_ALG = "HS256"
+FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "https://rootcall.onrender.com")
 
-# Create database tables
-Base.metadata.create_all(bind=engine)
+app = FastAPI(title="RootCall (autofix)")
 
-# Initialize FastAPI
-app = FastAPI(
-    title="VoIP Platform API",
-    description="Complete VoIP platform with conversational AI",
-    version="1.0.0"
-)
+# Trust Render/Cloudflare proxy headers so Secure cookies behave
+app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
 
-# CORS middleware
+# Exact-origin CORS with credentials allowed (cookies)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://getrootcall.com",
-        "http://getrootcall.com",
-        "https://www.getrootcall.com",
-        "http://www.getrootcall.com",
-        "https://rootcall.onrender.com",
-        "http://localhost:3000",
-        "http://localhost:8000"
-    ],
+    allow_origins=[FRONTEND_ORIGIN],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET","POST","PUT","DELETE","OPTIONS"],
     allow_headers=["*"],
 )
 
-# Include all routers
-app.include_router(telnyx_webhooks.router)
-app.include_router(texml.router)
-app.include_router(retell.router)
-app.include_router(retell_inbound_router)
-app.include_router(auto_retell.router)
-app.include_router(provision_inbound.router)
-app.include_router(client_onboarding.router)
-app.include_router(telnyx_router.router)
-app.include_router(bulk_router.router)
-app.include_router(provision_finalize.router)
-app.include_router(outbound_calls.router)
-app.include_router(rootcall_portal.router)
-app.include_router(agent_templates.router)
-app.include_router(rootcall_screen_router)
-app.include_router(payments.router)
-app.include_router(number_management.router)
-app.include_router(auth.router)
-app.include_router(admin.router)
-app.include_router(stripe_webhooks.router)
+# Serve your existing static site (already in backend/static)
+if os.path.isdir(os.path.join(os.path.dirname(__file__), "..", "static")):
+    app.mount("/", StaticFiles(directory=os.path.join(os.path.dirname(__file__), "..", "static"), html=True), name="static")
 
-# Mount static files - MUST BE BEFORE if __name__
-# Try multiple possible paths for static directory
-static_paths = [
-    Path("static"),           # When running from backend/
-    Path("backend/static"),   # When running from root
-    Path(__file__).parent.parent / "static"  # Absolute path
-]
+def issue_jwt(user_id: str) -> str:
+    return jwt.encode(
+        {"sub": user_id, "exp": int(time.time()) + 7*24*3600},
+        JWT_SECRET,
+        algorithm=JWT_ALG,
+    )
 
-for static_dir in static_paths:
-    if static_dir.exists() and static_dir.is_dir():
-        app.mount("/", StaticFiles(directory=str(static_dir), html=True), name="static")
-        print(f"✅ Mounted static files from: {static_dir}")
-        break
-else:
-    print("⚠️ Warning: No static directory found!")
+@app.get("/healthz")
+def healthz():
+    return {"ok": True}
 
-@app.get("/api")
-async def root():
-    return {
-        "message": "VoIP Platform API",
-        "status": "running",
-        "version": "1.0.0"
-    }
+@app.post("/api/auth/login")
+def login(resp: Response):
+    # TODO: Replace with real credential check
+    user_id = "user-123"
+    token = issue_jwt(user_id)
+    # Cross-site safe cookie (Render = HTTPS)
+    resp.set_cookie(
+        key="auth",
+        value=token,
+        httponly=True,
+        secure=True,
+        samesite="none",
+        path="/",
+        max_age=7*24*3600,
+    )
+    return {"ok": True, "token": token}
 
-@app.get("/health")
-async def health():
-    return {"status": "ok"}
+@app.post("/api/auth/logout")
+def logout(resp: Response):
+    resp.delete_cookie("auth", path="/")
+    return {"ok": True}
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+@app.get("/api/auth/me")
+def me(user = Depends(get_current_user)):
+    return {"ok": True, "user": user}
+
+@app.get("/api/rootcall/dashboard")
+def dashboard(user = Depends(get_current_user)):
+    # Example data; replace with your real stats
+    return {"stats": {"calls_today": 12, "blocked": 5}, "user": user}

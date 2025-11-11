@@ -1,3 +1,5 @@
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
 sqlalchemy==2.0.23
 psycopg2-binary==2.9.9
 python-dotenv==1.0.1
@@ -14,8 +16,3 @@ stripe>=10,<13
 aiofiles==23.2.1
 email-validator==2.1.0
 pytz==2024.1
-# --- server stack (aligned) ---
-fastapi==0.111.0
-starlette==0.37.2
-uvicorn[standard]==0.30.6
-anyio>=4.0.0,<5

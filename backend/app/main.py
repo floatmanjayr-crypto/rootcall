@@ -32,7 +32,6 @@ Base.metadata.create_all(bind=engine)
 
 # Initialize FastAPI
 app = FastAPI(
-
     title="VoIP Platform API",
     description="Complete VoIP platform with conversational AI",
     version="1.0.0"
@@ -69,12 +68,30 @@ app.include_router(provision_finalize.router)
 app.include_router(outbound_calls.router)
 app.include_router(rootcall_portal.router)
 app.include_router(agent_templates.router)
-app.include_router(rootcall_screen_router)  # RootCall Call Screening
+app.include_router(rootcall_screen_router)
 app.include_router(payments.router)
 app.include_router(number_management.router)
 app.include_router(auth.router)
 app.include_router(admin.router)
-@app.get("/")
+app.include_router(stripe_webhooks.router)
+
+# Mount static files - MUST BE BEFORE if __name__
+# Try multiple possible paths for static directory
+static_paths = [
+    Path("static"),           # When running from backend/
+    Path("backend/static"),   # When running from root
+    Path(__file__).parent.parent / "static"  # Absolute path
+]
+
+for static_dir in static_paths:
+    if static_dir.exists() and static_dir.is_dir():
+        app.mount("/", StaticFiles(directory=str(static_dir), html=True), name="static")
+        print(f"✅ Mounted static files from: {static_dir}")
+        break
+else:
+    print("⚠️ Warning: No static directory found!")
+
+@app.get("/api")
 async def root():
     return {
         "message": "VoIP Platform API",
@@ -89,14 +106,3 @@ async def health():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
-
-
-# Only mount static files if the directory exists
-static_dir = Path("static")
-if static_dir.exists() and static_dir.is_dir():
-    app.mount("/static", StaticFiles(directory="static"), name="static")
-
-# Import stripe webhook router
-from app.routers import stripe_webhooks
-app.include_router(stripe_webhooks.router)
-

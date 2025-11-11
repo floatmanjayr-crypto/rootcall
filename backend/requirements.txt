@@ -14,6 +14,8 @@ stripe>=10,<13
 aiofiles==23.2.1
 email-validator==2.1.0
 pytz==2024.1
+# --- server stack (aligned) ---
 fastapi==0.111.0
-starlette==0.36.3
-uvicorn[standard]==0.27.1
+starlette==0.37.2
+uvicorn[standard]==0.30.6
+anyio>=4.0.0,<5

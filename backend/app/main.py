@@ -52,29 +52,6 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-
-# Request logging middleware
-import logging
-import time
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-@app.middleware("http")
-async def log_requests(request, call_next):
-    start = time.time()
-    
-    # Log request
-    logger.info(f"➡️  {request.method} {request.url.path}")
-    
-    response = await call_next(request)
-    
-    # Log response
-    duration = time.time() - start
-    emoji = "✅" if response.status_code < 400 else "❌"
-    logger.info(f"{emoji} {request.method} {request.url.path} - {response.status_code} ({duration:.2f}s)")
-    
-    return response
 )
 
 # Include all routers

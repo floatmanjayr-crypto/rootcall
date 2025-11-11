@@ -1012,7 +1012,7 @@
         // Load Dashboard
         async function loadDashboard() {
             try {
-                const response = await fetch(API + '/api/rootcall/dashboard`, {
+                const response = await fetch(API + '/api/rootcall/dashboard', {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -1120,7 +1120,7 @@
             message.textContent = 'Step 1/4: Searching for available numbers...';
 
             try {
-                const response = await fetch(API + '/api/rootcall/provision`, {
+                const response = await fetch(API + '/api/rootcall/provision', {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`,

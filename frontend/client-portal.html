@@ -1160,7 +1160,7 @@
             }
 
             try {
-                const response = await fetch(API + '/api/rootcall/update-forwarding?forwarding_number=' + encodeURIComponent(number) + '`, {
+                const response = await fetch(API + '/api/rootcall/update-forwarding?forwarding_number=' + encodeURIComponent(number)', {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`
@@ -1192,7 +1192,7 @@
             }
 
             try {
-                const response = await fetch(API + '/api/rootcall/add-trusted-contact?phone_number=' + encodeURIComponent(number) + '&name=' + encodeURIComponent(name || 'Contact') + '`, {
+                const response = await fetch(API + '/api/rootcall/add-trusted-contact?phone_number=' + encodeURIComponent(number) + '&name=' + encodeURIComponent(name || 'Contact')', {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`

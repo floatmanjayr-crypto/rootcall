@@ -24,14 +24,17 @@
     html,body{margin:0;background:var(--ivory);color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
     a{color:inherit;text-decoration:none}
     .container{max-width:1120px;margin:0 auto;padding:24px}
-    .btn{display:inline-flex;align-items:center;gap:.6rem;padding:14px 20px;border-radius:12px;font-weight:700;letter-spacing:.2px;cursor:pointer;border:none}
+    .btn{display:inline-flex;align-items:center;gap:.6rem;padding:14px 20px;border-radius:12px;font-weight:700;letter-spacing:.2px;cursor:pointer;border:none;transition:all 0.3s ease}
     .btn-primary{background:var(--green);color:#fff;box-shadow:var(--shadow)}
-    .btn-primary:hover{filter:brightness(1.05)}
+    .btn-primary:hover{filter:brightness(1.1);transform:translateY(-2px)}
     .btn-ghost{border:2px solid var(--green);color:var(--green);background:transparent}
+    .btn-ghost:hover{background:var(--green);color:#fff}
     .badge{display:inline-block;background:#e8f5ef;color:var(--green);padding:6px 10px;border-radius:999px;font-weight:700;font-size:.78rem}
     header{position:sticky;top:0;backdrop-filter:saturate(180%) blur(6px);background:color-mix(in oklab, var(--ivory) 85%, white 15%);border-bottom:1px solid #ece7e2;z-index:20}
     .nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0}
-    .nav a.cta{margin-left:auto}
+    .nav-links{display:flex;align-items:center;gap:28px}
+    .nav-links a{font-weight:600;color:var(--muted);transition:color 0.3s}
+    .nav-links a:hover{color:var(--green)}
     .logo{display:flex;align-items:center;gap:12px;font-weight:800;color:var(--green);letter-spacing:.5px}
     .logo svg{width:42px;height:42px}
     .hero{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center;padding:54px 0 18px}
@@ -76,7 +79,7 @@
     
     @media (max-width: 960px){ 
       .hero{grid-template-columns:1fr} 
-      .nav .hide-sm{display:none} 
+      .nav-links .hide-sm{display:none} 
       .grid-3{grid-template-columns:1fr} 
     }
   </style>
@@ -92,12 +95,12 @@
         </svg>
         <span>ROOTCALL</span>
       </div>
-      <nav class="hide-sm" aria-label="Main navigation">
-        <a href="#how" class="hide-sm" style="margin-right:18px">How it works</a>
-        <a href="#pricing" class="hide-sm" style="margin-right:18px">Pricing</a>
-        <a href="#faq" class="hide-sm" style="margin-right:18px">FAQ</a>
-      </nav>
-      <a href="/static/login.html" class="btn btn-primary cta">Sign In</a>
+      <div class="nav-links">
+        <a href="#how" class="hide-sm">How it works</a>
+        <a href="#pricing" class="hide-sm">Pricing</a>
+        <a href="#faq" class="hide-sm">FAQ</a>
+        <a href="login.html" class="btn btn-primary">Sign In</a>
+      </div>
     </div>
   </header>
 
@@ -263,7 +266,7 @@
         <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">Create Account & Subscribe</button>
       </form>
       <p style="text-align:center;margin-top:15px;color:var(--muted);font-size:14px">
-        Already have an account? <a href="/static/login.html" style="color:var(--green);font-weight:700">Sign in</a>
+        Already have an account? <a href="login.html" style="color:var(--green);font-weight:700">Sign in here</a>
       </p>
     </div>
   </div>
@@ -315,7 +318,6 @@
       const plan = document.getElementById('signup-plan').value;
 
       try {
-        // Create account
         const signupResponse = await fetch(API + '/api/auth/signup', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
@@ -333,14 +335,12 @@
           return;
         }
 
-        // Store user data
         localStorage.setItem('token', signupData.access_token);
         localStorage.setItem('user', JSON.stringify(signupData.user));
         localStorage.setItem('selected_plan', plan);
 
         showMessage('Account created! Redirecting to payment...');
         
-        // Redirect to Stripe checkout
         setTimeout(async () => {
           try {
             const checkoutResponse = await fetch(API + '/api/payments/create-checkout', {
@@ -382,27 +382,5 @@
       });
     });
   </script>
-</body>
-</html>
-
-<!-- ========================================= -->
-<!-- í¼ RootCall Footer -->
-<!-- ========================================= -->
-<footer style="margin-top:80px;background:#0A1220;border-top:1px solid rgba(255,255,255,0.08);padding:40px 20px;text-align:center;font-family:Inter,system-ui,Arial;color:#E6F0FF">
-  <div style="max-width:900px;margin:0 auto;">
-    <img src="logo.png" alt="RootCall Logo" style="height:44px;vertical-align:middle;margin-bottom:10px;">
-    <p style="margin:10px 0;font-size:15px;opacity:0.9">
-      Stay protected from phone scams. RootCall shields your calls with AI precision.
-    </p>
-    <p style="margin:16px 0 8px;">
-      <a href="/privacy.html" style="color:#2FD7C4;text-decoration:none;margin-right:20px;">Privacy Policy</a>
-      <a href="/terms.html" style="color:#2FD7C4;text-decoration:none;">Terms of Service</a>
-    </p>
-    <p style="margin-top:12px;font-size:13px;opacity:0.7">
-      &copy; 2025 RootCall â€” All rights reserved.
-    </p>
-  </div>
-</footer>
-
 </body>
 </html>

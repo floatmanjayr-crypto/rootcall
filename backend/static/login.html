@@ -112,6 +112,19 @@
       font-size: 0.9rem;
       color: #ddd;
     }
+    .back-link {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(255,255,255,0.1);
+    }
+    .back-link a {
+      color: #ddd;
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+    .back-link a:hover {
+      color: white;
+    }
   </style>
 </head>
 <body>
@@ -137,11 +150,19 @@
       <a href="forgot-password.html">Forgot Password?</a> |
       <a href="index.html">Sign up</a>
     </div>
+
+    <div class="back-link">
+      <a href="index.html">← Back to Home</a>
+    </div>
   </div>
 
   <script>
-    // Check if user is already logged in
-    (function checkAuth() {
+    // Check if redirected from logout
+    const urlParams = new URLSearchParams(window.location.search);
+    const fromLogout = urlParams.get('logout');
+    
+    // Only auto-redirect if NOT coming from logout
+    if (!fromLogout) {
       const user = localStorage.getItem('user');
       if (user) {
         try {
@@ -149,14 +170,13 @@
           if (userData.id || userData.email) {
             // User already authenticated, redirect to dashboard
             window.location.href = '/client-portal.html';
-            return;
           }
         } catch (e) {
           // Invalid user data, clear it
           localStorage.removeItem('user');
         }
       }
-    })();
+    }
 
     function togglePassword() {
       const passwordInput = document.getElementById("password");

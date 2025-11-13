@@ -740,7 +740,8 @@
         function logout() {
             if (confirm('Are you sure you want to logout?')) {
                 localStorage.removeItem('user');
-                alert('Logged out successfully');
+                localStorage.removeItem('token');
+                window.location.href = '/login.html?logout=true';
             }
         }
 

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>BadBot Call Shield - Dashboard</title>
+    <title>RootCall Call Shield - Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -18,7 +18,7 @@
         <div class="container mx-auto px-6 py-4">
             <div class="flex justify-between items-center">
                 <h1 class="text-2xl font-bold text-purple-600">
-                    <i class="fas fa-shield-alt mr-2"></i>BadBot Call Shield
+                    <i class="fas fa-shield-alt mr-2"></i>RootCall Call Shield
                 </h1>
                 <div class="flex items-center gap-4">
                     <a href="/static/shield-pricing.html" class="text-gray-600 hover:text-purple-600">
@@ -213,7 +213,7 @@
                         <a href="/static/purchase-number.html" class="block px-4 py-3 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg transition text-center font-medium">
                             <i class="fas fa-phone-plus mr-2"></i>Buy Shield Number
                         </a>
-                        <a href="/api/badbot/export/1" class="block px-4 py-3 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg transition text-center font-medium">
+                        <a href="/api/rootcall/export/1" class="block px-4 py-3 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg transition text-center font-medium">
                             <i class="fas fa-download mr-2"></i>Export Call History
                         </a>
                         <a href="/static/shield-pricing.html" class="block px-4 py-3 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg transition text-center font-medium">
@@ -254,7 +254,7 @@
 
     <script>
         const CLIENT_ID = 1;
-        const API = 'http://localhost:8000/api/badbot';
+        const API = 'http://localhost:8000/api/rootcall';
 
         // Check if user is logged in
         const user = JSON.parse(localStorage.getItem('user') || 'null');

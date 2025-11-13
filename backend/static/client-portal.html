@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BadBot Call Shield - Your Protection Dashboard</title>
+    <title>RootCall Call Shield - Your Protection Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -102,7 +102,7 @@
                         <i class="fas fa-shield-alt text-white text-xl"></i>
                     </div>
                     <div>
-                        <h1 class="text-2xl font-bold text-gray-800">BadBot Call Shield</h1>
+                        <h1 class="text-2xl font-bold text-gray-800">RootCall Call Shield</h1>
                         <p class="text-xs text-gray-600">AI-Powered Protection</p>
                     </div>
                 </div>
@@ -436,7 +436,7 @@
                         <i class="fas fa-history text-purple-600 mr-2"></i>
                         Recent Activity
                     </h3>
-                    <a href="/api/badbot/export/1" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
+                    <a href="/api/rootcall/export/1" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
                         <i class="fas fa-download mr-2"></i>Export CSV
                     </a>
                 </div>
@@ -485,7 +485,7 @@
                 <div class="w-16 h-16 bg-gradient-to-br from-purple-600 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
                     <i class="fas fa-shield-alt text-white text-2xl"></i>
                 </div>
-                <h3 class="text-2xl font-bold">BadBot Call Shield</h3>
+                <h3 class="text-2xl font-bold">RootCall Call Shield</h3>
                 <p class="text-gray-400">Protecting what matters most</p>
             </div>
             <div class="flex justify-center gap-6 text-gray-400">
@@ -506,14 +506,14 @@
         async function loadData() {
             try {
                 // Load stats
-                const stats = await fetch(`${API}/api/badbot/stats/${CLIENT_ID}`).then(r => r.json());
+                const stats = await fetch(`${API}/api/rootcall/stats/${CLIENT_ID}`).then(r => r.json());
                 document.getElementById('spam-blocked').textContent = stats.spam_blocked;
                 document.getElementById('calls-screened').textContent = stats.calls_screened;
                 document.getElementById('trusted-connected').textContent = stats.trusted_forwarded;
                 document.getElementById('total-threats').textContent = stats.total_calls;
 
                 // Load config
-                const configRes = await fetch(`${API}/api/badbot/config/${CLIENT_ID}`);
+                const configRes = await fetch(`${API}/api/rootcall/config/${CLIENT_ID}`);
                 if (configRes.ok) {
                     const config = await configRes.json();
                     document.getElementById('client-cell').value = config.client_cell || '';
@@ -564,7 +564,7 @@
                 }
 
                 // Load recent calls
-                const callsRes = await fetch(`${API}/api/badbot/calls/${CLIENT_ID}`);
+                const callsRes = await fetch(`${API}/api/rootcall/calls/${CLIENT_ID}`);
                 if (callsRes.ok) {
                     const calls = await callsRes.json();
                     const tbody = document.getElementById('call-history');
@@ -640,7 +640,7 @@
                 return;
             }
             try {
-                await fetch(`${API}/api/badbot/config/${CLIENT_ID}`, {
+                await fetch(`${API}/api/rootcall/config/${CLIENT_ID}`, {
                     method: 'PATCH',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({client_cell: newNumber})
@@ -654,7 +654,7 @@
 
         async function saveSettings() {
             try {
-                await fetch(`${API}/api/badbot/config/${CLIENT_ID}`, {
+                await fetch(`${API}/api/rootcall/config/${CLIENT_ID}`, {
                     method: 'PATCH',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
@@ -677,7 +677,7 @@
                 return;
             }
             try {
-                await fetch(`${API}/api/badbot/trusted-contacts/${CLIENT_ID}`, {
+                await fetch(`${API}/api/rootcall/trusted-contacts/${CLIENT_ID}`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({phone_number: phone, name: name})
@@ -693,7 +693,7 @@
         async function removeContact(phone) {
             if (!confirm(`Remove ${phone} from trusted contacts?`)) return;
             try {
-                await fetch(`${API}/api/badbot/trusted-contacts/${CLIENT_ID}/${encodeURIComponent(phone)}`, {
+                await fetch(`${API}/api/rootcall/trusted-contacts/${CLIENT_ID}/${encodeURIComponent(phone)}`, {
                     method: 'DELETE'
                 });
                 loadData();

@@ -1,248 +1,187 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>BadBot Call Shield - Login</title>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        .container {
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            padding: 40px;
-            width: 100%;
-            max-width: 400px;
-        }
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .logo {
-            font-size: 32px;
-            font-weight: 900;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 10px;
-        }
-        .subtitle {
-            color: #666;
-            font-size: 14px;
-        }
-        h2 {
-            font-size: 24px;
-            margin-bottom: 20px;
-            color: #333;
-        }
-        .form-group {
-            margin-bottom: 20px;
-        }
-        label {
-            display: block;
-            font-size: 14px;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 8px;
-        }
-        input {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e5e7eb;
-            border-radius: 8px;
-            font-size: 16px;
-            transition: border-color 0.3s;
-        }
-        input:focus {
-            outline: none;
-            border-color: #7c3aed;
-        }
-        button {
-            width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-        button:hover {
-            transform: scale(1.02);
-        }
-        .toggle-link {
-            text-align: center;
-            margin-top: 20px;
-            color: #666;
-        }
-        .toggle-link a {
-            color: #7c3aed;
-            text-decoration: none;
-            font-weight: bold;
-        }
-        .toggle-link a:hover {
-            text-decoration: underline;
-        }
-        .message {
-            padding: 12px;
-            border-radius: 8px;
-            margin-top: 15px;
-            display: none;
-        }
-        .message.error {
-            background: #fee;
-            color: #c00;
-            border: 1px solid #fcc;
-        }
-        .message.success {
-            background: #efe;
-            color: #060;
-            border: 1px solid #cfc;
-        }
-        .hidden {
-            display: none;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>Login | RootCall</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --green: #0d3d2f;
+      --ivory: #f9f6f3;
+      --light: rgba(255, 255, 255, 0.07);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: Inter, sans-serif;
+      background: linear-gradient(135deg, var(--green), #124b39);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .login-box {
+      background: var(--light);
+      padding: 30px 25px;
+      border-radius: 16px;
+      max-width: 400px;
+      width: 100%;
+      text-align: center;
+      backdrop-filter: blur(10px);
+    }
+    .login-box img {
+      width: 80px;
+      margin-bottom: 20px;
+    }
+    h2 {
+      font-size: 1.8rem;
+      margin-bottom: 20px;
+    }
+    .input-group {
+      margin: 15px 0;
+      text-align: left;
+    }
+    label {
+      font-size: 0.9rem;
+      margin-bottom: 5px;
+      display: block;
+    }
+    input {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      outline: none;
+    }
+    .password-toggle {
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      font-size: 0.8rem;
+      margin-top: 5px;
+    }
+    .password-toggle input[type="checkbox"] {
+      margin-right: 5px;
+    }
+    .forgot {
+      text-align: right;
+      margin-top: 5px;
+    }
+    .forgot a {
+      color: #ffffffcc;
+      font-size: 0.85rem;
+      text-decoration: underline;
+    }
+    .signup {
+      text-align: center;
+      margin-top: 15px;
+      font-size: 0.9rem;
+    }
+    .signup a {
+      color: #ffffffcc;
+      font-weight: 700;
+      text-decoration: underline;
+    }
+    .btn {
+      margin-top: 20px;
+      background: white;
+      color: var(--green);
+      padding: 12px 30px;
+      font-weight: 700;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      width: 100%;
+      transition: all 0.3s;
+    }
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    }
+    @media (max-width: 480px) {
+      .login-box {
+        padding: 20px;
+      }
+      h2 {
+        font-size: 1.5rem;
+      }
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <div class="logo">BADBOT</div>
-            <div class="subtitle">Call Shield Protection</div>
-        </div>
+  <div class="login-box">
+    <img src="/static/rootcall-logo.png" alt="RootCall Logo">
+    <h2>Sign In</h2>
 
-        <div id="login-form">
-            <h2>Sign In</h2>
-            <form onsubmit="login(event)">
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" id="login-email" required>
-                </div>
-                <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" id="login-password" required>
-                </div>
-                <button type="submit">Sign In</button>
-            </form>
-            <div class="toggle-link">
-                Don't have an account? <a href="#" onclick="showSignup()">Sign Up</a>
-            </div>
-        </div>
+    <form id="loginForm">
+      <div class="input-group">
+        <label for="cell">Phone or Email</label>
+        <input type="text" id="cell" name="cell" required>
+      </div>
 
-        <div id="signup-form" class="hidden">
-            <h2>Create Account</h2>
-            <form onsubmit="signup(event)">
-                <div class="form-group">
-                    <label>Full Name</label>
-                    <input type="text" id="signup-name" required>
-                </div>
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" id="signup-email" required>
-                </div>
-                <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" id="signup-password" required minlength="6">
-                </div>
-                <button type="submit">Create Account</button>
-            </form>
-            <div class="toggle-link">
-                Already have an account? <a href="#" onclick="showLogin()">Sign In</a>
-            </div>
+      <div class="input-group">
+        <label for="pass">Password</label>
+        <input type="password" id="pass" name="pass" required>
+        <div class="password-toggle">
+          <label><input type="checkbox" onclick="togglePassword()"> Show Password</label>
         </div>
+      </div>
 
-        <div id="message" class="message"></div>
+      <div class="forgot">
+        <a href="/forgot-password.html">Forgot password?</a>
+      </div>
+
+      <button class="btn" type="submit">Login</button>
+    </form>
+
+    <div class="signup">
+      Don’t have an account?  
+      <a href="/index.html">Sign Up Here</a>
     </div>
+  </div>
 
-    <script>
-        const API = 'http://localhost:8000';
+  <script>
+    const API = 'https://rootcall.onrender.com';
 
-        function showSignup() {
-            document.getElementById('login-form').classList.add('hidden');
-            document.getElementById('signup-form').classList.remove('hidden');
-            document.getElementById('message').style.display = 'none';
+    function togglePassword() {
+      const pass = document.getElementById('pass');
+      pass.type = pass.type === 'password' ? 'text' : 'password';
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const cell = document.getElementById('cell').value;
+      const pass = document.getElementById('pass').value;
+
+      try {
+        const response = await fetch(API + '/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: cell,
+            password: pass
+          })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          localStorage.setItem('token', data.access_token);
+          localStorage.setItem('user', JSON.stringify(data.user));
+
+          // Redirect
+          window.location.href = "/client-portal.html";
+        } else {
+          alert(data.detail || "Login failed");
         }
-
-        function showLogin() {
-            document.getElementById('signup-form').classList.add('hidden');
-            document.getElementById('login-form').classList.remove('hidden');
-            document.getElementById('message').style.display = 'none';
-        }
-
-        function showMessage(text, isError = false) {
-            const msg = document.getElementById('message');
-            msg.textContent = text;
-            msg.className = 'message ' + (isError ? 'error' : 'success');
-            msg.style.display = 'block';
-        }
-
-        async function signup(e) {
-            e.preventDefault();
-            try {
-                const response = await fetch(API + '/api/auth/signup', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        full_name: document.getElementById('signup-name').value,
-                        email: document.getElementById('signup-email').value,
-                        password: document.getElementById('signup-password').value
-                    })
-                });
-
-                const data = await response.json();
-                
-                if (response.ok) {
-                    localStorage.setItem('token', data.access_token);
-                    localStorage.setItem('user', JSON.stringify(data.user));
-                    showMessage('Account created! Redirecting...');
-                    setTimeout(() => window.location.href = '/static/shield-pricing.html', 1500);
-                } else {
-                    showMessage(data.detail || 'Signup failed', true);
-                }
-            } catch (err) {
-                showMessage('Error: ' + err.message, true);
-            }
-        }
-
-        async function login(e) {
-            e.preventDefault();
-            try {
-                const formData = new URLSearchParams();
-                formData.append('username', document.getElementById('login-email').value);
-                formData.append('password', document.getElementById('login-password').value);
-
-                const response = await fetch(API + '/api/auth/login', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                    body: formData
-                });
-
-                const data = await response.json();
-                
-                if (response.ok) {
-                    localStorage.setItem('token', data.access_token);
-                    localStorage.setItem('user', JSON.stringify(data.user));
-                    showMessage('Welcome back! Redirecting...');
-                    setTimeout(() => window.location.href = '/static/client-portal.html', 1500);
-                } else {
-                    showMessage(data.detail || 'Login failed', true);
-                }
-            } catch (err) {
-                showMessage('Error: ' + err.message, true);
-            }
-        }
-    </script>
+      } catch (err) {
+        alert("Server error, try again.");
+      }
+    });
+  </script>
 </body>
 </html>

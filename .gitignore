@@ -33,3 +33,6 @@ logs/
 
 # Alembic
 alembic/versions/*.pyc
+
+# backups
+backend-backup-*/

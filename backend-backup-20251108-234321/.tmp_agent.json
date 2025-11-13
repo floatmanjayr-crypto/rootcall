@@ -1,6 +1,0 @@
-{
-  "name": "BadBot Agent",
-  "voice_id": "cartesia-Cleo",
-  "response_engine": { "type": "retell-llm", "llm_id": "llm_dedf8ade2be17c84387cd9074f26" },
-  "begin_message": "Hello, this line screens incoming calls."
-}

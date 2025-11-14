@@ -7,7 +7,7 @@ import os
 import logging
 
 import stripe
-import stripe.checkout as stripe_checkout  # ⬅️ explicit import
+from stripe.checkout import Session as StripeCheckoutSession  # ⬅️ DIRECT import
 
 log = logging.getLogger(__name__)
 
@@ -43,12 +43,10 @@ async def create_checkout_session(
     if not STRIPE_SECRET_KEY:
         raise HTTPException(status_code=500, detail="Stripe not configured on server")
 
-    # price for selected tier
     price_id = PRICE_MAP.get(data.tier)
     if not price_id:
         raise HTTPException(status_code=400, detail="Invalid or misconfigured tier")
 
-    # user + email
     user = db.query(User).filter(User.id == data.user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -58,8 +56,8 @@ async def create_checkout_session(
     try:
         origin = request.headers.get("origin") or "https://getrootcall.com"
 
-        # ⬇️ use stripe_checkout instead of stripe.checkout
-        checkout_session = stripe_checkout.Session.create(
+        # ✅ Use the directly imported Session class (no stripe.checkout)
+        checkout_session = StripeCheckoutSession.create(
             customer_email=user.email,
             line_items=[
                 {

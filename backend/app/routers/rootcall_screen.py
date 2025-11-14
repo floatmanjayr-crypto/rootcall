@@ -1,415 +1,1017 @@
-import os
-import logging
-from typing import Optional
-from fastapi import APIRouter, Request, Response
-from app.services.client_config import get_client_config
-import httpx
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RootCall - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --green: #0d3d2f;
+            --ivory: #f9f6f3;
+            --light-green: #e8f5e9;
+            --accent: #2d7a5f;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--ivory);
+            color: #1a1a1a;
+        }
 
-log = logging.getLogger("rootcall")
+        .sidebar {
+            background: white;
+            width: 280px;
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            border-right: 1px solid #e5e5e5;
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+        }
 
-async def send_sms_alert(to_number: str, message: str, from_number: str = "+18135478530"):
-    """Send SMS alert"""
-    if DRY_RUN:
-        log.info("[DRY_RUN] SMS to %s: %s", to_number, message)
-        return True
-    
-    if not TELNYX_API_KEY or not to_number:
-        log.warning("[SMS] Missing API key or phone number")
-        return False
-    
-    url = "https://api.telnyx.com/v2/messages"
-    
-    async with httpx.AsyncClient(timeout=10) as client:
-        try:
-            r = await client.post(
-                url,
-                headers={"Authorization": f"Bearer {TELNYX_API_KEY}"},
-                json={"from": from_number, "to": to_number, "text": message}
-            )
-            log.info("[SMS] Sent to %s: status %s", to_number, r.status_code)
-            return r.status_code in [200, 201, 202]
-        except Exception as e:
-            log.error("[SMS] Error: %s", e)
-            return False
+        .sidebar-header {
+            padding: 2rem 1.5rem;
+            border-bottom: 1px solid #e5e5e5;
+        }
 
-router = APIRouter(prefix="/telnyx/rootcall", tags=["BadBot Screen"])
+        .sidebar-nav {
+            flex: 1;
+            padding: 1.5rem 0;
+            overflow-y: auto;
+        }
 
-TELNYX_API_KEY = os.getenv("TELNYX_API_KEY", "").strip()
-TELNYX_SMS_FROM = os.getenv("TELNYX_SMS_FROM", "").strip()
-DRY_RUN = os.getenv("BADBOT_DRY_RUN", "").strip() == "1"
+        .nav-item {
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
 
-# Telnyx webhook signature verification (optional but recommended)
-TELNYX_PUBLIC_KEY = os.getenv("TELNYX_PUBLIC_KEY", "").strip()
+        .nav-item:hover {
+            background: var(--ivory);
+            color: var(--green);
+        }
 
-def verify_telnyx_signature(request: Request, body: bytes):
-    """Verify Telnyx webhook signature - currently disabled for testing"""
-    # TODO: Implement signature verification for production
-    # For now, we'll allow all requests for testing
-    return True
+        .nav-item.active {
+            background: var(--light-green);
+            color: var(--green);
+            border-right: 3px solid var(--green);
+        }
 
+        .main-content {
+            margin-left: 280px;
+            min-height: 100vh;
+        }
 
-async def telnyx_gather_speak(ccid: str, text: str):
-    """Ask caller a question and wait for DTMF response"""
-    if DRY_RUN:
-        log.info("[DRY_RUN] gather_speak ccid=%s", ccid)
-        return {"ok": True, "dry_run": True}
+        .top-bar {
+            background: white;
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid #e5e5e5;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
 
-    if not TELNYX_API_KEY:
-        log.error("Missing TELNYX_API_KEY")
-        return {"error": "Missing API key"}
+        .content-area {
+            padding: 2rem;
+            max-width: 1400px;
+        }
 
-    url = f"https://api.telnyx.com/v2/calls/{ccid}/actions/gather_using_speak"
-    async with httpx.AsyncClient(timeout=10) as client:
-        try:
-            r = await client.post(
-                url,
-                headers={"Authorization": f"Bearer {TELNYX_API_KEY}"},
-                json={
-                    "payload": text,
-                    "voice": "female",
-                    "language": "en-US",
-                    "valid_digits": "1234567890*#",
-                    "timeout_millis": 10000,
-                    "maximum_digits": 1,
-                    "minimum_digits": 1
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            border-left: 4px solid var(--green);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--green);
+            margin: 0.5rem 0;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--green);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(13, 61, 47, 0.3);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .area-code-btn {
+            padding: 1.5rem;
+            border: 2px solid #e5e5e5;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .area-code-btn:hover {
+            border-color: var(--green);
+            transform: scale(1.05);
+        }
+
+        .area-code-btn.selected {
+            background: var(--green);
+            color: white;
+            border-color: var(--green);
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--green);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .page-content {
+            display: none;
+        }
+
+        .page-content.active {
+            display: block;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #10b981;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #ef4444;
+        }
+
+        input[type="text"],
+        input[type="tel"] {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid #e5e5e5;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--green);
+        }
+
+        .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; }
+
+        @media (max-width: 1024px) {
+            .sidebar { transform: translateX(-100%); }
+            .main-content { margin-left: 0; }
+            .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <div style="width: 50px; height: 50px; background: linear-gradient(135deg, var(--green), var(--accent)); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-shield-alt" style="color: white; font-size: 1.5rem;"></i>
+                </div>
+                <div>
+                    <div style="font-weight: 800; font-size: 1.25rem; color: var(--green);">RootCall</div>
+                    <div style="font-size: 0.75rem; color: #999;">Call Protection</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar-nav">
+            <div class="nav-item active" onclick="showPage('dashboard')">
+                <i class="fas fa-home"></i>
+                <span>Dashboard</span>
+            </div>
+            <div class="nav-item" onclick="showPage('numbers')">
+                <i class="fas fa-phone-alt"></i>
+                <span>Shield Numbers</span>
+            </div>
+            <div class="nav-item" onclick="showPage('contacts')">
+                <i class="fas fa-user-shield"></i>
+                <span>Trusted Contacts</span>
+            </div>
+            <div class="nav-item" onclick="showPage('activity')">
+                <i class="fas fa-history"></i>
+                <span>Call Activity</span>
+            </div>
+            <div class="nav-item" onclick="showPage('settings')">
+                <i class="fas fa-cog"></i>
+                <span>Settings</span>
+            </div>
+        </div>
+
+        <div style="padding: 1.5rem; border-top: 1px solid #e5e5e5;">
+            <button onclick="window.location.href='/static/shield-pricing.html'" class="btn btn-primary" style="width: 100%; justify-content: center;">
+                <i class="fas fa-crown"></i>
+                Upgrade Plan
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="top-bar">
+            <div>
+                <h1 style="font-size: 1.5rem; font-weight: 700; color: var(--green);">Welcome, <span id="user-name">User</span></h1>
+                <p style="color: #666; font-size: 0.9rem;">Your protection is active 24/7</p>
+            </div>
+            <button onclick="logout()" class="btn btn-primary">
+                <i class="fas fa-sign-out-alt"></i>
+                Logout
+            </button>
+        </div>
+
+        <!-- Dashboard Page -->
+        <div id="page-dashboard" class="page-content active">
+            <div class="content-area">
+                <div class="grid-4" style="margin-bottom: 2rem;">
+                    <div class="stat-card">
+                        <i class="fas fa-ban" style="color: #ef4444; font-size: 1.5rem;"></i>
+                        <div class="stat-number" id="spam-blocked">0</div>
+                        <div style="color: #666; font-size: 0.9rem;">Spam Blocked</div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-shield-check" style="color: #10b981; font-size: 1.5rem;"></i>
+                        <div class="stat-number" id="calls-screened">0</div>
+                        <div style="color: #666; font-size: 0.9rem;">Calls Screened</div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-user-check" style="color: #3b82f6; font-size: 1.5rem;"></i>
+                        <div class="stat-number" id="trusted-connected">0</div>
+                        <div style="color: #666; font-size: 0.9rem;">Trusted Connected</div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-clock" style="color: #8b5cf6; font-size: 1.5rem;"></i>
+                        <div class="stat-number">24/7</div>
+                        <div style="color: #666; font-size: 0.9rem;">Active Protection</div>
+                    </div>
+                </div>
+
+                <!-- Quick Stats Card -->
+                <div class="card">
+                    <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--green); margin-bottom: 1rem;">
+                        <i class="fas fa-chart-line"></i> Protection Summary
+                    </h3>
+                    <div style="color: #666; line-height: 1.8;">
+                        <p><strong>Total Calls Handled:</strong> <span id="total-calls-summary">0</span></p>
+                        <p><strong>Protection Rate:</strong> <span style="color: #10b981; font-weight: 700;">99.8%</span></p>
+                        <p><strong>Average Response Time:</strong> <span style="color: #3b82f6; font-weight: 700;">&lt;1 second</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Shield Numbers Page -->
+        <div id="page-numbers" class="page-content">
+            <div class="content-area">
+                <div style="margin-bottom: 2rem;">
+                    <h2 style="font-size: 2rem; font-weight: 800; color: var(--green); margin-bottom: 0.5rem;">Shield Numbers</h2>
+                    <p style="color: #666;">Manage your protected phone numbers</p>
+                </div>
+
+                <div id="alert-container"></div>
+
+                <div class="card" style="margin-bottom: 2rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--green);">
+                            <i class="fas fa-phone-alt"></i> Your Numbers
+                        </h3>
+                        <button onclick="openProvisionModal()" class="btn btn-primary">
+                            <i class="fas fa-plus"></i>
+                            Provision Number
+                        </button>
+                    </div>
+                    <div id="numbers-list">
+                        <div style="text-align: center; padding: 2rem; color: #999;">
+                            <i class="fas fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 1rem;"></i>
+                            <p>Loading your numbers...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trusted Contacts Page -->
+        <div id="page-contacts" class="page-content">
+            <div class="content-area">
+                <div style="margin-bottom: 2rem;">
+                    <h2 style="font-size: 2rem; font-weight: 800; color: var(--green); margin-bottom: 0.5rem;">Trusted Contacts</h2>
+                    <p style="color: #666;">Numbers that always connect directly</p>
+                </div>
+
+                <div class="grid-2">
+                    <div class="card">
+                        <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--green); margin-bottom: 1.5rem;">
+                            <i class="fas fa-plus-circle"></i> Add Contact
+                        </h3>
+                        <div style="display: flex; flex-direction: column; gap: 1rem;">
+                            <input type="text" id="new-contact-name" placeholder="Contact Name (optional)" />
+                            <input type="tel" id="new-contact" placeholder="+1234567890" />
+                            <button onclick="addContact()" class="btn btn-primary" style="width: 100%; justify-content: center;">
+                                <i class="fas fa-save"></i>
+                                Add Contact
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--green); margin-bottom: 1.5rem;">
+                            <i class="fas fa-user-shield"></i> Your Contacts
+                        </h3>
+                        <div id="contacts-list"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Activity Page -->
+        <div id="page-activity" class="page-content">
+            <div class="content-area">
+                <div style="margin-bottom: 2rem;">
+                    <h2 style="font-size: 2rem; font-weight: 800; color: var(--green); margin-bottom: 0.5rem;">Call Activity</h2>
+                    <p style="color: #666;">Recent call history</p>
+                </div>
+
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 1.5rem;">
+                        <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--green);">Recent Calls</h3>
+                        <button onclick="exportCalls()" class="btn btn-primary">
+                            <i class="fas fa-download"></i> Export CSV
+                        </button>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background: var(--ivory);">
+                                    <th style="padding: 1rem; text-align: left;">Time</th>
+                                    <th style="padding: 1rem; text-align: left;">From</th>
+                                    <th style="padding: 1rem; text-align: left;">Caller</th>
+                                    <th style="padding: 1rem; text-align: left;">Action</th>
+                                    <th style="padding: 1rem; text-align: left;">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="call-history"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Page -->
+        <div id="page-settings" class="page-content">
+            <div class="content-area">
+                <div style="margin-bottom: 2rem;">
+                    <h2 style="font-size: 2rem; font-weight: 800; color: var(--green); margin-bottom: 0.5rem;">Settings</h2>
+                    <p style="color: #666;">Configure your protection</p>
+                </div>
+
+                <div class="grid-2">
+                    <div class="card">
+                        <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--green); margin-bottom: 1.5rem;">
+                            <i class="fas fa-bell"></i> Alert Settings
+                        </h3>
+                        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                            <div>
+                                <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Forwarding Number</label>
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <input type="tel" id="client-cell" placeholder="+1234567890" style="flex: 1;" />
+                                    <button onclick="updatePhone()" class="btn btn-primary">
+                                        <i class="fas fa-save"></i>
+                                    </button>
+                                </div>
+                                <p style="font-size: 0.85rem; color: #666; margin-top: 0.5rem;">Trusted calls forward here</p>
+                            </div>
+
+                            <label style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: var(--ivory); border-radius: 8px; cursor: pointer;">
+                                <input type="checkbox" id="sms-alerts" onchange="saveSettings()" style="width: 20px; height: 20px;" />
+                                <div>
+                                    <div style="font-weight: 600;">SMS Alerts</div>
+                                    <div style="font-size: 0.85rem; color: #666;">Get text notifications</div>
+                                </div>
+                            </label>
+
+                            <label style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: var(--ivory); border-radius: 8px; cursor: pointer;">
+                                <input type="checkbox" id="alert-spam" onchange="saveSettings()" style="width: 20px; height: 20px;" />
+                                <div>
+                                    <div style="font-weight: 600;">Spam Alerts</div>
+                                    <div style="font-size: 0.85rem; color: #666;">Alert on spam blocked</div>
+                                </div>
+                            </label>
+
+                            <label style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: var(--ivory); border-radius: 8px; cursor: pointer;">
+                                <input type="checkbox" id="alert-unknown" onchange="saveSettings()" style="width: 20px; height: 20px;" />
+                                <div>
+                                    <div style="font-weight: 600;">Unknown Alerts</div>
+                                    <div style="font-size: 0.85rem; color: #666;">Alert on unknowns</div>
+                                </div>
+                            </label>
+
+                            <label style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: var(--ivory); border-radius: 8px; cursor: pointer;">
+                                <input type="checkbox" id="auto-block-spam" onchange="saveSettings()" style="width: 20px; height: 20px;" />
+                                <div>
+                                    <div style="font-weight: 600;">Auto-Block Spam</div>
+                                    <div style="font-size: 0.85rem; color: #666;">Automatically block spam</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--green); margin-bottom: 1.5rem;">
+                            <i class="fas fa-user"></i> Account Info
+                        </h3>
+                        <div style="display: flex; flex-direction: column; gap: 1rem;">
+                            <div>
+                                <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Name</label>
+                                <input type="text" id="user-fullname" disabled style="background: #f5f5f5;" />
+                            </div>
+                            <div>
+                                <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Email</label>
+                                <input type="text" id="user-email" disabled style="background: #f5f5f5;" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Provision Modal -->
+    <div id="provision-modal" class="modal">
+        <div class="modal-content">
+            <div style="padding: 2rem;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 2rem;">
+                    <h2 style="font-size: 2rem; font-weight: 800; color: var(--green);">Provision Shield Number</h2>
+                    <button onclick="closeProvisionModal()" style="background: none; border: none; font-size: 2rem; cursor: pointer;">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <div id="step-area-code">
+                    <p style="margin-bottom: 1.5rem;">Choose area code:</p>
+                    <div class="grid-3" style="margin-bottom: 2rem;">
+                        <div class="area-code-btn" onclick="selectAreaCode('813')" data-code="813">
+                            <div style="font-size: 2rem; font-weight: 800;">813</div>
+                            <div style="font-size: 0.85rem; color: #666;">Tampa</div>
+                        </div>
+                        <div class="area-code-btn" onclick="selectAreaCode('727')" data-code="727">
+                            <div style="font-size: 2rem; font-weight: 800;">727</div>
+                            <div style="font-size: 0.85rem; color: #666;">St. Pete</div>
+                        </div>
+                        <div class="area-code-btn" onclick="selectAreaCode('407')" data-code="407">
+                            <div style="font-size: 2rem; font-weight: 800;">407</div>
+                            <div style="font-size: 0.85rem; color: #666;">Orlando</div>
+                        </div>
+                    </div>
+                    <button onclick="provisionNumber()" id="provision-btn" disabled class="btn btn-primary" style="width: 100%; justify-content: center; padding: 1rem;">
+                        <i class="fas fa-shield-alt"></i> Activate
+                    </button>
+                </div>
+
+                <div id="step-provisioning" style="display: none; text-align: center;">
+                    <div class="spinner" style="margin-bottom: 2rem;"></div>
+                    <h3 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem;">Setting Up...</h3>
+                    <p id="provision-status"></p>
+                </div>
+
+                <div id="step-success" style="display: none; text-align: center;">
+                    <div style="font-size: 5rem;">✅</div>
+                    <h3 style="font-size: 2rem; font-weight: 800; color: #10b981; margin: 1rem 0;">Success!</h3>
+                    <div style="background: #d1fae5; padding: 2rem; border-radius: 12px; margin-bottom: 2rem;">
+                        <p style="color: #065f46; margin-bottom: 0.5rem;">Your Number:</p>
+                        <p id="new-phone-number" style="font-size: 2rem; font-weight: 800; color: #065f46;"></p>
+                    </div>
+                    <button onclick="finishProvisioning()" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 1rem;">
+                        Go to Dashboard
+                    </button>
+                </div>
+
+                <div id="step-error" style="display: none; text-align: center;">
+                    <div style="font-size: 5rem;">❌</div>
+                    <h3 style="font-size: 2rem; font-weight: 800; color: #ef4444; margin: 1rem 0;">Error</h3>
+                    <p id="error-message" style="margin-bottom: 2rem;"></p>
+                    <button onclick="resetProvisionModal()" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 1rem;">
+                        Try Again
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // CONFIGURATION
+        // ============================================
+        const API = window.location.origin;
+        let USER_DATA = null;
+        let CLIENT_ID = null;
+        let SELECTED_AREA_CODE = null;
+
+        // ============================================
+        // INITIALIZATION
+        // ============================================
+        async function init() {
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                window.location.href = '/static/login.html';
+                return;
+            }
+
+            try {
+                // Decode JWT (format: header.payload.signature)
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                CLIENT_ID = payload.sub; // This is the user_id
+                USER_DATA = payload;
+                
+                document.getElementById('user-name').textContent = payload.email || 'User';
+                document.getElementById('user-fullname').value = payload.email || '';
+                document.getElementById('user-email').value = payload.email || '';
+
+                await loadData();
+            } catch (err) {
+                console.error('Init error:', err);
+                localStorage.removeItem('access_token');
+                window.location.href = '/static/login.html';
+            }
+        }
+
+        // ============================================
+        // DATA LOADING
+        // ============================================
+        async function loadData() {
+            try {
+                // Load stats
+                const stats = await fetch(`${API}/api/rootcall/stats/${CLIENT_ID}`)
+                    .then(r => r.json())
+                    .catch(() => ({ spam_blocked: 0, calls_screened: 0, trusted_forwarded: 0, total_calls: 0 }));
+                
+                document.getElementById('spam-blocked').textContent = stats.spam_blocked || 0;
+                document.getElementById('calls-screened').textContent = stats.calls_screened || 0;
+                document.getElementById('trusted-connected').textContent = stats.trusted_forwarded || 0;
+                document.getElementById('total-calls-summary').textContent = stats.total_calls || 0;
+
+                // Load config
+                const config = await fetch(`${API}/api/rootcall/config/${CLIENT_ID}`)
+                    .then(r => r.ok ? r.json() : null)
+                    .catch(() => null);
+                
+                if (config) {
+                    document.getElementById('client-cell').value = config.client_cell || '';
+                    document.getElementById('sms-alerts').checked = config.sms_alerts_enabled || false;
+                    document.getElementById('alert-spam').checked = config.alert_on_spam || false;
+                    document.getElementById('alert-unknown').checked = config.alert_on_unknown || false;
+                    document.getElementById('auto-block-spam').checked = config.auto_block_spam || false;
+
+                    // Load contacts
+                    const list = document.getElementById('contacts-list');
+                    if (config.trusted_contacts && config.trusted_contacts.length > 0) {
+                        list.innerHTML = config.trusted_contacts.map(c => {
+                            const phone = typeof c === 'string' ? c : c.phone_number;
+                            const name = typeof c === 'object' ? c.name : '';
+                            return `
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: var(--ivory); border-radius: 8px; margin-bottom: 0.5rem;">
+                                    <div>
+                                        ${name ? `<div style="font-weight: 600;">${name}</div>` : ''}
+                                        <div style="font-size: 0.85rem; color: #666;">${phone}</div>
+                                    </div>
+                                    <button onclick="removeContact('${phone}')" class="btn btn-primary" style="padding: 0.5rem 1rem; background: #ef4444;">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            `;
+                        }).join('');
+                    } else {
+                        list.innerHTML = '<p style="text-align: center; color: #999; padding: 2rem;">No trusted contacts yet</p>';
+                    }
+                } else {
+                    document.getElementById('contacts-list').innerHTML = '<p style="text-align: center; color: #999; padding: 2rem;">No configuration found</p>';
                 }
-            )
-            log.info("Gather response: %s", r.status_code)
-            return r.json() if r.text else {"ok": True}
-        except Exception as e:
-            log.error("Gather error: %s", e)
-            return {"error": str(e)}
 
-async def telnyx_answer(ccid: str):
-    """Answer the incoming call"""
-    if DRY_RUN:
-        log.info("[DRY_RUN] answer ccid=%s", ccid)
-        return {"ok": True, "dry_run": True}
-    
-    if not TELNYX_API_KEY:
-        log.error("Missing TELNYX_API_KEY")
-        return {"error": "Missing API key"}
-    
-    url = f"https://api.telnyx.com/v2/calls/{ccid}/actions/answer"
-    async with httpx.AsyncClient(timeout=10) as client:
-        try:
-            r = await client.post(
-                url,
-                headers={"Authorization": f"Bearer {TELNYX_API_KEY}"},
-                json={}
-            )
-            log.info("Answer response: %s", r.status_code)
-            return r.json() if r.text else {"ok": True}
-        except Exception as e:
-            log.error("Answer error: %s", e)
-            return {"error": str(e)}
+                // Load numbers
+                await loadNumbers();
 
-
-async def telnyx_speak(ccid: str, text: str):
-    """Speak text to caller"""
-    if DRY_RUN:
-        log.info("[DRY_RUN] speak: %s", text)
-        return {"ok": True}
-    
-    if not TELNYX_API_KEY:
-        log.error("Missing TELNYX_API_KEY")
-        return {"error": "Missing API key"}
-    
-    url = f"https://api.telnyx.com/v2/calls/{ccid}/actions/speak"
-    async with httpx.AsyncClient(timeout=10) as client:
-        try:
-            r = await client.post(
-                url,
-                headers={"Authorization": f"Bearer {TELNYX_API_KEY}"},
-                json={
-                    "payload": text,
-                    "voice": "female",
-                    "language": "en-US"
+                // Load calls
+                const calls = await fetch(`${API}/api/rootcall/calls/${CLIENT_ID}`)
+                    .then(r => r.ok ? r.json() : [])
+                    .catch(() => []);
+                
+                const tbody = document.getElementById('call-history');
+                if (calls.length > 0) {
+                    tbody.innerHTML = calls.map(call => `
+                        <tr style="border-top: 1px solid #e5e5e5;">
+                            <td style="padding: 1rem;">${new Date(call.timestamp).toLocaleString()}</td>
+                            <td style="padding: 1rem; font-weight: 600;">${call.from_number}</td>
+                            <td style="padding: 1rem;">${call.caller_name || 'Unknown'}</td>
+                            <td style="padding: 1rem;">${call.action.replace(/_/g, ' ')}</td>
+                            <td style="padding: 1rem;">
+                                <span style="padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.85rem; font-weight: 600; ${
+                                    call.status === 'blocked' ? 'background: #fee2e2; color: #991b1b;' :
+                                    call.status === 'screening' ? 'background: #fef3c7; color: #92400e;' :
+                                    'background: #d1fae5; color: #065f46;'
+                                }">${call.status}</span>
+                            </td>
+                        </tr>
+                    `).join('');
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="5" style="padding: 2rem; text-align: center; color: #999;">No call history yet</td></tr>';
                 }
-            )
-            log.info("Speak response: %s", r.status_code)
-            return r.json() if r.text else {"ok": True}
-        except Exception as e:
-            log.error("Speak error: %s", e)
-            return {"error": str(e)}
 
-async def telnyx_transfer(ccid: str, to: str):
-    """Transfer call to destination"""
-    if DRY_RUN:
-        log.info("[DRY_RUN] transfer ccid=%s to=%s", ccid, to)
-        return {"ok": True, "dry_run": True}
-    
-    if not TELNYX_API_KEY:
-        log.error("Missing TELNYX_API_KEY")
-        return {"error": "Missing API key"}
-    
-    url = f"https://api.telnyx.com/v2/calls/{ccid}/actions/transfer"
-    async with httpx.AsyncClient(timeout=10) as client:
-        try:
-            r = await client.post(
-                url,
-                headers={"Authorization": f"Bearer {TELNYX_API_KEY}"},
-                json={"to": to}
-            )
-            log.info("Transfer response: %s", r.status_code)
-            log.info("Transfer response body: %s", r.text)
-            
-            if r.status_code >= 400:
-                log.error("Transfer FAILED: %s", r.text)
-                return {"error": r.text, "status_code": r.status_code}
-            
-            return r.json() if r.text else {"ok": True}
-        except Exception as e:
-            log.error("Transfer error: %s", e)
-            return {"error": str(e)}
+            } catch (err) {
+                console.error('Error loading data:', err);
+            }
+        }
 
-async def telnyx_hangup(ccid: str):
-    """Hangup the call"""
-    if DRY_RUN:
-        log.info("[DRY_RUN] hangup ccid=%s", ccid)
-        return {"ok": True, "dry_run": True}
-    
-    if not TELNYX_API_KEY:
-        return
-    
-    url = f"https://api.telnyx.com/v2/calls/{ccid}/actions/hangup"
-    async with httpx.AsyncClient(timeout=10) as client:
-        try:
-            await client.post(
-                url,
-                headers={"Authorization": f"Bearer {TELNYX_API_KEY}"},
-                json={}
-            )
-        except Exception as e:
-            log.error("Hangup error: %s", e)
+        async function loadNumbers() {
+            const token = localStorage.getItem('access_token');
+            try {
+                const response = await fetch(`${API}/api/rootcall/my-number`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
 
-@router.post("/webhook", status_code=200)
-async def screen_call(request: Request):
-    """
-    Main BadBot screening webhook - NO AUTHENTICATION REQUIRED
-    This endpoint receives webhooks directly from Telnyx
-    """
-    
-    # Log the incoming request
-    client_ip = request.client.host if request.client else "unknown"
-    log.info("[WEBHOOK] Received from IP: %s", client_ip)
-    
-    # Get raw body for signature verification
-    try:
-        raw_body = await request.body()
-        body = await request.json()
-        log.info("[WEBHOOK] Event received: %s", body.get("data", {}).get("event_type", "unknown"))
-    except Exception as e:
-        log.error("[WEBHOOK] Failed to parse body: %s", e)
-        return {"error": "Invalid JSON", "status": "error"}
-    
-    # Optional: Verify Telnyx signature (disabled for testing)
-    # if not verify_telnyx_signature(request, raw_body):
-    #     log.warning("[WEBHOOK] Signature verification failed")
-    #     return {"error": "Invalid signature", "status": "unauthorized"}
-    
-    data = body.get("data", {})
-    evt = data.get("event_type", "")
-    payload = data.get("payload", {})
-    
-    ccid = payload.get("call_control_id")
-    # Handle both string and dict formats for from/to
-    from_field = payload.get("from", "")
-    to_field = payload.get("to", "")
-    
-    if isinstance(from_field, dict):
-        from_num = from_field.get("phone_number", "")
-    else:
-        from_num = str(from_field)
-    
-    if isinstance(to_field, dict):
-        to_num = to_field.get("phone_number", "")
-    else:
-        to_num = str(to_field)
-    cnam = payload.get("caller_id_name", "")
-    
-    log.info("[CALL] Event: %s | From: %s | To: %s | CCID: %s", evt, from_num, to_num, ccid)
-    
-    if not ccid:
-        log.warning("[WEBHOOK] No call_control_id found")
-        return {"status": "no_ccid"}
-    
-    # Get client config
-    cfg = get_client_config(to_num)
-    if not cfg:
-        log.warning("[CONFIG] No config for number: %s", to_num)
-        return {"status": "no_config", "telnyx_number": to_num}
-    
-    # Handle call.initiated - Answer immediately
-    if evt == "call.initiated":
-        log.info("[INITIATED] Answering call")
-        result = await telnyx_answer(ccid)
-        return {"status": "answered", "result": result}
-    
-    # Handle call.answered - Start screening
-    if evt == "call.answered":
-        client_cell = cfg.get("client_cell", "")
-        trusted = cfg.get("trusted_contacts", [])
-        
-        # 1) Check for spam
-        spam_keywords = ["spam", "scam", "fraud", "robocall", "telemarketer"]
-        if any(keyword in cnam.lower() for keyword in spam_keywords):
-            log.warning("[SPAM] Blocked: %s (%s)", from_num, cnam)
-            
-            # Send SMS alert
-            if cfg.get("sms_alerts_enabled") and cfg.get("alert_on_spam"):
-                await send_sms_alert(client_cell, f"[BadBot] SPAM BLOCKED: {cnam or from_num}")
-            
-            await telnyx_hangup(ccid)
-            return {"status": "spam_blocked"}
-        
-        # 2) Check if trusted
-        if from_num in trusted:
-            log.info("[TRUSTED] Forwarding %s to %s", from_num, client_cell)
-            
-            # Alert about trusted contact
-            if cfg.get("sms_alerts_enabled"):
-                await send_sms_alert(client_cell, f"[BadBot] Trusted contact {cnam or from_num} calling")
-            
-            await telnyx_transfer(ccid, client_cell)
-            return {"status": "trusted_forwarded"}
-        
-        # 3) Unknown caller - Screen them
-        log.info("[SCREENING] Asking %s to identify themselves", from_num)
-        
-        # Alert client screening is happening
-        log.info("[SMS CHECK] sms_alerts_enabled=%s, alert_on_unknown=%s, client_cell=%s", 
-                 cfg.get("sms_alerts_enabled"), cfg.get("alert_on_unknown"), client_cell)
-        if cfg.get("sms_alerts_enabled") and cfg.get("alert_on_unknown"):
-            log.info("[SMS] Sending unknown caller alert to %s", client_cell)
-            await send_sms_alert(client_cell, f"[BadBot] Unknown caller {cnam or from_num} being screened")
-        else:
-            log.warning("[SMS] Alert skipped - alerts not enabled or no client_cell")
-        
-        await telnyx_gather_speak(
-            ccid,
-            "Hello, who is calling? Press 1 if this is a doctor or medical office. Press 2 if you are family. Press 3 for all other calls."
-        )
-        return {"status": "screening_started"}
-    
-    # Handle gather.ended - Process caller response
-    if evt == "call.gather.ended":
-        digits = payload.get("digits", "")
-        log.info("[GATHER] Caller pressed: %s", digits)
-        
-        client_cell = cfg.get("client_cell", "")
-        
-        if digits == "1":
-            # Medical call - transfer immediately
-            log.info("[MEDICAL] Transferring to %s", client_cell)
-            await telnyx_speak(ccid, "Transferring you now.")
-            import asyncio
-            await asyncio.sleep(1)
-            await telnyx_transfer(ccid, client_cell)
-            return {"status": "medical_transferred"}
-        elif digits == "2":
-            # Family - transfer
-            log.info("[FAMILY] Transferring to %s", client_cell)
-            await telnyx_speak(ccid, "One moment please.")
-            import asyncio
-            await asyncio.sleep(1)
-            await telnyx_transfer(ccid, client_cell)
-            return {"status": "family_transferred"}
-        else:
-            # Other - send to voicemail or reject
-            log.info("[OTHER] Rejecting call")
-            await telnyx_speak(ccid, "Sorry, the person you are trying to reach is not available. Goodbye.")
-            import asyncio
-            await asyncio.sleep(2)
-            await telnyx_hangup(ccid)
-            return {"status": "rejected"}
+                const data = await response.json();
+                const container = document.getElementById('numbers-list');
 
-        client_cell = cfg.get("client_cell", "")
-        trusted = cfg.get("trusted_contacts", [])
-        retell_did = cfg.get("retell_did", "")
-        caregiver = cfg.get("caregiver_cell", "")
-        
-        # 1) Check for spam
-        spam_keywords = ["spam", "scam", "fraud", "robocall", "telemarketer"]
-        if any(keyword in cnam.lower() for keyword in spam_keywords):
-            log.warning("[SPAM] Blocked: %s (%s)", from_num, cnam)
-            
-            # Send SMS alerts
-            if cfg.get("sms_alerts_enabled") and cfg.get("alert_on_spam"):
-                await send_sms_alert(
-                    client_cell, 
-                    f"[BadBot] SPAM BLOCKED: {cnam or 'Unknown'} ({from_num})",
-                    to_num  # Send from the BadBot number
-                )
-                if caregiver:
-                    await send_sms_alert(
-                        caregiver,
-                        f"[BadBot] Spam blocked for {cfg.get('client_name')}: {from_num}"
-                    )
-            
-            await telnyx_hangup(ccid)
-            return {"status": "spam_blocked", "from": from_num}
-        
-        # 2) Check if trusted
-        if from_num in trusted:
-            log.info("[TRUSTED] Forwarding %s to %s", from_num, client_cell)
-            
-            # Notify client
-            if cfg.get("sms_alerts_enabled"):
-                await send_sms_alert(
-                    client_cell,
-                    f"[BadBot] Trusted contact {cnam or from_num} calling now",
-                    to_num
-                )
-            
-            if client_cell:
-                result = await telnyx_transfer(ccid, client_cell)
-                return {"status": "trusted_forwarded", "from": from_num, "to": client_cell, "result": result}
-        
-        # 3) Unknown -> Transfer DIRECTLY to client (bypass Retell for now)
-        log.info("[UNKNOWN] Transferring %s DIRECTLY to client: %s", from_num, client_cell)
-        if client_cell:
-            send_sms_alert(client_cell, f"[BadBot] Unknown caller {from_num} - transferred")
-            result = await telnyx_transfer(ccid, client_cell)
-            return {"status": "unknown_transferred_direct", "from": from_num, "to": client_cell, "result": result}
-        
-        # 4) Fallback - forward with alert
-        if client_cell:
-            log.info("[FALLBACK] Forwarding %s to %s", from_num, client_cell)
-            send_sms_alert(client_cell, f"[BadBot] Unknown caller {from_num} forwarded")
-            result = await telnyx_transfer(ccid, client_cell)
-            return {"status": "unknown_forwarded", "from": from_num, "to": client_cell, "result": result}
-        
-        log.warning("[NO_CONFIG] No routing configured")
-        return {"status": "no_action_configured"}
-    
-    # Handle hangup events
-    if evt in ("call.hangup", "call.ended", "call.hangup.completed"):
-        log.info("[ENDED] Call ended: %s", evt)
-        return {"status": "ok", "event": evt}
-    
-    # All other events
-    log.info("[OTHER] Event: %s", evt)
-    return {"status": "ignored", "event": evt}
+                if (data.has_number) {
+                    container.innerHTML = `
+                        <div style="padding: 1.5rem; background: var(--light-green); border: 2px solid var(--green); border-radius: 12px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <div style="font-size: 0.85rem; color: var(--green); font-weight: 600; text-transform: uppercase;">${data.friendly_name || 'Your Shield Number'}</div>
+                                    <div style="font-size: 2rem; font-weight: 800; color: var(--green); margin: 0.5rem 0;">${data.number}</div>
+                                    <div style="font-size: 0.85rem; color: #666;">Activated: ${new Date(data.purchased_at).toLocaleDateString()}</div>
+                                </div>
+                                <span style="padding: 0.75rem 1.5rem; background: #10b981; color: white; border-radius: 20px; font-weight: 700;">
+                                    <i class="fas fa-shield-check"></i> Active
+                                </span>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 3rem;">
+                            <i class="fas fa-shield-alt" style="font-size: 3rem; color: #ccc; margin-bottom: 1rem;"></i>
+                            <p style="color: #999; margin-bottom: 1.5rem;">No shield number yet</p>
+                            <button onclick="openProvisionModal()" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Get Your Shield Number
+                            </button>
+                        </div>
+                    `;
+                }
+            } catch (err) {
+                console.error('Error loading numbers:', err);
+                document.getElementById('numbers-list').innerHTML = '<p style="text-align: center; color: #ef4444; padding: 2rem;">Error loading numbers</p>';
+            }
+        }
 
-@router.get("/health")
-async def health_check():
-    """Health check - no auth required"""
-    return {
-        "status": "ok",
-        "service": "BadBot Call Screening",
-        "dry_run": DRY_RUN,
-        "has_api_key": bool(TELNYX_API_KEY)
-    }
+        // ============================================
+        // PROVISION NUMBER FLOW
+        // ============================================
+        function openProvisionModal() {
+            document.getElementById('provision-modal').classList.add('active');
+            resetProvisionModal();
+        }
 
-@router.get("/debug")
-async def debug_info():
-    """Debug info - no auth required"""
-    from app.services.client_config import CLIENT_LINES
-    return {
-        "dry_run": DRY_RUN,
-        "has_telnyx_key": bool(TELNYX_API_KEY),
-        "has_sms_from": bool(TELNYX_SMS_FROM),
-        "client_count": len(CLIENT_LINES),
-        "telnyx_numbers": list(CLIENT_LINES.keys())
-    }
+        function closeProvisionModal() {
+            document.getElementById('provision-modal').classList.remove('active');
+        }
+
+        function resetProvisionModal() {
+            document.getElementById('step-area-code').style.display = 'block';
+            document.getElementById('step-provisioning').style.display = 'none';
+            document.getElementById('step-success').style.display = 'none';
+            document.getElementById('step-error').style.display = 'none';
+            SELECTED_AREA_CODE = null;
+            document.getElementById('provision-btn').disabled = true;
+            document.querySelectorAll('.area-code-btn').forEach(btn => btn.classList.remove('selected'));
+        }
+
+        function selectAreaCode(code) {
+            SELECTED_AREA_CODE = code;
+            document.querySelectorAll('.area-code-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            event.target.closest('.area-code-btn').classList.add('selected');
+            document.getElementById('provision-btn').disabled = false;
+        }
+
+        async function provisionNumber() {
+            if (!SELECTED_AREA_CODE) {
+                showAlert('Please select an area code', 'error');
+                return;
+            }
+
+            document.getElementById('step-area-code').style.display = 'none';
+            document.getElementById('step-provisioning').style.display = 'block';
+
+            const token = localStorage.getItem('access_token');
+            
+            try {
+                document.getElementById('provision-status').textContent = 'Searching for available numbers...';
+
+                const response = await fetch(`${API}/api/rootcall/provision`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        area_code: SELECTED_AREA_CODE
+                    })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Provisioning failed');
+                }
+
+                document.getElementById('provision-status').textContent = 'Creating your AI agent...';
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                document.getElementById('provision-status').textContent = 'Configuring call screening...';
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                const data = await response.json();
+
+                // Success!
+                document.getElementById('step-provisioning').style.display = 'none';
+                document.getElementById('step-success').style.display = 'block';
+                document.getElementById('new-phone-number').textContent = data.rootcall_number || data.phone_number || 'Number provisioned!';
+
+            } catch (err) {
+                console.error('Provision error:', err);
+                document.getElementById('step-provisioning').style.display = 'none';
+                document.getElementById('step-error').style.display = 'block';
+                document.getElementById('error-message').textContent = err.message || 'Failed to provision number. Please try again.';
+            }
+        }
+
+        function finishProvisioning() {
+            closeProvisionModal();
+            loadData();
+            showAlert('Shield number activated successfully!', 'success');
+            showPage('numbers');
+        }
+
+        // ============================================
+        // CONTACTS MANAGEMENT
+        // ============================================
+        async function addContact() {
+            const phone = document.getElementById('new-contact').value.trim();
+            const name = document.getElementById('new-contact-name').value.trim();
+
+            if (!phone) {
+                showAlert('Please enter a phone number', 'error');
+                return;
+            }
+
+            if (!phone.startsWith('+')) {
+                showAlert('Phone number must start with + (e.g., +1234567890)', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API}/api/rootcall/trusted-contacts/${CLIENT_ID}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone_number: phone, name: name })
+                });
+
+                if (!response.ok) throw new Error('Failed to add contact');
+
+                document.getElementById('new-contact').value = '';
+                document.getElementById('new-contact-name').value = '';
+                showAlert('Contact added successfully!', 'success');
+                loadData();
+            } catch (err) {
+                showAlert('Error adding contact: ' + err.message, 'error');
+            }
+        }
+
+        async function removeContact(phone) {
+            if (!confirm(`Remove ${phone} from trusted contacts?`)) return;
+
+            try {
+                const response = await fetch(`${API}/api/rootcall/trusted-contacts/${CLIENT_ID}/${encodeURIComponent(phone)}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) throw new Error('Failed to remove contact');
+
+                showAlert('Contact removed', 'success');
+                loadData();
+            } catch (err) {
+                showAlert('Error removing contact: ' + err.message, 'error');
+            }
+        }
+
+        // ============================================
+        // SETTINGS
+        // ============================================
+        async function updatePhone() {
+            const phone = document.getElementById('client-cell').value.trim();
+
+            if (!phone) {
+                showAlert('Please enter a phone number', 'error');
+                return;
+            }
+
+            if (!phone.startsWith('+')) {
+                showAlert('Phone number must start with + (e.g., +1234567890)', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API}/api/rootcall/config/${CLIENT_ID}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ client_cell: phone })
+                });
+
+                if (!response.ok) throw new Error('Failed to update phone');
+
+                showAlert('Forwarding number updated!', 'success');
+            } catch (err) {
+                showAlert('Error: ' + err.message, 'error');
+            }
+        }
+
+        async function saveSettings() {
+            try {
+                const response = await fetch(`${API}/api/rootcall/config/${CLIENT_ID}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        sms_alerts_enabled: document.getElementById('sms-alerts').checked,
+                        alert_on_spam: document.getElementById('alert-spam').checked,
+                        alert_on_unknown: document.getElementById('alert-unknown').checked,
+                        auto_block_spam: document.getElementById('auto-block-spam').checked
+                    })
+                });
+
+                if (!response.ok) throw new Error('Failed to save settings');
+
+                showAlert('Settings saved!', 'success');
+            } catch (err) {
+                showAlert('Error: ' + err.message, 'error');
+            }
+        }
+
+        // ============================================
+        // EXPORT
+        // ============================================
+        function exportCalls() {
+            window.open(`${API}/api/rootcall/export/${CLIENT_ID}`, '_blank');
+        }
+
+        // ============================================
+        // UI HELPERS
+        // ============================================
+        function showPage(page) {
+            document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            
+            document.getElementById('page-' + page).classList.add('active');
+            event.target.closest('.nav-item').classList.add('active');
+        }
+
+        function showAlert(message, type) {
+            const container = document.getElementById('alert-container');
+            if (!container) return;
+
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            container.innerHTML = '';
+            container.appendChild(alert);
+
+            setTimeout(() => {
+                alert.style.opacity = '0';
+                alert.style.transition = 'opacity 0.3s';
+                setTimeout(() => alert.remove(), 300);
+            }, 5000);
+        }
+
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem('access_token');
+                window.location.href = '/static/login.html';
+            }
+        }
+
+        // ============================================
+        // AUTO-REFRESH
+        // ============================================
+        setInterval(() => {
+            if (document.visibilityState === 'visible') {
+                loadData();
+            }
+        }, 30000); // Refresh every 30 seconds
+
+        // ============================================
+        // START APPLICATION
+        // ============================================
+        init();
+    </script>
+</body>
+</html>

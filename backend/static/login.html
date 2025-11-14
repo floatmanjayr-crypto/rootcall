@@ -157,25 +157,24 @@
   </div>
 
   <script>
-    // Check if redirected from logout
+    // ============================================
+    // AUTO-REDIRECT IF ALREADY LOGGED IN
+    // ============================================
     const urlParams = new URLSearchParams(window.location.search);
     const fromLogout = urlParams.get('logout');
     
     // Only auto-redirect if NOT coming from logout
     if (!fromLogout) {
-      const user = localStorage.getItem('user');
-      if (user) {
-        try {
-          const userData = JSON.parse(user);
-          if (userData.id || userData.email) {
-            window.location.href = '/client-portal.html';
-          }
-        } catch (e) {
-          localStorage.removeItem('user');
-        }
+      const token = localStorage.getItem('access_token');
+      if (token) {
+        // Already authenticated, redirect to dashboard
+        window.location.href = '/client-portal.html';
       }
     }
 
+    // ============================================
+    // UTILITY FUNCTIONS
+    // ============================================
     function togglePassword() {
       const passwordInput = document.getElementById("password");
       const toggle = document.querySelector(".toggle-password");
@@ -212,12 +211,16 @@
       }
     }
 
+    // ============================================
+    // LOGIN FORM HANDLER
+    // ============================================
     document.getElementById("login-form").addEventListener("submit", async function(e) {
       e.preventDefault();
       
       const email = document.getElementById("email").value.trim();
       const password = document.getElementById("password").value;
 
+      // Validation
       if (!email || !password) {
         showError('Please enter both email and password.');
         return;
@@ -226,14 +229,14 @@
       setLoading(true);
 
       try {
-        // Try OAuth2 format first (most common for FastAPI)
+        // Send login request using OAuth2 form format
         const res = await fetch("https://rootcall.onrender.com/api/auth/login", {
           method: "POST",
           headers: { 
-            "Content-Type": "application/x-www-form-urlencoded"  // Changed from JSON
+            "Content-Type": "application/x-www-form-urlencoded"
           },
           body: new URLSearchParams({
-            username: email,   // Changed from "email" to "username" (OAuth2 standard)
+            username: email,   // OAuth2 uses "username" field
             password: password
           })
         });
@@ -241,27 +244,34 @@
         const data = await res.json();
         
         // Debug logging
-        console.log('Login attempt - Status:', res.status);
-        console.log('Response data:', data);
+        console.log('Login response:', res.status, data);
 
         if (res.ok) {
+          // ✅ CRITICAL: Store access_token for dashboard
+          if (data.access_token) {
+            localStorage.setItem("access_token", data.access_token);
+          }
+          
+          // Store full response for backward compatibility
           localStorage.setItem("user", JSON.stringify(data));
           
+          // Success feedback
           const btn = document.getElementById('login-btn');
           btn.textContent = '✓ Success!';
           btn.style.background = '#4ade80';
           
+          // Redirect to dashboard
           setTimeout(() => {
             window.location.href = "/client-portal.html";
           }, 500);
           
         } else {
-          // Enhanced error handling
+          // Handle login errors
           console.error('Login failed:', res.status, data);
           
           let errorMessage = "Invalid email or password.";
           
-          // Handle FastAPI validation errors
+          // Parse FastAPI validation errors
           if (Array.isArray(data.detail)) {
             errorMessage = data.detail.map(err => {
               const field = err.loc ? err.loc.join(' > ') : 'field';
@@ -278,12 +288,15 @@
           setLoading(false);
         }
       } catch (err) {
-        console.error('Network/Connection error:', err);
+        console.error('Network error:', err);
         showError("Error connecting to server. Please check your internet connection.");
         setLoading(false);
       }
     });
 
+    // ============================================
+    // ENTER KEY SUPPORT
+    // ============================================
     document.getElementById('password').addEventListener('keypress', function(e) {
       if (e.key === 'Enter') {
         document.getElementById('login-form').dispatchEvent(new Event('submit'));

@@ -4,7 +4,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.user import User
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, validator
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
@@ -22,11 +22,20 @@ class UserSignup(BaseModel):
     email: EmailStr
     password: str
     full_name: str
+    
+    @validator('password')
+    def truncate_password(cls, v):
+        # bcrypt has a 72 byte limit, truncate if necessary
+        return v[:72] if len(v.encode('utf-8')) > 72 else v
 
 def get_password_hash(password):
+    # Ensure password is truncated to 72 bytes for bcrypt
+    password = password[:72]
     return pwd_context.hash(password)
 
 def verify_password(plain, hashed):
+    # Ensure password is truncated to 72 bytes for bcrypt
+    plain = plain[:72]
     return pwd_context.verify(plain, hashed)
 
 def create_token(user_id: int):
@@ -52,7 +61,6 @@ async def signup(data: UserSignup, db: Session = Depends(get_db)):
     db.refresh(user)
     
     token = create_token(user.id)
-    
     return {
         "access_token": token,
         "token_type": "bearer",
@@ -62,12 +70,10 @@ async def signup(data: UserSignup, db: Session = Depends(get_db)):
 @router.post("/api/auth/login")
 async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == form_data.username).first()
-    
     if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
     token = create_token(user.id)
-    
     return {
         "access_token": token,
         "token_type": "bearer",

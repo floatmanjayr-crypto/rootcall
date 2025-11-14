@@ -75,14 +75,14 @@
   <div class="login-box">
     <img src="/static/rootcall-logo.png" alt="RootCall Logo">
     <h2>Sign In to RootCall</h2>
-    <form action="/api/login" method="POST">
+    <form action="/api/auth/login" method="POST">
       <div class="input-group">
         <label for="cell">Phone or Email</label>
-        <input type="text" id="cell" name="cell" required>
+        <input type="text" id="cell" name="username" required>
       </div>
       <div class="input-group">
         <label for="pass">Password</label>
-        <input type="password" id="pass" name="pass" required>
+        <input type="password" id="pass" name="password" required>
       </div>
       <button class="btn" type="submit">Login</button>
     </form>

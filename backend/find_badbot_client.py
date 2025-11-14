@@ -3,7 +3,7 @@
 Find which client has BadBot config
 """
 from app.database import SessionLocal
-from app.models.badbot_config import BadBotConfig
+from app.models.rootcall_config import RootCallConfig
 from app.models.phone_number import PhoneNumber
 from app.models.user import User
 

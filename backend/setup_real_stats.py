@@ -45,7 +45,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from app.database import get_db
-from app.models.badbot_config import BadBotConfig
+from app.models.rootcall_config import BadBotConfig
 from app.models.phone_number import PhoneNumber
 from app.models.user import User
 from app.models.badbot_call_log import BadBotCallLog
@@ -234,8 +234,8 @@ with open('app/routers/badbot_screen.py', 'r') as f:
 # Add import
 if 'BadBotCallLog' not in content:
     content = content.replace(
-        'from app.models.badbot_config import BadBotConfig',
-        'from app.models.badbot_config import BadBotConfig\nfrom app.models.badbot_call_log import BadBotCallLog'
+        'from app.models.rootcall_config import BadBotConfig',
+        'from app.models.rootcall_config import BadBotConfig\nfrom app.models.badbot_call_log import BadBotCallLog'
     )
     print("   ✓ Added import")
 

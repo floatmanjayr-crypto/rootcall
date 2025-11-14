@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.phone_number import PhoneNumber
-from app.models.badbot_config import BadBotConfig
+from app.models.rootcall_config import RootCallConfig
 from pydantic import BaseModel
 import telnyx
 import os
@@ -64,7 +64,7 @@ async def purchase_number(data: PurchaseNumber, db: Session = Depends(get_db)):
         db.add(phone)
         db.flush()
         
-        config = BadBotConfig(
+        config = RootCallConfig(
             phone_number_id=phone.id,
             user_id=data.user_id,
             client_name=data.nickname,
@@ -90,8 +90,8 @@ async def get_my_numbers(user_id: int, db: Session = Depends(get_db)):
     
     result = []
     for phone in phones:
-        config = db.query(BadBotConfig).filter(
-            BadBotConfig.phone_number_id == phone.id
+        config = db.query(RootCallConfig).filter(
+            RootCallConfig.phone_number_id == phone.id
         ).first()
         
         result.append({

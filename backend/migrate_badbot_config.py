@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Migrate Hardcoded BadBot Config to Database
-Run once: python migrate_badbot_config.py
+Run once: python migrate_rootcall_config.py
 
 Moves your hardcoded CLIENT_LINES configuration into the database
 """
@@ -10,7 +10,7 @@ sys.path.append(".")
 
 from app.database import SessionLocal
 from app.models.phone_number import PhoneNumber
-from app.models.badbot_config import BadBotConfig
+from app.models.rootcall_config import BadBotConfig
 from app.models.user import User
 
 # Your current hardcoded config

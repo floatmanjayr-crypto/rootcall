@@ -1,9 +1,9 @@
 with open('app/services/client_config.py', 'r') as f:
     content = f.read()
 
-# Fix the query - badbot_config is a relationship that returns a list
-old_code = '''        if phone and phone.badbot_config:
-            config = phone.badbot_config
+# Fix the query - rootcall_config is a relationship that returns a list
+old_code = '''        if phone and phone.rootcall_config:
+            config = phone.rootcall_config
             # Convert database model to dict format expected by screening logic'''
 
 new_code = '''        if phone:

@@ -1,6 +1,6 @@
 from app.database import SessionLocal
 from app.models.phone_number import PhoneNumber
-from app.models.badbot_config import BadBotConfig
+from app.models.rootcall_config import RootCallConfig
 
 db = SessionLocal()
 

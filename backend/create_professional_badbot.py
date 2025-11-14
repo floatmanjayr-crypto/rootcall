@@ -46,8 +46,8 @@ CREATE TABLE IF NOT EXISTS badbot_user_subscriptions (
 );
 
 -- Shield numbers (rename from phone_numbers concept)
-ALTER TABLE badbot_configs ADD COLUMN IF NOT EXISTS shield_number_nickname VARCHAR(100);
-ALTER TABLE badbot_configs ADD COLUMN IF NOT EXISTS is_primary BOOLEAN DEFAULT false;
+ALTER TABLE rootcall_configs ADD COLUMN IF NOT EXISTS shield_number_nickname VARCHAR(100);
+ALTER TABLE rootcall_configs ADD COLUMN IF NOT EXISTS is_primary BOOLEAN DEFAULT false;
 
 CREATE INDEX IF NOT EXISTS idx_user_subscriptions ON badbot_user_subscriptions(user_id);
 """
@@ -68,7 +68,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func, and_
 from app.database import get_db
-from app.models.badbot_config import BadBotConfig
+from app.models.rootcall_config import RootCallConfig
 from app.models.phone_number import PhoneNumber
 from app.models.user import User
 from app.models.badbot_call_log import BadBotCallLog

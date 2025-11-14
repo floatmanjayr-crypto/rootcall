@@ -368,7 +368,7 @@ print("\n3. Creating Backend API Endpoints...")
 api_code = '''from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models.badbot_config import BadBotConfig
+from app.models.rootcall_config import RootCallConfig
 from app.models.phone_number import PhoneNumber
 from pydantic import BaseModel
 from typing import List, Optional

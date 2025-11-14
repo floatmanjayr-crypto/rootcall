@@ -3,7 +3,7 @@
 Check and enable SMS alerts for BadBot config
 """
 from app.database import SessionLocal
-from app.models.badbot_config import BadBotConfig
+from app.models.rootcall_config import RootCallConfig
 from app.models.phone_number import PhoneNumber
 
 db = SessionLocal()

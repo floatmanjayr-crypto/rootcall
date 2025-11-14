@@ -6,7 +6,7 @@ Reads BadBot configuration from database instead of hardcoded CLIENT_LINES
 from typing import Dict, Optional
 from sqlalchemy.orm import Session
 from app.database import SessionLocal
-from app.models.badbot_config import BadBotConfig
+from app.models.rootcall_config import RootCallConfig
 from app.models.phone_number import PhoneNumber
 import logging
 
@@ -54,9 +54,9 @@ def get_client_config(telnyx_number: str, db: Session = None) -> Optional[Dict]:
         ).first()
         
         if phone:
-            # Query BadBotConfig directly - FIXED
-            config = db.query(BadBotConfig).filter(
-                BadBotConfig.phone_number_id == phone.id
+            # Query RootCallConfig directly - FIXED
+            config = db.query(RootCallConfig).filter(
+                RootCallConfig.phone_number_id == phone.id
             ).first()
             
             if config:
@@ -120,8 +120,8 @@ def add_trusted_contact(telnyx_number: str, contact_number: str, db: Session) ->
         if not phone:
             return False
             
-        config = db.query(BadBotConfig).filter(
-            BadBotConfig.phone_number_id == phone.id
+        config = db.query(RootCallConfig).filter(
+            RootCallConfig.phone_number_id == phone.id
         ).first()
         
         if not config:
@@ -159,8 +159,8 @@ def remove_trusted_contact(telnyx_number: str, contact_number: str, db: Session)
         if not phone:
             return False
             
-        config = db.query(BadBotConfig).filter(
-            BadBotConfig.phone_number_id == phone.id
+        config = db.query(RootCallConfig).filter(
+            RootCallConfig.phone_number_id == phone.id
         ).first()
         
         if not config:

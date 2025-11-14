@@ -32,7 +32,7 @@ async def create_checkout_session(data: CreateCheckout, db: Session = Depends(ge
         raise HTTPException(status_code=400, detail="Invalid tier")
     
     try:
-        checkout_session = stripe.stripe.stripe.checkout.Session.create(
+        checkout_session = stripe.checkout.Session.create(
             customer_email=user.email,
             payment_method_types=['card'],
             line_items=[{

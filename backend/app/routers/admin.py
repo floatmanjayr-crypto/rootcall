@@ -5,7 +5,7 @@ from sqlalchemy import func
 from app.database import get_db
 from app.models.user import User
 from app.models.phone_number import PhoneNumber
-from app.models.badbot_call_log import BadBotCallLog
+from app.models.rootcall_call_log import RootCallCallLog
 
 router = APIRouter(tags=["Admin"])
 
@@ -20,8 +20,8 @@ async def admin_dashboard(admin_id: int, db: Session = Depends(get_db)):
     
     total_users = db.query(User).count()
     total_numbers = db.query(PhoneNumber).filter(PhoneNumber.is_active == True).count()
-    total_calls = db.query(BadBotCallLog).count()
-    spam_blocked = db.query(BadBotCallLog).filter(BadBotCallLog.action == "spam_blocked").count()
+    total_calls = db.query(RootCallCallLog).count()
+    spam_blocked = db.query(RootCallCallLog).filter(RootCallCallLog.action == "spam_blocked").count()
     
     recent_users = db.query(User).order_by(User.created_at.desc()).limit(10).all()
     

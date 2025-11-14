@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>RootCall Login</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --green: #0d3d2f;
+      --ivory: #f9f6f3;
+    }
+    * {
+      margin: 0; padding: 0; box-sizing: border-box;
+    }
+    body {
+      font-family: Inter, sans-serif;
+      background: linear-gradient(135deg, var(--green), #124b39);
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .login-box {
+      background: rgba(255, 255, 255, 0.08);
+      padding: 30px;
+      border-radius: 16px;
+      max-width: 400px;
+      width: 100%;
+      text-align: center;
+    }
+    .login-box img {
+      width: 80px;
+      margin-bottom: 20px;
+    }
+    .login-box h2 {
+      margin-bottom: 20px;
+      font-size: 1.8rem;
+    }
+    .input-group {
+      margin: 15px 0;
+      text-align: left;
+    }
+    .input-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 0.9rem;
+    }
+    .input-group input {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+    .btn {
+      background: white;
+      color: var(--green);
+      padding: 12px 30px;
+      font-weight: 700;
+      border: none;
+      border-radius: 50px;
+      margin-top: 20px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+    }
+  </style>
+</head>
+<body>
+  <div class="login-box">
+    <img src="/static/rootcall-logo.png" alt="RootCall Logo">
+    <h2>Sign In to RootCall</h2>
+    <form action="/api/login" method="POST">
+      <div class="input-group">
+        <label for="cell">Phone or Email</label>
+        <input type="text" id="cell" name="cell" required>
+      </div>
+      <div class="input-group">
+        <label for="pass">Password</label>
+        <input type="password" id="pass" name="pass" required>
+      </div>
+      <button class="btn" type="submit">Login</button>
+    </form>
+  </div>
+</body>
+</html>

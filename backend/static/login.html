@@ -168,11 +168,9 @@
         try {
           const userData = JSON.parse(user);
           if (userData.id || userData.email) {
-            // User already authenticated, redirect to dashboard
             window.location.href = '/client-portal.html';
           }
         } catch (e) {
-          // Invalid user data, clear it
           localStorage.removeItem('user');
         }
       }
@@ -220,7 +218,6 @@
       const email = document.getElementById("email").value.trim();
       const password = document.getElementById("password").value;
 
-      // Basic validation
       if (!email || !password) {
         showError('Please enter both email and password.');
         return;
@@ -229,44 +226,64 @@
       setLoading(true);
 
       try {
+        // Try OAuth2 format first (most common for FastAPI)
         const res = await fetch("https://rootcall.onrender.com/api/auth/login", {
           method: "POST",
           headers: { 
-            "Content-Type": "application/json"
+            "Content-Type": "application/x-www-form-urlencoded"  // Changed from JSON
           },
-          body: JSON.stringify({ email, password })
+          body: new URLSearchParams({
+            username: email,   // Changed from "email" to "username" (OAuth2 standard)
+            password: password
+          })
         });
 
         const data = await res.json();
+        
+        // Debug logging
+        console.log('Login attempt - Status:', res.status);
+        console.log('Response data:', data);
 
         if (res.ok) {
-          // Store user data
           localStorage.setItem("user", JSON.stringify(data));
           
-          // Show success briefly before redirect
           const btn = document.getElementById('login-btn');
           btn.textContent = '✓ Success!';
           btn.style.background = '#4ade80';
           
-          // Redirect to dashboard
           setTimeout(() => {
             window.location.href = "/client-portal.html";
           }, 500);
           
         } else {
-          // Handle error response
-          const errorMessage = data.detail || data.message || "Invalid email or password.";
+          // Enhanced error handling
+          console.error('Login failed:', res.status, data);
+          
+          let errorMessage = "Invalid email or password.";
+          
+          // Handle FastAPI validation errors
+          if (Array.isArray(data.detail)) {
+            errorMessage = data.detail.map(err => {
+              const field = err.loc ? err.loc.join(' > ') : 'field';
+              return `${field}: ${err.msg}`;
+            }).join('; ');
+            console.error('Validation errors:', data.detail);
+          } else if (typeof data.detail === 'string') {
+            errorMessage = data.detail;
+          } else if (data.message) {
+            errorMessage = data.message;
+          }
+          
           showError(errorMessage);
           setLoading(false);
         }
       } catch (err) {
-        console.error('Login error:', err);
+        console.error('Network/Connection error:', err);
         showError("Error connecting to server. Please check your internet connection.");
         setLoading(false);
       }
     });
 
-    // Handle enter key in password field
     document.getElementById('password').addEventListener('keypress', function(e) {
       if (e.key === 'Enter') {
         document.getElementById('login-form').dispatchEvent(new Event('submit'));

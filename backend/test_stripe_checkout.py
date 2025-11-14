@@ -14,42 +14,42 @@ try:
     account = stripe.Account.retrieve()
     print(f"Connected to Stripe account: {account.id}")
     print()
-    
+
     price_ids = {
-        "Basic": os.getenv("STRIPE_BASIC_PRICE_ID"),
-        "Smart": os.getenv("STRIPE_SMART_PRICE_ID"),
-        "Premium": os.getenv("STRIPE_PREMIUM_PRICE_ID")
+        "Essential": os.getenv("STRIPE_ESSENTIAL_PRICE_ID"),
+        "Family": os.getenv("STRIPE_FAMILY_PRICE_ID"),
+        "Guardian": os.getenv("STRIPE_GUARDIAN_PRICE_ID")
     }
-    
+
     print("Checking prices:")
     for name, price_id in price_ids.items():
         try:
             price = stripe.Price.retrieve(price_id)
             amount = price.unit_amount / 100
-            print(f"OK {name}: ${amount:.2f}/month")
+            print(f"‚úÖ {name}: ${amount:.2f}/month (ID: {price_id})")
         except Exception as e:
-            print(f"ERROR {name}: {str(e)}")
-    
+            print(f"‚ùå {name}: {str(e)}")
+
     print()
     print("Creating test checkout session...")
-    
+
     session = stripe.checkout.Session.create(
         payment_method_types=["card"],
-        line_items=[{"price": price_ids["Smart"], "quantity": 1}],
+        line_items=[{"price": price_ids["Family"], "quantity": 1}],
         mode="subscription",
-        success_url="http://localhost:8000/success",
-        cancel_url="http://localhost:8000/cancel",
+        success_url="https://getrootcall.com/success.html?session_id={CHECKOUT_SESSION_ID}",
+        cancel_url="https://getrootcall.com/",
     )
-    
-    print(f"Checkout session created!")
+
+    print(f"‚úÖ Checkout session created!")
     print(f"Session ID: {session.id}")
     print(f"URL: {session.url}")
     print()
-    print("Copy this URL and paste in browser:")
+    print("Ì¥ó Copy this URL and paste in browser:")
     print(session.url)
-    
+
 except Exception as e:
-    print(f"ERROR: {str(e)}")
+    print(f"‚ùå ERROR: {str(e)}")
     print()
     print("Common issues:")
     print("1. Price IDs from different Stripe account")

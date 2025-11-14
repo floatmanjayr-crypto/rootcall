@@ -3,9 +3,11 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.user import User
 from pydantic import BaseModel
-import stripe
 import os
 import logging
+
+import stripe
+import stripe.checkout as stripe_checkout  # ⬅️ explicit import
 
 log = logging.getLogger(__name__)
 
@@ -24,6 +26,7 @@ PRICE_MAP = {
     "guardian": os.getenv("STRIPE_GUARDIAN_PRICE_ID"),
 }
 
+
 class CreateCheckout(BaseModel):
     tier: str
     user_id: int
@@ -37,16 +40,15 @@ async def create_checkout_session(
 ):
     """Create Stripe checkout session"""
 
-    # 1) Ensure Stripe is configured
     if not STRIPE_SECRET_KEY:
         raise HTTPException(status_code=500, detail="Stripe not configured on server")
 
-    # 2) Ensure plan is configured
+    # price for selected tier
     price_id = PRICE_MAP.get(data.tier)
     if not price_id:
         raise HTTPException(status_code=400, detail="Invalid or misconfigured tier")
 
-    # 3) Get user + email
+    # user + email
     user = db.query(User).filter(User.id == data.user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -56,7 +58,8 @@ async def create_checkout_session(
     try:
         origin = request.headers.get("origin") or "https://getrootcall.com"
 
-        checkout_session = stripe.checkout.Session.create(
+        # ⬇️ use stripe_checkout instead of stripe.checkout
+        checkout_session = stripe_checkout.Session.create(
             customer_email=user.email,
             line_items=[
                 {

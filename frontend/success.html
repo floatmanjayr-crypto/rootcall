@@ -41,11 +41,11 @@
     
     <p id="details" style="font-size:1rem;opacity:0.8;display:none"></p>
     <div id="actions" style="display:none">
-  <a href="https://rootcall.onrender.com/static/client-portal.html" class="btn">Go to Dashboard</a>
-  <a href="https://rootcall.onrender.com/static/login.html" class="btn">Sign In</a>
-</div>
-
-</div>
+      <!-- 🔥 BOTH buttons go to the backend pages that work -->
+      <a href="https://rootcall.onrender.com/static/client-portal.html" class="btn">Go to Dashboard</a>
+      <a href="https://rootcall.onrender.com/static/login.html" class="btn">Sign In</a>
+    </div>
+  </div>
   
   <script>
     const API = 'https://rootcall.onrender.com';
@@ -58,7 +58,6 @@
         document.getElementById(steps[i]).classList.add('complete');
       }
       
-      // Show success
       document.getElementById('status').textContent = '✅ Your RootCall protection is now active!';
       document.getElementById('details').innerHTML = 
         'Your account has been created successfully!<br><br>' +
@@ -72,7 +71,6 @@
       document.getElementById('actions').style.display = 'block';
     }
     
-    // Auto-login if user exists
     const user = localStorage.getItem('user');
     if (user) {
       simulateProvisioning();

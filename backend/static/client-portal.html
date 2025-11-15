@@ -602,11 +602,16 @@
         let CLIENT_ID = null;
         let SELECTED_AREA_CODE = null;
 
+        // Helper: get token from either key
+        function getToken() {
+            return localStorage.getItem('access_token') || localStorage.getItem('token');
+        }
+
         // ============================================
         // INITIALIZATION
         // ============================================
         async function init() {
-            const token = localStorage.getItem('access_token');
+            const token = getToken();
             if (!token) {
                 window.location.href = '/static/login.html';
                 return;
@@ -626,6 +631,9 @@
             } catch (err) {
                 console.error('Init error:', err);
                 localStorage.removeItem('access_token');
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                localStorage.removeItem('selected_plan');
                 window.location.href = '/static/login.html';
             }
         }
@@ -717,7 +725,7 @@
         }
 
         async function loadNumbers() {
-            const token = localStorage.getItem('access_token');
+            const token = getToken();
             try {
                 const response = await fetch(`${API}/api/rootcall/my-number`, {
                     headers: { 'Authorization': `Bearer ${token}` }
@@ -798,7 +806,7 @@
             document.getElementById('step-area-code').style.display = 'none';
             document.getElementById('step-provisioning').style.display = 'block';
 
-            const token = localStorage.getItem('access_token');
+            const token = getToken();
             
             try {
                 document.getElementById('provision-status').textContent = 'Searching for available numbers...';
@@ -994,7 +1002,15 @@
 
         function logout() {
             if (confirm('Are you sure you want to logout?')) {
-                localStorage.removeItem('access_token');
+                try {
+                    localStorage.removeItem('access_token');
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    localStorage.removeItem('selected_plan');
+                } catch (e) {
+                    console.warn('Could not clear localStorage', e);
+                }
+                // Redirect to the same login path your landing page uses
                 window.location.href = '/static/login.html';
             }
         }

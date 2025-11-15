@@ -532,3 +532,101 @@ async def get_dashboard_setup(
 async def landing_page():
     """Serve RootCall landing page"""
     return FileResponse("static/index.html")
+
+@router.post("/api/rootcall/import-existing/{phone_number}")
+async def import_existing_number(
+    phone_number: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Import existing Telnyx number into RootCall
+    Use this when you already have a number in Telnyx but not in database
+    """
+    from urllib.parse import unquote
+    
+    # Decode URL-encoded phone number
+    phone_number = unquote(phone_number)
+    
+    # Check if already exists
+    existing = db.query(PhoneNumber).filter(
+        PhoneNumber.phone_number == phone_number
+    ).first()
+    
+    if existing:
+        # Already exists - check if has config
+        existing_config = db.query(RootCallConfig).filter(
+            RootCallConfig.phone_number_id == existing.id
+        ).first()
+        
+        if existing_config:
+            return {
+                "success": True,
+                "message": "Number already configured",
+                "phone_id": existing.id,
+                "already_existed": True
+            }
+        else:
+            # Has phone but no config - create config
+            config = RootCallConfig(
+                phone_number_id=existing.id,
+                user_id=current_user.id,
+                client_name=current_user.full_name or current_user.email,
+                client_cell="",
+                retell_agent_id="",
+                retell_did=phone_number,
+                trusted_contacts=[],
+                sms_alerts_enabled=True,
+                alert_on_spam=True,
+                alert_on_unknown=True,
+                auto_block_spam=True,
+                is_active=True
+            )
+            db.add(config)
+            db.commit()
+            
+            return {
+                "success": True,
+                "message": f"Added config for existing number {phone_number}",
+                "phone_id": existing.id
+            }
+    
+    # Create new phone record
+    phone_record = PhoneNumber(
+        user_id=current_user.id,
+        phone_number=phone_number,
+        friendly_name=f"RootCall - {phone_number[-10:-7]}",
+        country_code="US",
+        telnyx_phone_number_id="imported_existing",
+        telnyx_connection_id="",
+        is_active=True,
+        monthly_cost=1.0
+    )
+    db.add(phone_record)
+    db.flush()
+    
+    # Create config
+    config = RootCallConfig(
+        phone_number_id=phone_record.id,
+        user_id=current_user.id,
+        client_name=current_user.full_name or current_user.email,
+        client_cell="",  # User will update later
+        retell_agent_id="",  # Will be created when needed
+        retell_did=phone_number,
+        trusted_contacts=[],
+        sms_alerts_enabled=True,
+        alert_on_spam=True,
+        alert_on_unknown=True,
+        auto_block_spam=True,
+        is_active=True
+    )
+    db.add(config)
+    db.commit()
+    db.refresh(phone_record)
+    
+    return {
+        "success": True,
+        "message": f"Successfully imported {phone_number}",
+        "phone_id": phone_record.id,
+        "phone_number": phone_number
+    }

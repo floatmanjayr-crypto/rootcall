@@ -1,305 +1,232 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>RootCall Login</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <meta charset="utf-8" />
+  <title>Sign In — RootCall</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
   <style>
-    :root {
-      --green: #0d3d2f;
-      --ivory: #f9f6f3;
+    :root{
+      --green:#0d3d2f;
+      --accent:#2d7a5f;
+      --ivory:#f9f6f3;
     }
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+      min-height:100vh;
+      background:radial-gradient(circle at top, #1b5240 0%, #071712 55%, #020806 100%);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+      color:#f9fafb;
     }
-    body {
-      font-family: Inter, sans-serif;
-      background: var(--green);
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      padding: 20px;
+    .card{
+      background:rgba(10,18,32,0.95);
+      border-radius:18px;
+      padding:32px 28px;
+      max-width:380px;
+      width:100%;
+      box-shadow:0 20px 50px rgba(0,0,0,0.6);
+      border:1px solid rgba(255,255,255,0.06);
     }
-    .container {
-      background: rgba(255,255,255,0.05);
-      padding: 30px;
-      border-radius: 12px;
-      width: 100%;
-      max-width: 400px;
-      text-align: center;
+    .logo-row{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      margin-bottom:18px;
     }
-    img.logo {
-      width: 80px;
-      margin-bottom: 20px;
+    .logo-icon{
+      width:40px;height:40px;
+      border-radius:12px;
+      background:linear-gradient(135deg,#0d3d2f,#2d7a5f);
+      display:flex;
+      align-items:center;
+      justify-content:center;
     }
-    h2 {
-      margin-bottom: 20px;
-      font-size: 1.8rem;
+    .logo-icon span{
+      font-weight:800;
+      color:white;
+      font-size:1.1rem;
     }
-    input[type="email"],
-    input[type="password"] {
-      width: 100%;
-      padding: 12px;
-      margin: 10px 0;
-      border-radius: 8px;
-      border: none;
-      font-size: 1rem;
+    .product-name{
+      font-weight:800;
+      letter-spacing:.14em;
+      font-size:.78rem;
+      color:#d1fae5;
     }
-    .password-wrapper {
-      position: relative;
+    h1{
+      font-size:1.6rem;
+      margin-bottom:8px;
     }
-    .toggle-password {
-      position: absolute;
-      top: 50%;
-      right: 12px;
-      transform: translateY(-50%);
-      cursor: pointer;
-      font-size: 0.9rem;
-      color: #666;
-      user-select: none;
+    .sub{
+      font-size:.9rem;
+      color:#9ca3af;
+      margin-bottom:22px;
     }
-    button {
-      background: white;
-      color: var(--green);
-      padding: 12px;
-      width: 100%;
-      border: none;
-      border-radius: 8px;
-      font-weight: bold;
-      font-size: 1rem;
-      margin-top: 10px;
-      cursor: pointer;
-      transition: all 0.3s ease;
+    label{
+      display:block;
+      font-size:.78rem;
+      font-weight:600;
+      text-transform:uppercase;
+      letter-spacing:.12em;
+      margin-bottom:6px;
+      color:#9ca3af;
     }
-    button:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(255,255,255,0.2);
+    input{
+      width:100%;
+      padding:11px 12px;
+      border-radius:10px;
+      border:1px solid rgba(148,163,184,0.6);
+      background:rgba(15,23,42,0.9);
+      color:#e5e7eb;
+      font-size:.95rem;
     }
-    button:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-      transform: none;
+    input:focus{
+      outline:none;
+      border-color:#22c55e;
+      box-shadow:0 0 0 1px rgba(34,197,94,0.4);
     }
-    .extra-links {
-      margin-top: 15px;
-      font-size: 0.9rem;
+    .field{margin-bottom:16px;}
+    .btn{
+      width:100%;
+      border:none;
+      border-radius:999px;
+      padding:12px 16px;
+      font-weight:700;
+      font-size:.98rem;
+      cursor:pointer;
+      background:linear-gradient(135deg,#16a34a,#22c55e);
+      color:white;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      margin-top:4px;
+      box-shadow:0 10px 30px rgba(22,163,74,0.45);
+      transition:transform .15s ease,box-shadow .15s ease,filter .15s ease;
     }
-    .extra-links a {
-      color: #ddd;
-      text-decoration: none;
-      margin: 0 8px;
+    .btn:hover{
+      filter:brightness(1.05);
+      transform:translateY(-1px);
+      box-shadow:0 16px 40px rgba(22,163,74,0.6);
     }
-    .extra-links a:hover {
-      text-decoration: underline;
+    .btn:disabled{
+      opacity:.6;
+      cursor:not-allowed;
+      transform:none;
+      box-shadow:none;
     }
-    .error-message {
-      background: rgba(255, 0, 0, 0.2);
-      border: 1px solid rgba(255, 0, 0, 0.4);
-      color: #ffcccc;
-      padding: 10px;
-      border-radius: 8px;
-      margin: 10px 0;
-      display: none;
+    .status{
+      min-height:20px;
+      font-size:.85rem;
+      margin-top:10px;
     }
-    .loading {
-      display: none;
-      margin-top: 10px;
-      font-size: 0.9rem;
-      color: #ddd;
+    .status.error{color:#fca5a5;}
+    .status.success{color:#6ee7b7;}
+    .footer-text{
+      margin-top:18px;
+      font-size:.8rem;
+      color:#9ca3af;
+      text-align:center;
     }
-    .back-link {
-      margin-top: 20px;
-      padding-top: 20px;
-      border-top: 1px solid rgba(255,255,255,0.1);
-    }
-    .back-link a {
-      color: #ddd;
-      text-decoration: none;
-      font-size: 0.9rem;
-    }
-    .back-link a:hover {
-      color: white;
+    .footer-text a{
+      color:#86efac;
+      text-decoration:none;
+      font-weight:600;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <img src="/static/rootcall-logo.png" alt="RootCall Logo" class="logo" onerror="this.style.display='none'">
-    <h2>Sign In to RootCall</h2>
-    
-    <div id="error-msg" class="error-message"></div>
-    
-    <form id="login-form">
-      <input type="email" id="email" placeholder="Email" required autocomplete="email">
-      
-      <div class="password-wrapper">
-        <input type="password" id="password" placeholder="Password" required autocomplete="current-password">
-        <span class="toggle-password" onclick="togglePassword()">Show</span>
+  <div class="card">
+    <div class="logo-row">
+      <div class="logo-icon"><span>R</span></div>
+      <div>
+        <div class="product-name">ROOTCALL</div>
+        <div style="font-size:.8rem;color:#9ca3af;">AI Call Shield</div>
       </div>
+    </div>
+    <h1>Sign in</h1>
+    <p class="sub">Access your dashboard to manage shield numbers and trusted contacts.</p>
 
-      <button type="submit" id="login-btn">Login</button>
-      <div class="loading" id="loading">Authenticating...</div>
+    <form id="login-form">
+      <div class="field">
+        <label for="email">Email</label>
+        <input id="email" type="email" autocomplete="email" required />
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input id="password" type="password" autocomplete="current-password" required />
+      </div>
+      <button type="submit" id="login-btn" class="btn">
+        <span id="btn-text">Sign In</span>
+        <span id="btn-spinner" style="display:none;font-size:0.85rem;">⏳</span>
+      </button>
+      <div id="status" class="status"></div>
     </form>
 
-    <div class="extra-links">
-      <a href="forgot-password.html">Forgot Password?</a> |
-      <a href="index.html">Sign up</a>
-    </div>
-
-    <div class="back-link">
-      <a href="index.html">← Back to Home</a>
+    <div class="footer-text">
+      Don’t have an account? <a href="/">Go back to RootCall homepage</a>
     </div>
   </div>
 
   <script>
-    // ============================================
-    // AUTO-REDIRECT IF ALREADY LOGGED IN
-    // ============================================
-    const urlParams = new URLSearchParams(window.location.search);
-    const fromLogout = urlParams.get('logout');
-    
-    // Only auto-redirect if NOT coming from logout
-    if (!fromLogout) {
-      const token = localStorage.getItem('access_token');
-      if (token) {
-        // Already authenticated, redirect to dashboard
-        window.location.href = '/client-portal.html';
-      }
-    }
+    const API = 'https://rootcall.onrender.com';
 
-    // ============================================
-    // UTILITY FUNCTIONS
-    // ============================================
-    function togglePassword() {
-      const passwordInput = document.getElementById("password");
-      const toggle = document.querySelector(".toggle-password");
-      if (passwordInput.type === "password") {
-        passwordInput.type = "text";
-        toggle.textContent = "Hide";
-      } else {
-        passwordInput.type = "password";
-        toggle.textContent = "Show";
-      }
-    }
+    const form = document.getElementById('login-form');
+    const statusEl = document.getElementById('status');
+    const btn = document.getElementById('login-btn');
+    const btnText = document.getElementById('btn-text');
+    const btnSpinner = document.getElementById('btn-spinner');
 
-    function showError(message) {
-      const errorDiv = document.getElementById('error-msg');
-      errorDiv.textContent = message;
-      errorDiv.style.display = 'block';
-      setTimeout(() => {
-        errorDiv.style.display = 'none';
-      }, 5000);
-    }
-
-    function setLoading(isLoading) {
-      const btn = document.getElementById('login-btn');
-      const loading = document.getElementById('loading');
-      
-      if (isLoading) {
-        btn.disabled = true;
-        btn.textContent = 'Logging in...';
-        loading.style.display = 'block';
-      } else {
-        btn.disabled = false;
-        btn.textContent = 'Login';
-        loading.style.display = 'none';
-      }
-    }
-
-    // ============================================
-    // LOGIN FORM HANDLER
-    // ============================================
-    document.getElementById("login-form").addEventListener("submit", async function(e) {
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      
-      const email = document.getElementById("email").value.trim();
-      const password = document.getElementById("password").value;
+      statusEl.textContent = '';
+      statusEl.className = 'status';
 
-      // Validation
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value.trim();
+
       if (!email || !password) {
-        showError('Please enter both email and password.');
+        statusEl.textContent = 'Please enter both email and password.';
+        statusEl.classList.add('error');
         return;
       }
 
-      setLoading(true);
+      btn.disabled = true;
+      btnText.textContent = 'Signing in...';
+      btnSpinner.style.display = 'inline';
 
       try {
-        // Send login request using OAuth2 form format
-        const res = await fetch("https://rootcall.onrender.com/api/auth/login", {
-          method: "POST",
-          headers: { 
-            "Content-Type": "application/x-www-form-urlencoded"
-          },
-          body: new URLSearchParams({
-            username: email,   // OAuth2 uses "username" field
-            password: password
-          })
+        const res = await fetch(API + '/api/auth/login', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ email, password })
         });
 
         const data = await res.json();
-        
-        // Debug logging
-        console.log('Login response:', res.status, data);
 
-        if (res.ok) {
-          // ✅ CRITICAL: Store access_token for dashboard
-          if (data.access_token) {
-            localStorage.setItem("access_token", data.access_token);
-          }
-          
-          // Store full response for backward compatibility
-          localStorage.setItem("user", JSON.stringify(data));
-          
-          // Success feedback
-          const btn = document.getElementById('login-btn');
-          btn.textContent = '✓ Success!';
-          btn.style.background = '#4ade80';
-          
-          // Redirect to dashboard
-          setTimeout(() => {
-            window.location.href = "/client-portal.html";
-          }, 500);
-          
-        } else {
-          // Handle login errors
-          console.error('Login failed:', res.status, data);
-          
-          let errorMessage = "Invalid email or password.";
-          
-          // Parse FastAPI validation errors
-          if (Array.isArray(data.detail)) {
-            errorMessage = data.detail.map(err => {
-              const field = err.loc ? err.loc.join(' > ') : 'field';
-              return `${field}: ${err.msg}`;
-            }).join('; ');
-            console.error('Validation errors:', data.detail);
-          } else if (typeof data.detail === 'string') {
-            errorMessage = data.detail;
-          } else if (data.message) {
-            errorMessage = data.message;
-          }
-          
-          showError(errorMessage);
-          setLoading(false);
+        if (!res.ok) {
+          throw new Error(data.detail || 'Login failed');
         }
-      } catch (err) {
-        console.error('Network error:', err);
-        showError("Error connecting to server. Please check your internet connection.");
-        setLoading(false);
-      }
-    });
 
-    // ============================================
-    // ENTER KEY SUPPORT
-    // ============================================
-    document.getElementById('password').addEventListener('keypress', function(e) {
-      if (e.key === 'Enter') {
-        document.getElementById('login-form').dispatchEvent(new Event('submit'));
+        // Save token exactly how dashboard expects it
+        localStorage.setItem('access_token', data.access_token);
+
+        statusEl.textContent = 'Login successful! Redirecting...';
+        statusEl.classList.add('success');
+
+        setTimeout(() => {
+          window.location.href = '/static/client-portal.html';
+        }, 800);
+      } catch (err) {
+        statusEl.textContent = err.message || 'Unable to sign in.';
+        statusEl.classList.add('error');
+      } finally {
+        btn.disabled = false;
+        btnText.textContent = 'Sign In';
+        btnSpinner.style.display = 'none';
       }
     });
   </script>

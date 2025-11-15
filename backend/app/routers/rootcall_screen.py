@@ -38,7 +38,7 @@ TELNYX_API_KEY = os.getenv("TELNYX_API_KEY", "").strip()
 TELNYX_SMS_FROM = os.getenv("TELNYX_SMS_FROM", "").strip()
 DRY_RUN = (
     os.getenv("ROOTCALL_DRY_RUN", "").strip()
-    or os.getenv("BADBOT_DRY_RUN", "").strip()
+    or os.getenv("ROOTCALL_DRY_RUN", "").strip()
 ) == "1"
 
 # Telnyx webhook signature verification (optional but recommended)
@@ -189,7 +189,7 @@ async def telnyx_hangup(ccid: str):
 @router.post("/webhook", status_code=200)
 async def screen_call(request: Request):
     """
-    Main BadBot screening webhook - NO AUTHENTICATION REQUIRED
+    Main RootCall screening webhook - NO AUTHENTICATION REQUIRED
     This endpoint receives webhooks directly from Telnyx
     """
     
@@ -342,7 +342,7 @@ async def screen_call(request: Request):
                 await send_sms_alert(
                     client_cell, 
                     f"[RootCall] SPAM BLOCKED: {cnam or 'Unknown'} ({from_num})",
-                    to_num  # Send from the BadBot number
+                    to_num  # Send from the RootCall number
                 )
                 if caregiver:
                     await send_sms_alert(

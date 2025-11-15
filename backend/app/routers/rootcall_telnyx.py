@@ -8,9 +8,9 @@ from fastapi import APIRouter, Request, HTTPException
 # Per-line mapping (public DID -> retell DID / cell)
 from app.services.client_config import get_client_config
 
-log = logging.getLogger("badbot")
+log = logging.getLogger("rootcall")
 
-# --- Minimal inline "BadBot heuristics" (fallbacks) ---
+# --- Minimal inline "RootCall heuristics" (fallbacks) ---
 def number_lookup(phone: str) -> Dict[str, Any]:
     # You can replace with your real CNAM/risk lookup later
     return {"number": phone, "cnam": "", "risk": "unknown"}
@@ -84,7 +84,7 @@ class TelnyxCC:
         return cls._post(ccid, "start_recording")
 
 # --- FastAPI router ---
-router = APIRouter(prefix="/telnyx/badbot", tags=["BadBot Telnyx"])
+router = APIRouter(prefix="/telnyx/rootcall", tags=["RootCall Telnyx"])
 WEBHOOK_AUTH_TOKEN = os.getenv("WEBHOOK_AUTH_TOKEN", "").strip()
 
 def _auth_ok(req: Request) -> bool:
@@ -109,7 +109,7 @@ async def telnyx_webhook(request: Request):
     if not ccid:
         raise HTTPException(status_code=400, detail="Missing call_control_id")
 
-    # Fetch per-client routing based on the CALLED number (public BadBot DID)
+    # Fetch per-client routing based on the CALLED number (public RootCall DID)
     cfg = get_client_config(to)
     RETELL_DID  = cfg.get("retell_did", "")
     CLIENT_CELL = cfg.get("client_cell", "")
@@ -145,7 +145,7 @@ async def telnyx_webhook(request: Request):
             return {"status": "retell_transfer_did", "to": RETELL_DID}
 
         # 5) Fallback mini-voicemail
-        TelnyxCC.speak(ccid, "This line is protected by BadBot. Please state your name and reason for calling.")
+        TelnyxCC.speak(ccid, "This line is protected by RootCall. Please state your name and reason for calling.")
         TelnyxCC.record_start(ccid)
         return {"status": "screening_vm"}
 
@@ -155,12 +155,12 @@ async def telnyx_webhook(request: Request):
     # Ignore other events
     return {"ok": True}
 
-# --- optional debug route (only if BADBOT_DEBUG=1) ---
+# --- optional debug route (only if ROOTCALL_DEBUG=1) ---
 from fastapi import Depends
 
 @router.get("/debug-auth")
 async def debug_auth(request: Request):
-    if os.getenv("BADBOT_DEBUG") != "1":
+    if os.getenv("ROOTCALL_DEBUG") != "1":
         raise HTTPException(status_code=403, detail="Debug disabled")
     return {
         "expected_token": os.getenv("WEBHOOK_AUTH_TOKEN", ""),
@@ -168,7 +168,7 @@ async def debug_auth(request: Request):
     }
 
 # ---- DRY RUN HOOK (for local testing without real Telnyx calls) ----
-if os.getenv("BADBOT_DRY_RUN") == "1":
+if os.getenv("ROOTCALL_DRY_RUN") == "1":
     _orig_post = TelnyxCC._post
 
     @classmethod
@@ -178,4 +178,4 @@ if os.getenv("BADBOT_DRY_RUN") == "1":
         return {"ok": True, "dry_run": True, "action": action, "ccid": ccid, "payload": payload or {}}
 
     TelnyxCC._post = _mock_post
-    log.warning("BADBOT_DRY_RUN=1 — Telnyx API calls are mocked.")
+    log.warning("ROOTCALL_DRY_RUN=1 — Telnyx API calls are mocked.")

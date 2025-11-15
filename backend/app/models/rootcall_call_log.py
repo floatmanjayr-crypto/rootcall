@@ -1,5 +1,5 @@
 """
-BadBot Call Logs Model
+RootCall Call Logs Model
 """
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.sql import func

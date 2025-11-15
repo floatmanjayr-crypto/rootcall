@@ -1,0 +1,1176 @@
+=== APP STRUCTURE ===
+total 142
+drwxr-xr-x 1 bokro 197609    0 Nov 14 00:48 ./
+drwxr-xr-x 1 bokro 197609    0 Nov 14 23:30 ../
+-rw-r--r-- 1 bokro 197609    0 Nov 14 00:48 __init__.py
+drwxr-xr-x 1 bokro 197609    0 Nov  9 00:08 __pycache__/
+drwxr-xr-x 1 bokro 197609    0 Nov 14 00:48 agent_framework/
+drwxr-xr-x 1 bokro 197609    0 Nov 14 00:48 api/
+-rw-r--r-- 1 bokro 197609 1431 Nov 14 00:48 config.py
+drwxr-xr-x 1 bokro 197609    0 Nov 14 00:48 core/
+-rw-r--r-- 1 bokro 197609  671 Nov 14 00:48 database.py
+-rw-r--r-- 1 bokro 197609  464 Nov 14 00:48 db.py
+-rw-r--r-- 1 bokro 197609  181 Nov 14 00:48 deps.py
+-rw-r--r-- 1 bokro 197609 2362 Nov 14 00:48 main.py
+-rw-r--r-- 1 bokro 197609 2268 Oct 22 09:59 main.py.backup
+-rw-r--r-- 1 bokro 197609 1673 Oct 23 16:49 main.py.backup2
+drwxr-xr-x 1 bokro 197609    0 Nov 14 00:48 models/
+-rw-r--r-- 1 bokro 197609  752 Nov 14 00:48 models.py
+drwxr-xr-x 1 bokro 197609    0 Nov 14 23:13 routers/
+drwxr-xr-x 1 bokro 197609    0 Nov 14 00:48 schemas/
+drwxr-xr-x 1 bokro 197609    0 Nov 14 03:15 services/
+drwxr-xr-x 1 bokro 197609    0 Oct 16 21:58 utils/
+drwxr-xr-x 1 bokro 197609    0 Oct 16 21:58 workers/
+
+=== MAIN.PY ===
+
+"""VoIP Platform Main Application"""
+from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
+from app.config import settings
+from app.database import engine, Base
+from app.routers import rootcall_portal
+from app.routers import payments, number_management, auth, admin
+
+# Import routers
+from app.routers import (
+    provision_inbound,
+    telnyx_webhooks,
+    texml,
+    retell,
+    auto_retell,
+    client_onboarding,
+    outbound_calls
+)
+from app.routers import telnyx as telnyx_router
+from app.routers import bulk as bulk_router
+from app.routers.retell_inbound import router as retell_inbound_router
+from app.api.v1 import provision_finalize
+from app.routers import agent_templates
+from app.routers.rootcall_screen import router as rootcall_screen_router
+
+# Create database tables
+Base.metadata.create_all(bind=engine)
+
+# Initialize FastAPI
+app = FastAPI(
+
+    title="VoIP Platform API",
+    description="Complete VoIP platform with conversational AI",
+    version="1.0.0"
+)
+
+# CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Include all routers
+app.include_router(telnyx_webhooks.router)
+app.include_router(texml.router)
+app.include_router(retell.router)
+app.include_router(retell_inbound_router)
+app.include_router(auto_retell.router)
+app.include_router(provision_inbound.router)
+app.include_router(client_onboarding.router)
+app.include_router(telnyx_router.router)
+app.include_router(bulk_router.router)
+app.include_router(provision_finalize.router)
+app.include_router(outbound_calls.router)
+app.include_router(rootcall_portal.router)
+app.include_router(agent_templates.router)
+app.include_router(rootcall_screen_router)  # BadBot Call Screening
+app.include_router(payments.router)
+app.include_router(number_management.router)
+app.include_router(auth.router)
+app.include_router(admin.router)
+@app.get("/")
+async def root():
+    return {
+        "message": "VoIP Platform API",
+        "status": "running",
+        "version": "1.0.0"
+    }
+
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+=== CONFIG.PY ===
+
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+class Settings:
+    # App Info
+    APP_NAME: str = "VoIP Platform"
+    APP_VERSION: str = "1.0.0"
+    DEBUG: bool = os.getenv("DEBUG", "False").lower() == "true"
+    
+    # API
+    API_V1_PREFIX: str = "/api/v1"
+    
+    # CORS
+    ALLOWED_ORIGINS: list = ["*"]
+    
+    # Telnyx
+    TELNYX_API_KEY: str = os.getenv("TELNYX_API_KEY", "")
+    TELNYX_PUBLIC_KEY: str = os.getenv("TELNYX_PUBLIC_KEY", "")
+    
+    # Database
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./voip.db")
+    
+    # OpenAI
+    OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
+    
+    # Retell.ai
+    RETELL_API_KEY: str = os.getenv("RETELL_API_KEY", "")
+    
+    # Deepgram
+    DEEPGRAM_API_KEY: str = os.getenv("DEEPGRAM_API_KEY", "")
+    
+    # Cloudflare R2 (optional)
+    CLOUDFLARE_ACCOUNT_ID: str = os.getenv("CLOUDFLARE_ACCOUNT_ID", "")
+    CLOUDFLARE_R2_ACCESS_KEY_ID: str = os.getenv("CLOUDFLARE_R2_ACCESS_KEY_ID", "")
+    CLOUDFLARE_R2_SECRET_ACCESS_KEY: str = os.getenv("CLOUDFLARE_R2_SECRET_ACCESS_KEY", "")
+    CLOUDFLARE_R2_BUCKET_NAME: str = os.getenv("CLOUDFLARE_R2_BUCKET_NAME", "")
+    CLOUDFLARE_R2_PUBLIC_URL: str = os.getenv("CLOUDFLARE_R2_PUBLIC_URL", "")
+    
+    # JWT/Auth
+    SECRET_KEY: str = os.getenv("SECRET_KEY", "your-secret-key-change-in-production")
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+
+settings = Settings()
+
+=== ROOTCALL PORTAL ===
+
+# -*- coding: utf-8 -*-
+"""
+RootCall Client Portal API Routes - REAL DATA
+"""
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+from sqlalchemy import func
+from app.database import get_db
+from app.models.rootcall_config import RootCallConfig
+from app.models.phone_number import PhoneNumber
+from app.models.user import User
+from app.models.rootcall_call_log import RootCallCallLog
+from pydantic import BaseModel
+from typing import Optional
+from datetime import datetime, timedelta
+
+router = APIRouter(tags=["RootCall Portal"])
+
+class ConfigUpdate(BaseModel):
+    sms_alerts_enabled: Optional[bool] = None
+    alert_on_spam: Optional[bool] = None
+    alert_on_unknown: Optional[bool] = None
+    auto_block_spam: Optional[bool] = None
+
+class TrustedContactAdd(BaseModel):
+    phone_number: str
+    name: Optional[str] = None
+
+@router.get("/api/rootcall/stats/{client_id}")
+async def get_stats(client_id: int, db: Session = Depends(get_db)):
+    """Get REAL RootCall protection stats"""
+    # Get all phone numbers for this user
+    phones = db.query(PhoneNumber).filter(PhoneNumber.user_id == client_id).all()
+    phone_ids = [p.id for p in phones]
+    
+    if not phone_ids:
+        return {
+            "spam_blocked": 0,
+            "calls_screened": 0,
+            "trusted_forwarded": 0,
+            "total_calls": 0
+        }
+    
+    # Count by action
+    spam_blocked = db.query(RootCallCallLog).filter(
+        RootCallCallLog.phone_number_id.in_(phone_ids),
+        RootCallCallLog.action == "spam_blocked"
+    ).count()
+    
+    calls_screened = db.query(RootCallCallLog).filter(
+        RootCallCallLog.phone_number_id.in_(phone_ids),
+        RootCallCallLog.action == "screened"
+    ).count()
+    
+    trusted_forwarded = db.query(RootCallCallLog).filter(
+        RootCallCallLog.phone_number_id.in_(phone_ids),
+        RootCallCallLog.action == "trusted_forwarded"
+    ).count()
+    
+    total_calls = db.query(RootCallCallLog).filter(
+        RootCallCallLog.phone_number_id.in_(phone_ids)
+    ).count()
+    
+    return {
+        "spam_blocked": spam_blocked,
+        "calls_screened": calls_screened,
+        "trusted_forwarded": trusted_forwarded,
+        "total_calls": total_calls
+    }
+
+@router.get("/api/rootcall/calls/{client_id}")
+async def get_recent_calls(client_id: int, db: Session = Depends(get_db)):
+    """Get REAL recent call activity"""
+    phones = db.query(PhoneNumber).filter(PhoneNumber.user_id == client_id).all()
+    phone_ids = [p.id for p in phones]
+    
+    if not phone_ids:
+        return []
+    
+    # Get last 20 calls
+    logs = db.query(RootCallCallLog).filter(
+        RootCallCallLog.phone_number_id.in_(phone_ids)
+    ).order_by(RootCallCallLog.timestamp.desc()).limit(20).all()
+    
+    return [
+        {
+            "timestamp": log.timestamp.isoformat(),
+            "from_number": log.from_number,
+            "caller_name": log.caller_name or "Unknown",
+            "action": log.action,
+            "status": log.status
+        }
+        for log in logs
+    ]
+
+@router.get("/api/rootcall/config/{client_id}")
+async def get_config(client_id: int, db: Session = Depends(get_db)):
+    """Get RootCall configuration"""
+    user = db.query(User).filter(User.id == client_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Client not found")
+    
+    phone = db.query(PhoneNumber).filter(PhoneNumber.user_id == client_id).first()
+    if not phone:
+        raise HTTPException(status_code=404, detail="No phone number")
+    
+    config = db.query(RootCallConfig).filter(RootCallConfig.phone_number_id == phone.id).first()
+    if not config:
+        raise HTTPException(status_code=404, detail="No config")
+    
+    return {
+        "client_name": config.client_name,
+        "client_cell": config.client_cell,
+        "sms_alerts_enabled": config.sms_alerts_enabled,
+        "alert_on_spam": config.alert_on_spam,
+        "alert_on_unknown": config.alert_on_unknown,
+        "auto_block_spam": config.auto_block_spam,
+        "trusted_contacts": [
+            {"phone_number": p, "name": ""} 
+            for p in (config.trusted_contacts or [])
+        ]
+    }
+
+@router.patch("/api/rootcall/config/{client_id}")
+async def update_config(client_id: int, updates: ConfigUpdate, db: Session = Depends(get_db)):
+    """Update RootCall configuration"""
+    phone = db.query(PhoneNumber).filter(PhoneNumber.user_id == client_id).first()
+    if not phone:
+        raise HTTPException(status_code=404)
+    
+    config = db.query(RootCallConfig).filter(RootCallConfig.phone_number_id == phone.id).first()
+    if not config:
+        raise HTTPException(status_code=404)
+    
+    if updates.sms_alerts_enabled is not None:
+        config.sms_alerts_enabled = updates.sms_alerts_enabled
+    if updates.alert_on_spam is not None:
+        config.alert_on_spam = updates.alert_on_spam
+    if updates.alert_on_unknown is not None:
+        config.alert_on_unknown = updates.alert_on_unknown
+    if updates.auto_block_spam is not None:
+        config.auto_block_spam = updates.auto_block_spam
+    
+    db.commit()
+    return {"success": True}
+
+@router.post("/api/rootcall/trusted-contacts/{client_id}")
+async def add_trusted_contact(client_id: int, contact: TrustedContactAdd, db: Session = Depends(get_db)):
+    """Add trusted contact"""
+    phone = db.query(PhoneNumber).filter(PhoneNumber.user_id == client_id).first()
+    if not phone:
+        raise HTTPException(status_code=404)
+    
+    config = db.query(RootCallConfig).filter(RootCallConfig.phone_number_id == phone.id).first()
+    if not config:
+        raise HTTPException(status_code=404)
+    
+    if not config.trusted_contacts:
+        config.trusted_contacts = []
+    
+    if contact.phone_number not in config.trusted_contacts:
+        config.trusted_contacts.append(contact.phone_number)
+        db.commit()
+    
+    return {"success": True}
+
+@router.delete("/api/rootcall/trusted-contacts/{client_id}/{phone_number}")
+async def remove_trusted_contact(client_id: int, phone_number: str, db: Session = Depends(get_db)):
+    """Remove trusted contact"""
+    phone = db.query(PhoneNumber).filter(PhoneNumber.user_id == client_id).first()
+    if not phone:
+        raise HTTPException(status_code=404)
+    
+    config = db.query(RootCallConfig).filter(RootCallConfig.phone_number_id == phone.id).first()
+    if not config:
+        raise HTTPException(status_code=404)
+    
+    if config.trusted_contacts and phone_number in config.trusted_contacts:
+        config.trusted_contacts.remove(phone_number)
+        db.commit()
+    
+    return {"success": True}
+
+
+@router.get("/api/rootcall/export/{client_id}")
+async def export_calls(client_id: int, db: Session = Depends(get_db)):
+    """Export call logs as CSV"""
+    from fastapi.responses import StreamingResponse
+    import io
+    import csv
+    
+    phones = db.query(PhoneNumber).filter(PhoneNumber.user_id == client_id).all()
+    phone_ids = [p.id for p in phones]
+    
+    if not phone_ids:
+        raise HTTPException(status_code=404)
+    
+    logs = db.query(RootCallCallLog).filter(
+        RootCallCallLog.phone_number_id.in_(phone_ids)
+    ).order_by(RootCallCallLog.timestamp.desc()).all()
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['Timestamp', 'From', 'Caller Name', 'Action', 'Status'])
+    
+    for log in logs:
+        writer.writerow([
+            log.timestamp.isoformat(),
+            log.from_number,
+            log.caller_name or 'Unknown',
+            log.action,
+            log.status
+        ])
+    
+    output.seek(0)
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=rootcall_calls.csv"}
+    )
+
+
+from fastapi.responses import FileResponse
+
+@router.get("/", response_class=FileResponse)
+async def landing_page():
+    """Serve RootCall landing page"""
+    return FileResponse("static/index.html")
+
+# ================================
+# RootCall dashboard setup status
+# ================================
+from fastapi import Depends
+from sqlalchemy.orm import Session
+from app.database import get_db
+from app.models.user import User
+from app.dependencies import get_current_user
+from app.models.rootcall import RootCallConfig, PhoneNumber
+
+
+@router.get("/dashboard-setup")
+def get_dashboard_setup(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Return setup status for the RootCall dashboard.
+    Used by client-portal.html after login.
+    """
+
+    # 1) Ensure RootCallConfig row exists
+    config = (
+        db.query(RootCallConfig)
+        .filter(RootCallConfig.user_id == current_user.id)
+        .first()
+    )
+
+    if not config:
+        config = RootCallConfig(
+            user_id=current_user.id,
+            client_cell=None,
+            sms_alerts_enabled=False,
+            alert_on_spam=True,
+            alert_on_unknown=True,
+            auto_block_spam=True,
+            trusted_contacts=[],
+        )
+        db.add(config)
+        db.commit()
+        db.refresh(config)
+
+    # 2) Check shield number
+    phone = (
+        db.query(PhoneNumber)
+        .filter(
+            PhoneNumber.user_id == current_user.id,
+            PhoneNumber.is_active == True,
+        )
+        .first()
+    )
+
+    has_number = phone is not None
+    has_forwarding = bool(config.client_cell)
+    trusted_count = len(config.trusted_contacts or [])
+
+    return {
+        "user_id": current_user.id,
+        "email": current_user.email,
+        "has_number": has_number,
+        "has_forwarding_number": has_forwarding,
+        "trusted_contacts_count": trusted_count,
+        "sms_alerts_enabled": bool(config.sms_alerts_enabled),
+        "auto_block_spam": bool(config.auto_block_spam),
+    }
+
+=== ROOTCALL SCREEN ===
+
+import os
+import logging
+from typing import Optional
+from fastapi import APIRouter, Request, Response
+from app.services.client_config import get_client_config
+import httpx
+
+log = logging.getLogger("rootcall")
+
+async def send_sms_alert(to_number: str, message: str, from_number: str = "+18135478530"):
+    """Send SMS alert"""
+    if DRY_RUN:
+        log.info("[DRY_RUN] SMS to %s: %s", to_number, message)
+        return True
+    
+    if not TELNYX_API_KEY or not to_number:
+        log.warning("[SMS] Missing API key or phone number")
+        return False
+    
+    url = "https://api.telnyx.com/v2/messages"
+    
+    async with httpx.AsyncClient(timeout=10) as client:
+        try:
+            r = await client.post(
+                url,
+                headers={"Authorization": f"Bearer {TELNYX_API_KEY}"},
+                json={"from": from_number, "to": to_number, "text": message}
+            )
+            log.info("[SMS] Sent to %s: status %s", to_number, r.status_code)
+            return r.status_code in [200, 201, 202]
+        except Exception as e:
+            log.error("[SMS] Error: %s", e)
+            return False
+
+router = APIRouter(prefix="/telnyx/rootcall", tags=["RootCall Screen"])
+
+TELNYX_API_KEY = os.getenv("TELNYX_API_KEY", "").strip()
+TELNYX_SMS_FROM = os.getenv("TELNYX_SMS_FROM", "").strip()
+DRY_RUN = (
+    os.getenv("ROOTCALL_DRY_RUN", "").strip()
+    or os.getenv("BADBOT_DRY_RUN", "").strip()
+) == "1"
+
+# Telnyx webhook signature verification (optional but recommended)
+TELNYX_PUBLIC_KEY = os.getenv("TELNYX_PUBLIC_KEY", "").strip()
+
+def verify_telnyx_signature(request: Request, body: bytes):
+    """Verify Telnyx webhook signature - currently disabled for testing"""
+    # TODO: Implement signature verification for production
+    # For now, we'll allow all requests for testing
+    return True
+
+
+async def telnyx_gather_speak(ccid: str, text: str):
+    """Ask caller a question and wait for DTMF response"""
+    if DRY_RUN:
+        log.info("[DRY_RUN] gather_speak ccid=%s", ccid)
+        return {"ok": True, "dry_run": True}
+
+    if not TELNYX_API_KEY:
+        log.error("Missing TELNYX_API_KEY")
+        return {"error": "Missing API key"}
+
+    url = f"https://api.telnyx.com/v2/calls/{ccid}/actions/gather_using_speak"
+    async with httpx.AsyncClient(timeout=10) as client:
+        try:
+            r = await client.post(
+                url,
+                headers={"Authorization": f"Bearer {TELNYX_API_KEY}"},
+                json={
+                    "payload": text,
+                    "voice": "female",
+                    "language": "en-US",
+                    "valid_digits": "1234567890*#",
+                    "timeout_millis": 10000,
+                    "maximum_digits": 1,
+                    "minimum_digits": 1
+                }
+            )
+            log.info("Gather response: %s", r.status_code)
+            return r.json() if r.text else {"ok": True}
+        except Exception as e:
+            log.error("Gather error: %s", e)
+            return {"error": str(e)}
+
+async def telnyx_answer(ccid: str):
+    """Answer the incoming call"""
+    if DRY_RUN:
+        log.info("[DRY_RUN] answer ccid=%s", ccid)
+        return {"ok": True, "dry_run": True}
+    
+    if not TELNYX_API_KEY:
+        log.error("Missing TELNYX_API_KEY")
+        return {"error": "Missing API key"}
+    
+    url = f"https://api.telnyx.com/v2/calls/{ccid}/actions/answer"
+    async with httpx.AsyncClient(timeout=10) as client:
+        try:
+            r = await client.post(
+                url,
+                headers={"Authorization": f"Bearer {TELNYX_API_KEY}"},
+                json={}
+            )
+            log.info("Answer response: %s", r.status_code)
+            return r.json() if r.text else {"ok": True}
+        except Exception as e:
+            log.error("Answer error: %s", e)
+            return {"error": str(e)}
+
+
+async def telnyx_speak(ccid: str, text: str):
+    """Speak text to caller"""
+    if DRY_RUN:
+        log.info("[DRY_RUN] speak: %s", text)
+        return {"ok": True}
+    
+    if not TELNYX_API_KEY:
+        log.error("Missing TELNYX_API_KEY")
+        return {"error": "Missing API key"}
+    
+    url = f"https://api.telnyx.com/v2/calls/{ccid}/actions/speak"
+    async with httpx.AsyncClient(timeout=10) as client:
+        try:
+            r = await client.post(
+                url,
+                headers={"Authorization": f"Bearer {TELNYX_API_KEY}"},
+                json={
+                    "payload": text,
+                    "voice": "female",
+                    "language": "en-US"
+                }
+            )
+            log.info("Speak response: %s", r.status_code)
+            return r.json() if r.text else {"ok": True}
+        except Exception as e:
+            log.error("Speak error: %s", e)
+            return {"error": str(e)}
+
+async def telnyx_transfer(ccid: str, to: str):
+    """Transfer call to destination"""
+    if DRY_RUN:
+        log.info("[DRY_RUN] transfer ccid=%s to=%s", ccid, to)
+        return {"ok": True, "dry_run": True}
+    
+    if not TELNYX_API_KEY:
+        log.error("Missing TELNYX_API_KEY")
+        return {"error": "Missing API key"}
+    
+    url = f"https://api.telnyx.com/v2/calls/{ccid}/actions/transfer"
+    async with httpx.AsyncClient(timeout=10) as client:
+        try:
+            r = await client.post(
+                url,
+                headers={"Authorization": f"Bearer {TELNYX_API_KEY}"},
+                json={"to": to}
+            )
+            log.info("Transfer response: %s", r.status_code)
+            log.info("Transfer response body: %s", r.text)
+            
+            if r.status_code >= 400:
+                log.error("Transfer FAILED: %s", r.text)
+                return {"error": r.text, "status_code": r.status_code}
+            
+            return r.json() if r.text else {"ok": True}
+        except Exception as e:
+            log.error("Transfer error: %s", e)
+            return {"error": str(e)}
+
+async def telnyx_hangup(ccid: str):
+    """Hangup the call"""
+    if DRY_RUN:
+        log.info("[DRY_RUN] hangup ccid=%s", ccid)
+        return {"ok": True, "dry_run": True}
+    
+    if not TELNYX_API_KEY:
+        return
+    
+    url = f"https://api.telnyx.com/v2/calls/{ccid}/actions/hangup"
+    async with httpx.AsyncClient(timeout=10) as client:
+        try:
+            await client.post(
+                url,
+                headers={"Authorization": f"Bearer {TELNYX_API_KEY}"},
+                json={}
+            )
+        except Exception as e:
+            log.error("Hangup error: %s", e)
+
+@router.post("/webhook", status_code=200)
+async def screen_call(request: Request):
+    """
+    Main BadBot screening webhook - NO AUTHENTICATION REQUIRED
+    This endpoint receives webhooks directly from Telnyx
+    """
+    
+    # Log the incoming request
+    client_ip = request.client.host if request.client else "unknown"
+    log.info("[WEBHOOK] Received from IP: %s", client_ip)
+    
+    # Get raw body for signature verification
+    try:
+        raw_body = await request.body()
+        body = await request.json()
+        log.info("[WEBHOOK] Event received: %s", body.get("data", {}).get("event_type", "unknown"))
+    except Exception as e:
+        log.error("[WEBHOOK] Failed to parse body: %s", e)
+        return {"error": "Invalid JSON", "status": "error"}
+    
+    # Optional: Verify Telnyx signature (disabled for testing)
+    # if not verify_telnyx_signature(request, raw_body):
+    #     log.warning("[WEBHOOK] Signature verification failed")
+    #     return {"error": "Invalid signature", "status": "unauthorized"}
+    
+    data = body.get("data", {})
+    evt = data.get("event_type", "")
+    payload = data.get("payload", {})
+    
+    ccid = payload.get("call_control_id")
+    # Handle both string and dict formats for from/to
+    from_field = payload.get("from", "")
+    to_field = payload.get("to", "")
+    
+    if isinstance(from_field, dict):
+        from_num = from_field.get("phone_number", "")
+    else:
+        from_num = str(from_field)
+    
+    if isinstance(to_field, dict):
+        to_num = to_field.get("phone_number", "")
+    else:
+        to_num = str(to_field)
+    cnam = payload.get("caller_id_name", "")
+    
+    log.info("[CALL] Event: %s | From: %s | To: %s | CCID: %s", evt, from_num, to_num, ccid)
+    
+    if not ccid:
+        log.warning("[WEBHOOK] No call_control_id found")
+        return {"status": "no_ccid"}
+    
+    # Get client config
+    cfg = get_client_config(to_num)
+    if not cfg:
+        log.warning("[CONFIG] No config for number: %s", to_num)
+        return {"status": "no_config", "telnyx_number": to_num}
+    
+    # Handle call.initiated - Answer immediately
+    if evt == "call.initiated":
+        log.info("[INITIATED] Answering call")
+        result = await telnyx_answer(ccid)
+        return {"status": "answered", "result": result}
+    
+    # Handle call.answered - Start screening
+    if evt == "call.answered":
+        client_cell = cfg.get("client_cell", "")
+        trusted = cfg.get("trusted_contacts", [])
+        
+        # 1) Check for spam
+        spam_keywords = ["spam", "scam", "fraud", "robocall", "telemarketer"]
+        if any(keyword in cnam.lower() for keyword in spam_keywords):
+            log.warning("[SPAM] Blocked: %s (%s)", from_num, cnam)
+            
+            # Send SMS alert
+            if cfg.get("sms_alerts_enabled") and cfg.get("alert_on_spam"):
+                await send_sms_alert(client_cell, f"[RootCall] SPAM BLOCKED: {cnam or from_num}")
+            
+            await telnyx_hangup(ccid)
+            return {"status": "spam_blocked"}
+        
+        # 2) Check if trusted
+        if from_num in trusted:
+            log.info("[TRUSTED] Forwarding %s to %s", from_num, client_cell)
+            
+            # Alert about trusted contact
+            if cfg.get("sms_alerts_enabled"):
+                await send_sms_alert(client_cell, f"[RootCall] Trusted contact {cnam or from_num} calling")
+            
+            await telnyx_transfer(ccid, client_cell)
+            return {"status": "trusted_forwarded"}
+        
+        # 3) Unknown caller - Screen them
+        log.info("[SCREENING] Asking %s to identify themselves", from_num)
+        
+        # Alert client screening is happening
+        log.info("[SMS CHECK] sms_alerts_enabled=%s, alert_on_unknown=%s, client_cell=%s", 
+                 cfg.get("sms_alerts_enabled"), cfg.get("alert_on_unknown"), client_cell)
+        if cfg.get("sms_alerts_enabled") and cfg.get("alert_on_unknown"):
+            log.info("[SMS] Sending unknown caller alert to %s", client_cell)
+            await send_sms_alert(client_cell, f"[RootCall] Unknown caller {cnam or from_num} being screened")
+        else:
+            log.warning("[SMS] Alert skipped - alerts not enabled or no client_cell")
+        
+        await telnyx_gather_speak(
+            ccid,
+            "Hello, who is calling? Press 1 if this is a doctor or medical office. Press 2 if you are family. Press 3 for all other calls."
+        )
+        return {"status": "screening_started"}
+    
+    # Handle gather.ended - Process caller response
+    if evt == "call.gather.ended":
+        digits = payload.get("digits", "")
+        log.info("[GATHER] Caller pressed: %s", digits)
+        
+        client_cell = cfg.get("client_cell", "")
+        
+        if digits == "1":
+            # Medical call - transfer immediately
+            log.info("[MEDICAL] Transferring to %s", client_cell)
+            await telnyx_speak(ccid, "Transferring you now.")
+            import asyncio
+            await asyncio.sleep(1)
+            await telnyx_transfer(ccid, client_cell)
+            return {"status": "medical_transferred"}
+        elif digits == "2":
+            # Family - transfer
+            log.info("[FAMILY] Transferring to %s", client_cell)
+            await telnyx_speak(ccid, "One moment please.")
+            import asyncio
+            await asyncio.sleep(1)
+            await telnyx_transfer(ccid, client_cell)
+            return {"status": "family_transferred"}
+        else:
+            # Other - send to voicemail or reject
+            log.info("[OTHER] Rejecting call")
+            await telnyx_speak(ccid, "Sorry, the person you are trying to reach is not available. Goodbye.")
+            import asyncio
+            await asyncio.sleep(2)
+            await telnyx_hangup(ccid)
+            return {"status": "rejected"}
+
+        client_cell = cfg.get("client_cell", "")
+        trusted = cfg.get("trusted_contacts", [])
+        retell_did = cfg.get("retell_did", "")
+        caregiver = cfg.get("caregiver_cell", "")
+        
+        # 1) Check for spam
+        spam_keywords = ["spam", "scam", "fraud", "robocall", "telemarketer"]
+        if any(keyword in cnam.lower() for keyword in spam_keywords):
+            log.warning("[SPAM] Blocked: %s (%s)", from_num, cnam)
+            
+            # Send SMS alerts
+            if cfg.get("sms_alerts_enabled") and cfg.get("alert_on_spam"):
+                await send_sms_alert(
+                    client_cell, 
+                    f"[RootCall] SPAM BLOCKED: {cnam or 'Unknown'} ({from_num})",
+                    to_num  # Send from the BadBot number
+                )
+                if caregiver:
+                    await send_sms_alert(
+                        caregiver,
+                        f"[RootCall] Spam blocked for {cfg.get('client_name')}: {from_num}"
+                    )
+            
+            await telnyx_hangup(ccid)
+            return {"status": "spam_blocked", "from": from_num}
+        
+        # 2) Check if trusted
+        if from_num in trusted:
+            log.info("[TRUSTED] Forwarding %s to %s", from_num, client_cell)
+            
+            # Notify client
+            if cfg.get("sms_alerts_enabled"):
+                await send_sms_alert(
+                    client_cell,
+                    f"[RootCall] Trusted contact {cnam or from_num} calling now",
+                    to_num
+                )
+            
+            if client_cell:
+                result = await telnyx_transfer(ccid, client_cell)
+                return {"status": "trusted_forwarded", "from": from_num, "to": client_cell, "result": result}
+        
+        # 3) Unknown -> Transfer DIRECTLY to client (bypass Retell for now)
+        log.info("[UNKNOWN] Transferring %s DIRECTLY to client: %s", from_num, client_cell)
+        if client_cell:
+            send_sms_alert(client_cell, f"[RootCall] Unknown caller {from_num} - transferred")
+            result = await telnyx_transfer(ccid, client_cell)
+            return {"status": "unknown_transferred_direct", "from": from_num, "to": client_cell, "result": result}
+        
+        # 4) Fallback - forward with alert
+        if client_cell:
+            log.info("[FALLBACK] Forwarding %s to %s", from_num, client_cell)
+            send_sms_alert(client_cell, f"[RootCall] Unknown caller {from_num} forwarded")
+            result = await telnyx_transfer(ccid, client_cell)
+            return {"status": "unknown_forwarded", "from": from_num, "to": client_cell, "result": result}
+        
+        log.warning("[NO_CONFIG] No routing configured")
+        return {"status": "no_action_configured"}
+    
+    # Handle hangup events
+    if evt in ("call.hangup", "call.ended", "call.hangup.completed"):
+        log.info("[ENDED] Call ended: %s", evt)
+        return {"status": "ok", "event": evt}
+    
+    # All other events
+    log.info("[OTHER] Event: %s", evt)
+    return {"status": "ignored", "event": evt}
+
+@router.get("/health")
+async def health_check():
+    """Health check - no auth required"""
+    return {
+        "status": "ok",
+        "service": "RootCall Call Screening",
+        "dry_run": DRY_RUN,
+        "has_api_key": bool(TELNYX_API_KEY)
+    }
+
+@router.get("/debug")
+async def debug_info():
+    """Debug info - no auth required"""
+    from app.services.client_config import CLIENT_LINES
+    return {
+        "dry_run": DRY_RUN,
+        "has_telnyx_key": bool(TELNYX_API_KEY),
+        "has_sms_from": bool(TELNYX_SMS_FROM),
+        "client_count": len(CLIENT_LINES),
+        "telnyx_numbers": list(CLIENT_LINES.keys())
+    }
+
+=== AUTH ROUTER ===
+
+# -*- coding: utf-8 -*-
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from sqlalchemy.orm import Session
+from app.database import get_db
+from app.models.user import User
+from pydantic import BaseModel, EmailStr, validator
+from passlib.context import CryptContext
+from jose import JWTError, jwt
+from datetime import datetime, timedelta
+import os
+
+router = APIRouter(tags=["Auth"])
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
+
+SECRET_KEY = os.getenv("JWT_SECRET_KEY", "changeme-super-secret-key")
+ALGORITHM = "HS256"
+
+class UserSignup(BaseModel):
+    email: EmailStr
+    password: str
+    full_name: str
+    
+    @validator('password')
+    def truncate_password(cls, v):
+        # bcrypt has a 72 byte limit, truncate if necessary
+        return v[:72] if len(v.encode('utf-8')) > 72 else v
+
+def get_password_hash(password):
+    # Ensure password is truncated to 72 bytes for bcrypt
+    password = password[:72]
+    return pwd_context.hash(password)
+
+def verify_password(plain, hashed):
+    # Ensure password is truncated to 72 bytes for bcrypt
+    plain = plain[:72]
+    return pwd_context.verify(plain, hashed)
+
+def create_token(user_id: int):
+    expire = datetime.utcnow() + timedelta(hours=24)
+    return jwt.encode({"sub": user_id, "exp": expire}, SECRET_KEY, algorithm=ALGORITHM)
+
+@router.post("/api/auth/signup")
+async def signup(data: UserSignup, db: Session = Depends(get_db)):
+    existing = db.query(User).filter(User.email == data.email).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    
+    user = User(
+        email=data.email,
+        username=data.email,
+        hashed_password=get_password_hash(data.password),
+        full_name=data.full_name,
+        is_active=True,
+        balance=0.0
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    
+    token = create_token(user.id)
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "user": {"id": user.id, "email": user.email, "full_name": user.full_name}
+    }
+
+@router.post("/api/auth/login")
+async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == form_data.username).first()
+    if not user or not verify_password(form_data.password, user.hashed_password):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    token = create_token(user.id)
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "user": {"id": user.id, "email": user.email, "full_name": user.full_name}
+    }
+
+@router.get("/api/auth/me")
+async def get_me(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise HTTPException(status_code=401)
+        return {"id": user.id, "email": user.email, "full_name": user.full_name}
+    except JWTError:
+        raise HTTPException(status_code=401)
+
+=== MODELS ===
+
+total 85
+drwxr-xr-x 1 bokro 197609    0 Nov 14 00:48 ./
+drwxr-xr-x 1 bokro 197609    0 Nov 14 00:48 ../
+-rw-r--r-- 1 bokro 197609  912 Nov 14 00:48 __init__.py
+drwxr-xr-x 1 bokro 197609    0 Nov 13 16:02 __pycache__/
+-rw-r--r-- 1 bokro 197609 1431 Nov 14 00:48 agent_template.py
+-rw-r--r-- 1 bokro 197609 2105 Nov 14 00:48 ai_agent.py
+-rw-r--r-- 1 bokro 197609  796 Nov 14 00:48 appointment.py
+-rw-r--r-- 1 bokro 197609 6155 Nov 14 00:48 bulk_campaign.py
+-rw-r--r-- 1 bokro 197609 2498 Nov 14 00:48 call.py
+-rw-r--r-- 1 bokro 197609  467 Nov 14 00:48 client_mapping.py
+-rw-r--r-- 1 bokro 197609 5330 Nov 14 00:48 ivr.py
+-rw-r--r-- 1 bokro 197609 1261 Nov 14 00:48 phone_number.py
+-rw-r--r-- 1 bokro 197609 1218 Nov 14 00:48 recording.py
+-rw-r--r-- 1 bokro 197609  667 Nov 14 00:48 rootcall_call_log.py
+-rw-r--r-- 1 bokro 197609 3053 Nov 14 00:48 rootcall_config.py
+-rw-r--r-- 1 bokro 197609 4253 Nov 14 00:48 subscription.py
+-rw-r--r-- 1 bokro 197609 1266 Nov 14 00:48 user.py
+-rw-r--r-- 1 bokro 197609 1135 Oct 23 19:33 user.py.backup
+
+=== ROOTCALL CONFIG MODEL ===
+
+"""
+BadBot Configuration Model
+Save as: app/models/rootcall_config.py
+
+Stores BadBot screening configuration per phone number
+Replaces hardcoded CLIENT_LINES dictionary
+"""
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, JSON
+from sqlalchemy.orm import relationship
+from datetime import datetime
+from app.database import Base
+
+
+class RootCallConfig(Base):
+    """BadBot screening configuration for a phone number"""
+    __tablename__ = "rootcall_configs"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    phone_number_id = Column(Integer, ForeignKey("phone_numbers.id"), unique=True, nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    
+    # Client information
+    client_name = Column(String, nullable=False)
+    client_cell = Column(String, nullable=False)  # Where to transfer trusted/verified calls
+    
+    # Retell AI configuration
+    retell_agent_id = Column(String, nullable=False)
+    retell_did = Column(String, nullable=False)  # The DID that Retell uses
+    
+    # Trusted contacts (whitelist) - stored as JSON array
+    # Example: ["+17545551234", "+18005551234"]
+    trusted_contacts = Column(JSON, default=list)
+    
+    # SMS alerts configuration
+    caregiver_cell = Column(String, nullable=True)  # Optional: receives SMS alerts
+    sms_alerts_enabled = Column(Boolean, default=True)
+    alert_on_spam = Column(Boolean, default=True)
+    alert_on_unknown = Column(Boolean, default=False)
+    
+    # Screening settings
+    auto_block_spam = Column(Boolean, default=True)
+    require_caller_name = Column(Boolean, default=False)
+    
+    # Status
+    is_active = Column(Boolean, default=True)
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    phone_number = relationship("PhoneNumber", backref="rootcall_config")
+    user = relationship("User", backref="rootcall_configs")
+
+
+class TrustedContact(Base):
+    """Individual trusted contact (alternative to JSON array)"""
+    __tablename__ = "trusted_contacts"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    rootcall_config_id = Column(Integer, ForeignKey("rootcall_configs.id"), nullable=False)
+    
+    # Contact details
+    name = Column(String, nullable=False)
+    phone_number = Column(String, nullable=False)
+    relationship_type = Column(String)  # family, friend, doctor, etc.
+    notes = Column(String, nullable=True)
+    
+    # Statistics
+    total_calls = Column(Integer, default=0)
+    last_call_at = Column(DateTime, nullable=True)
+    
+    # Status
+    is_active = Column(Boolean, default=True)
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    rootcall_config = relationship("RootCallConfig", backref="trusted_contacts_list")# [PASTE THE CONTENT FROM rootcall_config_model.py HERE]
+
+
+=== ROOTCALL CALL LOG MODEL ===
+
+"""
+BadBot Call Logs Model
+"""
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy.sql import func
+from app.database import Base
+
+class RootCallCallLog(Base):
+    __tablename__ = "rootcall_call_logs"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    phone_number_id = Column(Integer, ForeignKey("phone_numbers.id"))
+    from_number = Column(String(20), nullable=False)
+    caller_name = Column(String(255))
+    action = Column(String(50), nullable=False)
+    status = Column(String(50), nullable=False)
+    call_control_id = Column(String(255))
+    timestamp = Column(DateTime(timezone=True), server_default=func.now())
+
+=== PHONE NUMBER MODEL ===
+
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Float
+from sqlalchemy.orm import relationship
+from datetime import datetime
+from app.database import Base
+
+
+class PhoneNumber(Base):
+    __tablename__ = "phone_numbers"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    
+    # Phone details
+    phone_number = Column(String, unique=True, index=True, nullable=False)
+    friendly_name = Column(String)
+    country_code = Column(String, default="US")
+    
+    # Telnyx details
+    telnyx_phone_number_id = Column(String, unique=True)
+    telnyx_connection_id = Column(String)
+    
+    # AI Agent assignment
+    ai_agent_id = Column(Integer, ForeignKey("ai_agents.id"), nullable=True)
+    
+    # Status
+    is_active = Column(Boolean, default=True)
+    monthly_cost = Column(Float, default=1.0)
+    
+    # Timestamps
+    purchased_at = Column(DateTime, default=datetime.utcnow)
+    released_at = Column(DateTime, nullable=True)
+    
+    # Relationships
+    user = relationship("User", back_populates="phone_numbers")
+    ai_agent = relationship("AIAgent", back_populates="phone_numbers")
+    calls = relationship("Call", back_populates="phone_number")
+
+=== USER MODEL ===
+
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Float
+from sqlalchemy.orm import relationship
+from datetime import datetime
+from app.database import Base
+
+class User(Base):
+    __tablename__ = "users"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unique=True, index=True, nullable=False)
+    username = Column(String, unique=True, index=True)
+    hashed_password = Column(String, nullable=False)
+    full_name = Column(String)
+    
+    # Account status
+    is_active = Column(Boolean, default=True)
+    is_superuser = Column(Boolean, default=False)
+    
+    # Billing
+    balance = Column(Float, default=0.0)
+    stripe_customer_id = Column(String, nullable=True)
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    phone_numbers = relationship("PhoneNumber", back_populates="user")
+    ai_agents = relationship("AIAgent", back_populates="user")
+    calls = relationship("Call", back_populates="user")
+    recordings = relationship("Recording", back_populates="user")  # ADDED
+    subscription = relationship("Subscription", back_populates="user", uselist=False)
+
+=== AI AGENT MODEL ===
+

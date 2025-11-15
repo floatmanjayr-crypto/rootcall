@@ -255,6 +255,27 @@
             .main-content { margin-left: 0; }
             .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
         }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: white;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            z-index: 2000;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(400px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
     </style>
 </head>
 <body>
@@ -342,7 +363,6 @@
                     </div>
                 </div>
 
-                <!-- Quick Stats Card -->
                 <div class="card">
                     <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--green); margin-bottom: 1rem;">
                         <i class="fas fa-chart-line"></i> Protection Summary
@@ -595,16 +615,62 @@
 
     <script>
         // ============================================
-        // CONFIGURATION
+        // ✅ PRODUCTION CONFIGURATION
         // ============================================
-        const API = window.location.origin;
+        const API = 'https://rootcall.onrender.com';
         let USER_DATA = null;
         let CLIENT_ID = null;
         let SELECTED_AREA_CODE = null;
 
-        // Helper: get token from either key
+        // ============================================
+        // ✅ AUTHENTICATED FETCH WRAPPER
+        // ============================================
         function getToken() {
             return localStorage.getItem('access_token') || localStorage.getItem('token');
+        }
+
+        async function authFetch(url, options = {}) {
+            const token = getToken();
+            
+            const headers = {
+                'Content-Type': 'application/json',
+                ...options.headers
+            };
+
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
+            const response = await fetch(url, {
+                ...options,
+                headers
+            });
+
+            // ✅ Auto-logout on 401
+            if (response.status === 401) {
+                console.warn('Session expired - logging out');
+                logout();
+                throw new Error('Session expired');
+            }
+
+            return response;
+        }
+
+        // ✅ Toast notification
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}" 
+                   style="color: ${type === 'success' ? '#10b981' : '#ef4444'}; font-size: 1.5rem;"></i>
+                <span style="font-weight: 600;">${message}</span>
+            `;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
         }
 
         // ============================================
@@ -618,45 +684,43 @@
             }
 
             try {
-                // Decode JWT (format: header.payload.signature)
                 const payload = JSON.parse(atob(token.split('.')[1]));
-                CLIENT_ID = payload.sub; // This is the user_id
+                CLIENT_ID = payload.sub;
                 USER_DATA = payload;
                 
-                document.getElementById('user-name').textContent = payload.email || 'User';
+                document.getElementById('user-name').textContent = payload.email?.split('@')[0] || 'User';
                 document.getElementById('user-fullname').value = payload.email || '';
                 document.getElementById('user-email').value = payload.email || '';
 
                 await loadData();
             } catch (err) {
                 console.error('Init error:', err);
-                localStorage.removeItem('access_token');
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
-                localStorage.removeItem('selected_plan');
-                window.location.href = '/static/login.html';
+                logout();
             }
         }
 
         // ============================================
-        // DATA LOADING
+        // ✅ DATA LOADING - WITH AUTH
         // ============================================
         async function loadData() {
             try {
-                // Load stats
-                const stats = await fetch(`${API}/api/rootcall/stats/${CLIENT_ID}`)
-                    .then(r => r.json())
-                    .catch(() => ({ spam_blocked: 0, calls_screened: 0, trusted_forwarded: 0, total_calls: 0 }));
+                // ✅ Load stats with auth
+                const statsResponse = await authFetch(`${API}/api/rootcall/stats/${CLIENT_ID}`);
+                const stats = statsResponse.ok ? await statsResponse.json() : { 
+                    spam_blocked: 0, 
+                    calls_screened: 0, 
+                    trusted_forwarded: 0, 
+                    total_calls: 0 
+                };
                 
                 document.getElementById('spam-blocked').textContent = stats.spam_blocked || 0;
                 document.getElementById('calls-screened').textContent = stats.calls_screened || 0;
                 document.getElementById('trusted-connected').textContent = stats.trusted_forwarded || 0;
                 document.getElementById('total-calls-summary').textContent = stats.total_calls || 0;
 
-                // Load config
-                const config = await fetch(`${API}/api/rootcall/config/${CLIENT_ID}`)
-                    .then(r => r.ok ? r.json() : null)
-                    .catch(() => null);
+                // ✅ Load config with auth
+                const configResponse = await authFetch(`${API}/api/rootcall/config/${CLIENT_ID}`);
+                const config = configResponse.ok ? await configResponse.json() : null;
                 
                 if (config) {
                     document.getElementById('client-cell').value = config.client_cell || '';
@@ -690,13 +754,11 @@
                     document.getElementById('contacts-list').innerHTML = '<p style="text-align: center; color: #999; padding: 2rem;">No configuration found</p>';
                 }
 
-                // Load numbers
                 await loadNumbers();
 
-                // Load calls
-                const calls = await fetch(`${API}/api/rootcall/calls/${CLIENT_ID}`)
-                    .then(r => r.ok ? r.json() : [])
-                    .catch(() => []);
+                // ✅ Load calls with auth
+                const callsResponse = await authFetch(`${API}/api/rootcall/calls/${CLIENT_ID}`);
+                const calls = callsResponse.ok ? await callsResponse.json() : [];
                 
                 const tbody = document.getElementById('call-history');
                 if (calls.length > 0) {
@@ -721,16 +783,15 @@
 
             } catch (err) {
                 console.error('Error loading data:', err);
+                if (err.message !== 'Session expired') {
+                    showToast('Error loading data', 'error');
+                }
             }
         }
 
         async function loadNumbers() {
-            const token = getToken();
             try {
-                const response = await fetch(`${API}/api/rootcall/my-number`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-
+                const response = await authFetch(`${API}/api/rootcall/my-number`);
                 const data = await response.json();
                 const container = document.getElementById('numbers-list');
 
@@ -762,7 +823,9 @@
                 }
             } catch (err) {
                 console.error('Error loading numbers:', err);
-                document.getElementById('numbers-list').innerHTML = '<p style="text-align: center; color: #ef4444; padding: 2rem;">Error loading numbers</p>';
+                if (err.message !== 'Session expired') {
+                    document.getElementById('numbers-list').innerHTML = '<p style="text-align: center; color: #ef4444; padding: 2rem;">Error loading numbers</p>';
+                }
             }
         }
 
@@ -805,21 +868,13 @@
 
             document.getElementById('step-area-code').style.display = 'none';
             document.getElementById('step-provisioning').style.display = 'block';
-
-            const token = getToken();
             
             try {
                 document.getElementById('provision-status').textContent = 'Searching for available numbers...';
 
-                const response = await fetch(`${API}/api/rootcall/provision`, {
+                const response = await authFetch(`${API}/api/rootcall/provision`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({
-                        area_code: SELECTED_AREA_CODE
-                    })
+                    body: JSON.stringify({ area_code: SELECTED_AREA_CODE })
                 });
 
                 if (!response.ok) {
@@ -835,7 +890,6 @@
 
                 const data = await response.json();
 
-                // Success!
                 document.getElementById('step-provisioning').style.display = 'none';
                 document.getElementById('step-success').style.display = 'block';
                 document.getElementById('new-phone-number').textContent = data.rootcall_number || data.phone_number || 'Number provisioned!';
@@ -851,31 +905,30 @@
         function finishProvisioning() {
             closeProvisionModal();
             loadData();
-            showAlert('Shield number activated successfully!', 'success');
+            showToast('Shield number activated successfully!', 'success');
             showPage('numbers');
         }
 
         // ============================================
-        // CONTACTS MANAGEMENT
+        // ✅ CONTACTS - WITH AUTH
         // ============================================
         async function addContact() {
             const phone = document.getElementById('new-contact').value.trim();
             const name = document.getElementById('new-contact-name').value.trim();
 
             if (!phone) {
-                showAlert('Please enter a phone number', 'error');
+                showToast('Please enter a phone number', 'error');
                 return;
             }
 
             if (!phone.startsWith('+')) {
-                showAlert('Phone number must start with + (e.g., +1234567890)', 'error');
+                showToast('Phone number must start with + (e.g., +1234567890)', 'error');
                 return;
             }
 
             try {
-                const response = await fetch(`${API}/api/rootcall/trusted-contacts/${CLIENT_ID}`, {
+                const response = await authFetch(`${API}/api/rootcall/trusted-contacts/${CLIENT_ID}`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ phone_number: phone, name: name })
                 });
 
@@ -883,10 +936,10 @@
 
                 document.getElementById('new-contact').value = '';
                 document.getElementById('new-contact-name').value = '';
-                showAlert('Contact added successfully!', 'success');
+                showToast('Contact added successfully!', 'success');
                 loadData();
             } catch (err) {
-                showAlert('Error adding contact: ' + err.message, 'error');
+                showToast('Error adding contact: ' + err.message, 'error');
             }
         }
 
@@ -894,55 +947,53 @@
             if (!confirm(`Remove ${phone} from trusted contacts?`)) return;
 
             try {
-                const response = await fetch(`${API}/api/rootcall/trusted-contacts/${CLIENT_ID}/${encodeURIComponent(phone)}`, {
+                const response = await authFetch(`${API}/api/rootcall/trusted-contacts/${CLIENT_ID}/${encodeURIComponent(phone)}`, {
                     method: 'DELETE'
                 });
 
                 if (!response.ok) throw new Error('Failed to remove contact');
 
-                showAlert('Contact removed', 'success');
+                showToast('Contact removed', 'success');
                 loadData();
             } catch (err) {
-                showAlert('Error removing contact: ' + err.message, 'error');
+                showToast('Error removing contact: ' + err.message, 'error');
             }
         }
 
         // ============================================
-        // SETTINGS
+        // ✅ SETTINGS - WITH AUTH
         // ============================================
         async function updatePhone() {
             const phone = document.getElementById('client-cell').value.trim();
 
             if (!phone) {
-                showAlert('Please enter a phone number', 'error');
+                showToast('Please enter a phone number', 'error');
                 return;
             }
 
             if (!phone.startsWith('+')) {
-                showAlert('Phone number must start with + (e.g., +1234567890)', 'error');
+                showToast('Phone number must start with + (e.g., +1234567890)', 'error');
                 return;
             }
 
             try {
-                const response = await fetch(`${API}/api/rootcall/config/${CLIENT_ID}`, {
+                const response = await authFetch(`${API}/api/rootcall/config/${CLIENT_ID}`, {
                     method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ client_cell: phone })
                 });
 
                 if (!response.ok) throw new Error('Failed to update phone');
 
-                showAlert('Forwarding number updated!', 'success');
+                showToast('Forwarding number updated!', 'success');
             } catch (err) {
-                showAlert('Error: ' + err.message, 'error');
+                showToast('Error: ' + err.message, 'error');
             }
         }
 
         async function saveSettings() {
             try {
-                const response = await fetch(`${API}/api/rootcall/config/${CLIENT_ID}`, {
+                const response = await authFetch(`${API}/api/rootcall/config/${CLIENT_ID}`, {
                     method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         sms_alerts_enabled: document.getElementById('sms-alerts').checked,
                         alert_on_spam: document.getElementById('alert-spam').checked,
@@ -953,9 +1004,9 @@
 
                 if (!response.ok) throw new Error('Failed to save settings');
 
-                showAlert('Settings saved!', 'success');
+                showToast('Settings saved!', 'success');
             } catch (err) {
-                showAlert('Error: ' + err.message, 'error');
+                showToast('Error: ' + err.message, 'error');
             }
         }
 
@@ -1001,18 +1052,11 @@
         }
 
         function logout() {
-            if (confirm('Are you sure you want to logout?')) {
-                try {
-                    localStorage.removeItem('access_token');
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('user');
-                    localStorage.removeItem('selected_plan');
-                } catch (e) {
-                    console.warn('Could not clear localStorage', e);
-                }
-                // Redirect to the same login path your landing page uses
-                window.location.href = '/static/login.html';
-            }
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            localStorage.removeItem('selected_plan');
+            window.location.href = '/static/login.html';
         }
 
         // ============================================
@@ -1022,10 +1066,10 @@
             if (document.visibilityState === 'visible') {
                 loadData();
             }
-        }, 30000); // Refresh every 30 seconds
+        }, 30000);
 
         // ============================================
-        // START APPLICATION
+        // START
         // ============================================
         init();
     </script>

@@ -397,13 +397,17 @@
       loginBtn.textContent = 'Signing in...';
 
       try {
+        // 🔑 Match old backend logic: username + password (form-encoded)
+        const body = new URLSearchParams();
+        body.append('username', email);   // backend expects "username"
+        body.append('password', password);
+
         const res = await fetch(`${API}/api/auth/login`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password })
+          body // application/x-www-form-urlencoded
         });
 
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
 
         if (!res.ok) {
           showMessage(data.detail || 'Login failed. Please check your details.', 'error');
@@ -413,14 +417,16 @@
         }
 
         // Store token in the key your dashboard expects
-        localStorage.setItem('access_token', data.access_token);
+        if (data.access_token) {
+          localStorage.setItem('access_token', data.access_token);
+        }
         if (data.user) {
           localStorage.setItem('user', JSON.stringify(data.user));
         }
 
         showMessage('Login successful! Redirecting...', 'success');
 
-        // Redirect to dashboard
+        // Redirect to dashboard the same way as before
         window.location.href = '/static/client-portal.html';
 
       } catch (err) {

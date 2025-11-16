@@ -800,3 +800,29 @@ async def import_existing_number(
 async def landing_page():
     """Serve RootCall landing page"""
     return FileResponse("static/index.html")
+
+
+@router.delete("/api/rootcall/my-number")
+async def delete_my_number(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Delete/deactivate user's current number"""
+    phone = db.query(PhoneNumber).filter(
+        PhoneNumber.user_id == current_user.id,
+        PhoneNumber.is_active == True
+    ).first()
+    
+    if not phone:
+        raise HTTPException(status_code=404, detail="No active number found")
+    
+    # Deactivate
+    phone.is_active = False
+    db.commit()
+    
+    log.info(f"Deactivated number {phone.phone_number} for user {current_user.id}")
+    
+    return {
+        "success": True,
+        "message": f"Number {phone.phone_number} deactivated. You can now provision a new one."
+    }

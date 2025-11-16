@@ -348,7 +348,7 @@ async def export_calls(
 
 
 # ============================================
-# Ì∂ï NEW: SEARCH AVAILABLE NUMBERS FROM TELNYX
+# NEW: SEARCH AVAILABLE NUMBERS FROM TELNYX
 # ============================================
 
 @router.get("/api/rootcall/available-numbers")
@@ -398,7 +398,7 @@ async def get_available_numbers(
 
 
 # ============================================
-# Ì∂ï ENHANCED: PROVISION WITH RETELL AUTO-IMPORT
+# ENHANCED: PROVISION WITH RETELL AUTO-IMPORT
 # ============================================
 
 @router.post("/api/rootcall/provision")
@@ -456,7 +456,7 @@ async def provision_rootcall(
             
             phone_number = available[0]["phone_number"]
         
-        log.info(f"Ì≥û Provisioning {phone_number} for user {current_user.id}")
+        log.info(f"[PROVISION] Starting for {phone_number} - user {current_user.id}")
         
         # STEP 1: Purchase from Telnyx
         log.info("STEP 1: Purchasing from Telnyx...")
@@ -468,7 +468,7 @@ async def provision_rootcall(
                 detail="Failed to purchase number from Telnyx"
             )
         
-        log.info(f"‚úÖ Purchased: {phone_number}")
+        log.info(f"SUCCESS - Purchased: {phone_number}")
         
         # STEP 2: Create Telnyx SIP credential connection for Retell
         log.info("STEP 2: Setting up SIP connection...")
@@ -484,12 +484,12 @@ async def provision_rootcall(
         )
         
         connection_id = connection.get("id")
-        log.info(f"‚úÖ SIP Connection: {connection_id}")
+        log.info(f"SUCCESS - SIP Connection: {connection_id}")
         
         # STEP 3: Assign number to connection
         log.info("STEP 3: Assigning number to SIP trunk...")
         telnyx_service.assign_number_to_connection(phone_number, connection_id)
-        log.info(f"‚úÖ Number assigned to connection")
+        log.info(f"SUCCESS - Number assigned to connection")
         
         # STEP 4: Create Retell agent
         log.info("STEP 4: Creating Retell AI agent...")
@@ -534,7 +534,7 @@ Be polite but firm with scammers. Protect the user at all costs."""
             publish=True
         )
         
-        log.info(f"‚úÖ Agent created: {agent_id}")
+        log.info(f"SUCCESS - Agent created: {agent_id}")
         
         # STEP 5: Import number to Retell
         log.info("STEP 5: Importing number to Retell...")
@@ -548,7 +548,7 @@ Be polite but firm with scammers. Protect the user at all costs."""
             outbound_agent_id=agent_id
         )
         
-        log.info(f"‚úÖ Imported to Retell")
+        log.info(f"SUCCESS - Imported to Retell")
         
         # STEP 6: Save to database
         log.info("STEP 6: Saving to database...")
@@ -585,7 +585,7 @@ Be polite but firm with scammers. Protect the user at all costs."""
         db.commit()
         db.refresh(phone_record)
         
-        log.info("Ìæâ PROVISIONING COMPLETE!")
+        log.info("[COMPLETE] Provisioning successful!")
         
         return {
             "success": True,
@@ -594,7 +594,7 @@ Be polite but firm with scammers. Protect the user at all costs."""
             "friendly_name": phone_record.friendly_name,
             "agent_id": agent_id,
             "purchased_at": phone_record.purchased_at.isoformat(),
-            "message": f"‚úÖ Number activated with AI scam protection!"
+            "message": f"Number activated with AI scam protection!"
         }
         
     except HTTPException:
@@ -602,7 +602,7 @@ Be polite but firm with scammers. Protect the user at all costs."""
         raise
     except Exception as e:
         db.rollback()
-        log.error(f"‚ùå Provision failed: {e}")
+        log.error(f"[ERROR] Provision failed: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e)

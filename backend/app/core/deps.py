@@ -16,19 +16,19 @@ def get_current_user(
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    
+
     payload = decode_access_token(token)
     if payload is None:
         raise credentials_exception
-    
-    user_id: str = payload.get("sub")
-if user_id is None:
-    raise credentials_exception
 
-user = db.query(User).filter(User.id == int(user_id)).first()
+    user_id: str = payload.get("sub")
+    if user_id is None:
+        raise credentials_exception
+
+    user = db.query(User).filter(User.id == int(user_id)).first()
     if user is None:
         raise credentials_exception
-    
+
     return user
 
 def get_current_active_user(current_user: User = Depends(get_current_user)) -> User:

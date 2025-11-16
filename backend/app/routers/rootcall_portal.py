@@ -484,10 +484,14 @@ async def provision_rootcall(
         sip_username = f"rootcall_{current_user.id}"
         sip_password = f"rc_{secrets.token_urlsafe(16)}"
         
+        # Add webhook URL for incoming calls to route to Retell
+        webhook_url = "https://rootcall.onrender.com/retell/webhook"
+
         connection, username, password = telnyx.get_or_create_credential_connection(
             connection_name=connection_name,
             sip_username=sip_username,
-            sip_password=sip_password
+            sip_password=sip_password,
+            webhook_url=webhook_url
         )
         
         connection_id = connection.get("id")

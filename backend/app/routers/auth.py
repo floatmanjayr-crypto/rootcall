@@ -111,3 +111,32 @@ async def debug_jwt():
         "algorithm": ALGORITHM,
         "settings_algorithm": settings.JWT_ALGORITHM
     }
+
+
+@router.get("/api/auth/test-token-decode")
+async def test_token_decode(token: str, db: Session = Depends(get_db)):
+    """Debug: Show each step of token validation"""
+    from jose import JWTError
+    
+    try:
+        # Step 1: Decode token
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        
+        # Step 2: Get user_id
+        user_id = payload.get("sub")
+        
+        # Step 3: Query database
+        from app.models.user import User
+        user = db.query(User).filter(User.id == user_id).first()
+        
+        return {
+            "step1_decode": "SUCCESS",
+            "step2_payload": payload,
+            "step3_user_id": user_id,
+            "step4_user_exists": user is not None,
+            "step5_user_details": {"id": user.id, "email": user.email} if user else None
+        }
+    except JWTError as e:
+        return {"error": "JWT decode failed", "detail": str(e)}
+    except Exception as e:
+        return {"error": "Unexpected error", "detail": str(e)}

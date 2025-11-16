@@ -478,20 +478,18 @@ async def provision_rootcall(
         log.info(f"SUCCESS - Purchased: {phone_number}")
         
         # STEP 2: Create Telnyx SIP credential connection for Retell
-        log.info("STEP 2: Setting up SIP connection...")
+        # SIP trunk setup moved above
         
-        connection_name = f"RootCall-{current_user.id}"
+        connection_name = f"RootCall-Retell-{current_user.id}"
         sip_username = f"rootcall_{current_user.id}"
         sip_password = f"rc_{secrets.token_urlsafe(16)}"
         
-        # Add webhook URL for incoming calls to route to Retell
-        webhook_url = "https://rootcall.onrender.com/retell/webhook"
-
-        connection, username, password = telnyx.get_or_create_credential_connection(
+        # Create Elastic SIP Trunk pointing to Retell (sip.retellai.com)
+        log.info("STEP 2: Creating Elastic SIP Trunk for Retell...")
+        connection, username, password = telnyx.get_or_create_retell_trunk(
             connection_name=connection_name,
             sip_username=sip_username,
-            sip_password=sip_password,
-            webhook_url=webhook_url
+            sip_password=sip_password
         )
         
         connection_id = connection.get("id")

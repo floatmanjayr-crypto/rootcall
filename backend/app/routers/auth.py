@@ -8,7 +8,6 @@ from pydantic import BaseModel, EmailStr, validator
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
-from app.config import settings
 import os
 
 router = APIRouter(tags=["Auth"])
@@ -16,8 +15,8 @@ router = APIRouter(tags=["Auth"])
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
 
-# SECRET_KEY = os.getenv("JWT_SECRET_KEY", "changeme-super-secret-key")
-# ALGORITHM = "HS256"
+SECRET_KEY = os.getenv("JWT_SECRET_KEY", "changeme-super-secret-key")
+ALGORITHM = "HS256"
 
 class UserSignup(BaseModel):
     email: EmailStr
@@ -84,7 +83,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
 @router.get("/api/auth/me")
 async def get_me(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     try:
-        payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id = payload.get("sub")
         user = db.query(User).filter(User.id == user_id).first()
         if not user:

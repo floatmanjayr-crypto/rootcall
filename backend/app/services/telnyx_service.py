@@ -74,7 +74,7 @@ class TelnyxService:
         Purchase a specific DID (E.164).
         """
         payload = {"phone_numbers": [{"phone_number": phone_number}]}
-        data = self._post("/phone_number_orders", json=payload)
+        data = self._post("/number_orders", json=payload)  # ✅ CORRECT ENDPOINT
         log.info("📞 Ordered Telnyx number: %s", phone_number)
         return data
 

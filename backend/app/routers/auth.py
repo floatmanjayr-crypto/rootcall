@@ -91,3 +91,23 @@ async def get_me(token: str = Depends(oauth2_scheme), db: Session = Depends(get_
         return {"id": user.id, "email": user.email, "full_name": user.full_name}
     except JWTError:
         raise HTTPException(status_code=401)
+
+
+@router.get("/api/auth/debug-jwt")
+async def debug_jwt():
+    """Debug: Check if JWT secrets match"""
+    import os
+    from app.config import settings
+    
+    env_secret = os.getenv("JWT_SECRET_KEY", "NOT_SET")
+    
+    return {
+        "env_JWT_SECRET_KEY_first20": env_secret[:20] + "..." if env_secret != "NOT_SET" else "NOT_SET",
+        "settings_JWT_SECRET_KEY_first20": settings.JWT_SECRET_KEY[:20] + "...",
+        "auth_SECRET_KEY_first20": SECRET_KEY[:20] + "...",
+        "env_equals_settings": env_secret == settings.JWT_SECRET_KEY,
+        "settings_equals_auth": settings.JWT_SECRET_KEY == SECRET_KEY,
+        "all_match": env_secret == settings.JWT_SECRET_KEY == SECRET_KEY,
+        "algorithm": ALGORITHM,
+        "settings_algorithm": settings.JWT_ALGORITHM
+    }

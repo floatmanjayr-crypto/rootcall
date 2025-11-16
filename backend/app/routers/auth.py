@@ -40,7 +40,7 @@ def verify_password(plain, hashed):
 
 def create_token(user_id: int):
     expire = datetime.utcnow() + timedelta(hours=24)
-    return jwt.encode({"sub": user_id, "exp": expire}, SECRET_KEY, algorithm=ALGORITHM)
+    return jwt.encode({"sub": str(user_id), "exp": expire}, SECRET_KEY, algorithm=ALGORITHM)
 
 @router.post("/api/auth/signup")
 async def signup(data: UserSignup, db: Session = Depends(get_db)):

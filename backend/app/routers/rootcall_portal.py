@@ -39,8 +39,8 @@ log = logging.getLogger(__name__)
 router = APIRouter(tags=["RootCall Portal"])
 
 # Initialize services
-telnyx_service = TelnyxService()
-retell_service = RetellService()
+# Services initialized per-request
+# telnyx_service = TelnyxService()
 
 # ============================================
 # PYDANTIC MODELS
@@ -364,8 +364,11 @@ async def get_available_numbers(
     try:
         log.info(f"Client {current_user.id} searching numbers for area code: {area_code}")
         
+        # Initialize service
+        telnyx = TelnyxService()
+        
         # Search Telnyx for available numbers
-        numbers = telnyx_service.search_available_numbers(
+        numbers = telnyx.search_available_numbers(
             area_code=area_code,
             country_code="US",
             limit=50
@@ -442,7 +445,7 @@ async def provision_rootcall(
             log.info(f"Searching for available number in area code {area_code}")
             
             # Search for available number
-            available = telnyx_service.search_available_numbers(
+            available = telnyx.search_available_numbers(
                 area_code=area_code,
                 country_code="US",
                 limit=1
@@ -458,9 +461,13 @@ async def provision_rootcall(
         
         log.info(f"[PROVISION] Starting for {phone_number} - user {current_user.id}")
         
+        # Initialize services
+        telnyx = TelnyxService()
+        retell = RetellService()
+        
         # STEP 1: Purchase from Telnyx
         log.info("STEP 1: Purchasing from Telnyx...")
-        order_result = telnyx_service.order_number(phone_number)
+        order_result = telnyx.order_number(phone_number)
         
         if not order_result:
             raise HTTPException(
@@ -477,7 +484,7 @@ async def provision_rootcall(
         sip_username = f"rootcall_{current_user.id}"
         sip_password = f"rc_{secrets.token_urlsafe(16)}"
         
-        connection, username, password = telnyx_service.get_or_create_credential_connection(
+        connection, username, password = telnyx.get_or_create_credential_connection(
             connection_name=connection_name,
             sip_username=sip_username,
             sip_password=sip_password
@@ -488,7 +495,7 @@ async def provision_rootcall(
         
         # STEP 3: Assign number to connection
         log.info("STEP 3: Assigning number to SIP trunk...")
-        telnyx_service.assign_number_to_connection(phone_number, connection_id)
+        telnyx.assign_number_to_connection(phone_number, connection_id)
         log.info(f"SUCCESS - Number assigned to connection")
         
         # STEP 4: Create Retell agent
@@ -520,13 +527,13 @@ For LEGITIMATE calls, say: "Thank you, connecting you now." Then transfer.
 
 Be polite but firm with scammers. Protect the user at all costs."""
 
-        llm_id = retell_service.create_llm(
+        llm_id = retell.create_llm(
             general_prompt=scam_prompt,
             begin_message="Hello, this is the AI scam screening service. May I ask who's calling and the reason for your call?",
             start_speaker="agent"
         )
         
-        agent_id = retell_service.create_agent(
+        agent_id = retell.create_agent(
             name=agent_name,
             llm_id=llm_id,
             voice_id="11labs-Adrian",
@@ -539,7 +546,7 @@ Be polite but firm with scammers. Protect the user at all costs."""
         # STEP 5: Import number to Retell
         log.info("STEP 5: Importing number to Retell...")
         
-        retell_import = retell_service.import_phone_number(
+        retell_import = retell.import_phone_number(
             phone_number=phone_number,
             termination_uri="sip.telnyx.com",
             sip_username=username,

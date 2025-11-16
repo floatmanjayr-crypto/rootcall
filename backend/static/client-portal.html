@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RootCall - AI Call Protection Dashboard</title>
+    <title>RootCall - AI Scam Screening Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -227,7 +227,7 @@
         .modal-content {
             background: white;
             border-radius: 24px;
-            max-width: 700px;
+            max-width: 900px;
             width: 90%;
             max-height: 90vh;
             overflow-y: auto;
@@ -265,14 +265,93 @@
             box-shadow: 0 8px 20px rgba(13, 61, 47, 0.3);
         }
 
-        .area-code-btn.all-option {
-            border: 3px dashed #d1d5db;
-            background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+        .number-card {
+            padding: 1.5rem;
+            border: 3px solid #e5e5e5;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
         }
 
-        .area-code-btn.all-option.selected {
-            background: linear-gradient(135deg, var(--accent) 0%, var(--green) 100%);
-            border-style: solid;
+        .number-card:hover {
+            border-color: var(--accent);
+            transform: translateX(4px);
+            box-shadow: 0 4px 12px rgba(45, 122, 95, 0.2);
+        }
+
+        .number-card.selected {
+            background: linear-gradient(135deg, var(--light-green) 0%, #c6f6d5 100%);
+            border-color: var(--green);
+            border-width: 4px;
+            box-shadow: 0 8px 20px rgba(13, 61, 47, 0.2);
+        }
+
+        .number-card.selected .number-text {
+            color: var(--green);
+            font-weight: 900;
+        }
+
+        .number-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .number-text {
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            color: #1a1a1a;
+        }
+
+        .number-location {
+            font-size: 0.85rem;
+            color: #666;
+            font-weight: 600;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 1rem 1.5rem;
+            border: 2px solid #e5e5e5;
+            border-radius: 12px;
+            font-size: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--green);
+            box-shadow: 0 0 0 4px rgba(13, 61, 47, 0.1);
+        }
+
+        .numbers-grid {
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+        }
+
+        .numbers-grid::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .numbers-grid::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .numbers-grid::-webkit-scrollbar-thumb {
+            background: var(--accent);
+            border-radius: 10px;
+        }
+
+        .numbers-grid::-webkit-scrollbar-thumb:hover {
+            background: var(--green);
         }
 
         .spinner {
@@ -446,6 +525,7 @@
             align-items: center;
             gap: 0.5rem;
             margin-bottom: 1.5rem;
+            justify-content: center;
         }
 
         .step-dot {
@@ -453,12 +533,29 @@
             height: 10px;
             background: #d1d5db;
             border-radius: 50%;
+            transition: all 0.3s ease;
         }
 
         .step-dot.active {
             background: var(--green);
             width: 32px;
             border-radius: 5px;
+        }
+
+        .step-dot.completed {
+            background: var(--success);
+        }
+
+        .scam-shield-badge {
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.75rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
         }
     </style>
 </head>
@@ -485,7 +582,7 @@
                 </div>
                 <div>
                     <div style="font-weight: 900; font-size: 1.4rem; color: var(--green); letter-spacing: -0.5px;">RootCall</div>
-                    <div style="font-size: 0.75rem; color: #999; font-weight: 600;">AI Call Protection</div>
+                    <div style="font-size: 0.75rem; color: #999; font-weight: 600;">AI Scam Screening</div>
                 </div>
             </div>
         </div>
@@ -514,9 +611,9 @@
         </div>
 
         <div style="padding: 1.5rem; border-top: 1px solid #e5e5e5;">
-            <button onclick="window.location.href='/static/shield-pricing.html'" class="btn btn-primary" style="width: 100%; justify-content: center;">
-                <i class="fas fa-crown"></i>
-                Upgrade Plan
+            <button onclick="logout()" class="btn btn-primary" style="width: 100%; justify-content: center;">
+                <i class="fas fa-sign-out-alt"></i>
+                Logout
             </button>
         </div>
     </div>
@@ -529,13 +626,15 @@
                     Welcome, <span id="user-name">User</span> 👋
                 </h1>
                 <div class="protection-status">
-                    <span>Protection Active 24/7</span>
+                    <span>AI Scam Protection Active 24/7</span>
                 </div>
             </div>
-            <button onclick="logout()" class="btn btn-primary">
-                <i class="fas fa-sign-out-alt"></i>
-                Logout
-            </button>
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <span class="scam-shield-badge">
+                    <i class="fas fa-ban"></i>
+                    SCAM SHIELD
+                </span>
+            </div>
         </div>
 
         <!-- Dashboard Page -->
@@ -546,7 +645,7 @@
                     <div class="stat-card">
                         <i class="fas fa-ban" style="color: var(--danger); font-size: 1.75rem;"></i>
                         <div class="stat-number" id="spam-blocked">0</div>
-                        <div style="color: #666; font-size: 0.9rem; font-weight: 600;">Spam Blocked</div>
+                        <div style="color: #666; font-size: 0.9rem; font-weight: 600;">Scams Blocked</div>
                     </div>
                     <div class="stat-card">
                         <i class="fas fa-shield-check" style="color: var(--success); font-size: 1.75rem;"></i>
@@ -561,7 +660,7 @@
                     <div class="stat-card">
                         <i class="fas fa-robot" style="color: #8b5cf6; font-size: 1.75rem;"></i>
                         <div class="stat-number">AI</div>
-                        <div style="color: #666; font-size: 0.9rem; font-weight: 600;">Powered Protection</div>
+                        <div style="color: #666; font-size: 0.9rem; font-weight: 600;">Powered Screening</div>
                     </div>
                 </div>
 
@@ -571,7 +670,7 @@
                     <div>
                         <div class="card" style="margin-bottom: 1.5rem;">
                             <h3 style="font-size: 1.4rem; font-weight: 800; color: var(--green); margin-bottom: 1.5rem;">
-                                <i class="fas fa-chart-line"></i> Protection Summary
+                                <i class="fas fa-chart-line"></i> Scam Protection Summary
                             </h3>
                             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem;">
                                 <div style="padding: 1.25rem; background: var(--ivory); border-radius: 12px;">
@@ -583,11 +682,11 @@
                                     <div style="font-size: 2rem; font-weight: 800; color: var(--success);">99.8%</div>
                                 </div>
                                 <div style="padding: 1.25rem; background: var(--ivory); border-radius: 12px;">
-                                    <div style="color: #666; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem;">RESPONSE TIME</div>
+                                    <div style="color: #666; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem;">AI RESPONSE</div>
                                     <div style="font-size: 2rem; font-weight: 800; color: #3b82f6;">&lt;1s</div>
                                 </div>
                                 <div style="padding: 1.25rem; background: var(--ivory); border-radius: 12px;">
-                                    <div style="color: #666; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem;">AI ACCURACY</div>
+                                    <div style="color: #666; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem;">SCAM ACCURACY</div>
                                     <div style="font-size: 2rem; font-weight: 800; color: #8b5cf6;">99.9%</div>
                                 </div>
                             </div>
@@ -614,10 +713,9 @@
                     <!-- Fraud Alerts -->
                     <div class="card" style="background: linear-gradient(180deg, #ffffff 0%, #fff5f5 100%);">
                         <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--danger); margin-bottom: 1.5rem;">
-                            <i class="fas fa-exclamation-triangle"></i> Trending Fraud Alerts
+                            <i class="fas fa-exclamation-triangle"></i> Trending Scam Alerts
                         </h3>
                         <div id="fraud-alerts-container">
-                            <!-- Fraud alerts will be loaded here -->
                             <div class="fraud-alert-card">
                                 <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.75rem;">
                                     <div style="font-weight: 700; font-size: 0.95rem; color: var(--danger);">
@@ -665,21 +763,6 @@
                                     <i class="fas fa-clock"></i> Updated 1 day ago
                                 </div>
                             </div>
-
-                            <div class="fraud-alert-card">
-                                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.75rem;">
-                                    <div style="font-weight: 700; font-size: 0.95rem; color: var(--danger);">
-                                        <i class="fas fa-fire" style="margin-right: 0.5rem;"></i>
-                                        Grandparent Scam
-                                    </div>
-                                </div>
-                                <p style="font-size: 0.85rem; color: #666; line-height: 1.6;">
-                                    Scammers pretending to be grandchildren in emergency situations needing immediate money.
-                                </p>
-                                <div style="margin-top: 0.75rem; font-size: 0.75rem; color: #999; font-weight: 600;">
-                                    <i class="fas fa-clock"></i> Updated 2 days ago
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -691,7 +774,7 @@
             <div class="content-area">
                 <div style="margin-bottom: 2rem;">
                     <h2 style="font-size: 2.25rem; font-weight: 900; color: var(--green); margin-bottom: 0.5rem;">Shield Numbers</h2>
-                    <p style="color: #666; font-size: 1.05rem;">Your AI-protected phone numbers with automatic scam detection</p>
+                    <p style="color: #666; font-size: 1.05rem;">AI-protected phone numbers with automatic scam detection & blocking</p>
                 </div>
 
                 <div id="alert-container"></div>
@@ -703,7 +786,7 @@
                         </h3>
                         <button onclick="openProvisionModal()" class="btn btn-primary">
                             <i class="fas fa-plus"></i>
-                            Get Root Shield Number
+                            Get Shield Number
                         </button>
                     </div>
                     <div id="numbers-list">
@@ -791,7 +874,7 @@
             <div class="content-area">
                 <div style="margin-bottom: 2rem;">
                     <h2 style="font-size: 2.25rem; font-weight: 900; color: var(--green); margin-bottom: 0.5rem;">Settings</h2>
-                    <p style="color: #666; font-size: 1.05rem;">Configure your AI protection preferences</p>
+                    <p style="color: #666; font-size: 1.05rem;">Configure your AI scam protection preferences</p>
                 </div>
 
                 <div class="grid-2">
@@ -822,8 +905,8 @@
                             <label style="display: flex; align-items: center; gap: 1rem; padding: 1.25rem; background: var(--ivory); border-radius: 12px; cursor: pointer;">
                                 <input type="checkbox" id="alert-spam" onchange="saveSettings()" style="width: 22px; height: 22px; cursor: pointer;" />
                                 <div>
-                                    <div style="font-weight: 700;">Spam Alerts</div>
-                                    <div style="font-size: 0.85rem; color: #666;">Notify when spam is blocked</div>
+                                    <div style="font-weight: 700;">Scam Alerts</div>
+                                    <div style="font-size: 0.85rem; color: #666;">Notify when scams are blocked</div>
                                 </div>
                             </label>
 
@@ -838,8 +921,8 @@
                             <label style="display: flex; align-items: center; gap: 1rem; padding: 1.25rem; background: var(--ivory); border-radius: 12px; cursor: pointer;">
                                 <input type="checkbox" id="auto-block-spam" onchange="saveSettings()" style="width: 22px; height: 22px; cursor: pointer;" />
                                 <div>
-                                    <div style="font-weight: 700;">Auto-Block Spam</div>
-                                    <div style="font-size: 0.85rem; color: #666;">AI automatically blocks confirmed spam</div>
+                                    <div style="font-weight: 700;">Auto-Block Scams</div>
+                                    <div style="font-size: 0.85rem; color: #666;">AI automatically blocks confirmed scams</div>
                                 </div>
                             </label>
                         </div>
@@ -863,7 +946,7 @@
                         <div class="info-badge" style="margin-top: 1.5rem;">
                             <i class="fas fa-shield-check" style="font-size: 1.25rem;"></i>
                             <div>
-                                <div style="font-weight: 700; margin-bottom: 0.25rem;">AI Protection Active</div>
+                                <div style="font-weight: 700; margin-bottom: 0.25rem;">AI Scam Protection Active</div>
                                 <div style="font-size: 0.85rem;">All your numbers are protected by advanced AI screening</div>
                             </div>
                         </div>
@@ -881,34 +964,29 @@
                 <div style="display: flex; justify-content: space-between; margin-bottom: 2rem;">
                     <div>
                         <h2 style="font-size: 2.25rem; font-weight: 900; color: var(--green); margin-bottom: 0.5rem;">
-                            <i class="fas fa-shield-alt"></i> Get Your Root Shield Number
+                            <i class="fas fa-shield-alt"></i> Get Your Scam Shield Number
                         </h2>
-                        <p style="color: #666;">AI agent automatically included with every number</p>
+                        <p style="color: #666;">Powered by Telnyx • AI scam screening included</p>
                     </div>
                     <button onclick="closeProvisionModal()" style="background: none; border: none; font-size: 2rem; cursor: pointer; color: #999; transition: all 0.3s ease;" onmouseover="this.style.color='var(--danger)'" onmouseout="this.style.color='#999'">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
 
+                <!-- Step 1: Choose Area Code -->
                 <div id="step-area-code">
                     <div class="step-indicator">
                         <div class="step-dot active"></div>
                         <div class="step-dot"></div>
                         <div class="step-dot"></div>
+                        <div class="step-dot"></div>
                     </div>
 
-                    <p style="margin-bottom: 1.5rem; font-weight: 600; color: var(--green); font-size: 1.1rem;">
-                        <i class="fas fa-map-marker-alt"></i> Choose your area code:
+                    <p style="margin-bottom: 1.5rem; font-weight: 700; color: var(--green); font-size: 1.2rem;">
+                        <i class="fas fa-map-marker-alt"></i> Step 1: Choose Your Area Code
                     </p>
                     
                     <div class="grid-4" style="margin-bottom: 2rem;">
-                        <div class="area-code-btn all-option" onclick="selectAreaCode('ALL', event)" data-code="ALL">
-                            <div style="font-size: 1.75rem; font-weight: 900; margin-bottom: 0.5rem;">
-                                <i class="fas fa-globe-americas"></i>
-                            </div>
-                            <div style="font-size: 1.25rem; font-weight: 800;">ANY</div>
-                            <div style="font-size: 0.85rem; color: #666; margin-top: 0.25rem;">All Available</div>
-                        </div>
                         <div class="area-code-btn" onclick="selectAreaCode('813', event)" data-code="813">
                             <div style="font-size: 2.25rem; font-weight: 900;">813</div>
                             <div style="font-size: 0.9rem; color: #666; margin-top: 0.5rem;">Tampa, FL</div>
@@ -921,49 +999,104 @@
                             <div style="font-size: 2.25rem; font-weight: 900;">407</div>
                             <div style="font-size: 0.9rem; color: #666; margin-top: 0.5rem;">Orlando, FL</div>
                         </div>
+                        <div class="area-code-btn" onclick="selectAreaCode('305', event)" data-code="305">
+                            <div style="font-size: 2.25rem; font-weight: 900;">305</div>
+                            <div style="font-size: 0.9rem; color: #666; margin-top: 0.5rem;">Miami, FL</div>
+                        </div>
+                        <div class="area-code-btn" onclick="selectAreaCode('212', event)" data-code="212">
+                            <div style="font-size: 2.25rem; font-weight: 900;">212</div>
+                            <div style="font-size: 0.9rem; color: #666; margin-top: 0.5rem;">New York, NY</div>
+                        </div>
+                        <div class="area-code-btn" onclick="selectAreaCode('310', event)" data-code="310">
+                            <div style="font-size: 2.25rem; font-weight: 900;">310</div>
+                            <div style="font-size: 0.9rem; color: #666; margin-top: 0.5rem;">Los Angeles, CA</div>
+                        </div>
+                        <div class="area-code-btn" onclick="selectAreaCode('312', event)" data-code="312">
+                            <div style="font-size: 2.25rem; font-weight: 900;">312</div>
+                            <div style="font-size: 0.9rem; color: #666; margin-top: 0.5rem;">Chicago, IL</div>
+                        </div>
+                        <div class="area-code-btn" onclick="selectAreaCode('415', event)" data-code="415">
+                            <div style="font-size: 2.25rem; font-weight: 900;">415</div>
+                            <div style="font-size: 0.9rem; color: #666; margin-top: 0.5rem;">San Francisco, CA</div>
+                        </div>
                     </div>
 
                     <div class="info-badge" style="margin-bottom: 1.5rem;">
                         <i class="fas fa-robot" style="font-size: 1.5rem;"></i>
                         <div>
-                            <div style="font-weight: 700; margin-bottom: 0.25rem;">AI Agent Included</div>
-                            <div style="font-size: 0.9rem;">Your Root Shield number comes with an AI agent that automatically screens all calls, blocks spam, and identifies scams in real-time.</div>
+                            <div style="font-weight: 700; margin-bottom: 0.25rem;">AI Scam Screening Included</div>
+                            <div style="font-size: 0.9rem;">Every number comes with 24/7 AI protection that automatically screens calls, blocks scams, and protects you from fraud.</div>
                         </div>
                     </div>
 
-                    <button onclick="provisionNumber()" id="provision-btn" disabled class="btn btn-primary" style="width: 100%; justify-content: center; padding: 1.25rem; font-size: 1.1rem;">
-                        <i class="fas fa-shield-alt"></i> Activate Shield Number
+                    <button onclick="searchNumbers()" id="search-btn" disabled class="btn btn-primary" style="width: 100%; justify-content: center; padding: 1.25rem; font-size: 1.1rem;">
+                        <i class="fas fa-search"></i> Search Available Numbers
                     </button>
                 </div>
 
-                <div id="step-provisioning" style="display: none; text-align: center;">
-                    <div class="step-indicator" style="justify-content: center;">
-                        <div class="step-dot"></div>
+                <!-- Step 2: Searching -->
+                <div id="step-searching" style="display: none; text-align: center;">
+                    <div class="step-indicator">
+                        <div class="step-dot completed"></div>
                         <div class="step-dot active"></div>
+                        <div class="step-dot"></div>
                         <div class="step-dot"></div>
                     </div>
                     <div class="spinner" style="margin-bottom: 2rem;"></div>
-                    <h3 style="font-size: 1.75rem; font-weight: 800; margin-bottom: 1rem; color: var(--green);">Setting Up Your Protection...</h3>
+                    <h3 style="font-size: 1.75rem; font-weight: 800; margin-bottom: 1rem; color: var(--green);">Searching Telnyx Network...</h3>
+                    <p style="color: #666; font-size: 1.05rem;">Finding available numbers in your area</p>
+                </div>
+
+                <!-- Step 3: Select Number -->
+                <div id="step-select-number" style="display: none;">
+                    <div class="step-indicator">
+                        <div class="step-dot completed"></div>
+                        <div class="step-dot completed"></div>
+                        <div class="step-dot active"></div>
+                        <div class="step-dot"></div>
+                    </div>
+
+                    <p style="margin-bottom: 1.5rem; font-weight: 700; color: var(--green); font-size: 1.2rem;">
+                        <i class="fas fa-list"></i> Step 2: Choose Your Number
+                    </p>
+
+                    <input type="text" id="number-search" class="search-input" placeholder="🔍 Search by digits (e.g., 555, 1234)" oninput="filterNumbers()" />
+
+                    <div id="available-numbers" class="numbers-grid">
+                        <!-- Numbers will be populated here -->
+                    </div>
+
+                    <button onclick="provisionSelectedNumber()" id="provision-btn" disabled class="btn btn-primary" style="width: 100%; justify-content: center; padding: 1.25rem; font-size: 1.1rem; margin-top: 1.5rem;">
+                        <i class="fas fa-shield-alt"></i> Activate This Number
+                    </button>
+                </div>
+
+                <!-- Step 4: Provisioning -->
+                <div id="step-provisioning" style="display: none; text-align: center;">
+                    <div class="step-indicator">
+                        <div class="step-dot completed"></div>
+                        <div class="step-dot completed"></div>
+                        <div class="step-dot completed"></div>
+                        <div class="step-dot active"></div>
+                    </div>
+                    <div class="spinner" style="margin-bottom: 2rem;"></div>
+                    <h3 style="font-size: 1.75rem; font-weight: 800; margin-bottom: 1rem; color: var(--green);">Activating Your Protection...</h3>
                     <p id="provision-status" style="color: #666; font-size: 1.05rem;"></p>
                 </div>
 
+                <!-- Step 5: Success -->
                 <div id="step-success" style="display: none; text-align: center;">
-                    <div class="step-indicator" style="justify-content: center;">
-                        <div class="step-dot"></div>
-                        <div class="step-dot"></div>
-                        <div class="step-dot active"></div>
-                    </div>
                     <div style="font-size: 6rem; margin: 1rem 0;">
                         <i class="fas fa-check-circle" style="color: var(--success);"></i>
                     </div>
-                    <h3 style="font-size: 2.25rem; font-weight: 900; color: var(--success); margin: 1rem 0;">Success!</h3>
+                    <h3 style="font-size: 2.25rem; font-weight: 900; color: var(--success); margin: 1rem 0;">Protection Activated!</h3>
                     <div style="background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); padding: 2.5rem; border-radius: 16px; margin: 2rem 0; border: 2px solid var(--success);">
-                        <p style="color: #065f46; margin-bottom: 0.75rem; font-weight: 600; font-size: 1.1rem;">Your Root Shield Number:</p>
+                        <p style="color: #065f46; margin-bottom: 0.75rem; font-weight: 600; font-size: 1.1rem;">Your Scam Shield Number:</p>
                         <p id="new-phone-number" style="font-size: 2.5rem; font-weight: 900; color: #065f46; letter-spacing: 1px;"></p>
                         <div style="margin-top: 1.5rem; padding: 1rem; background: white; border-radius: 10px;">
                             <i class="fas fa-robot" style="color: var(--success); font-size: 1.5rem; margin-bottom: 0.5rem;"></i>
-                            <div style="font-weight: 700; color: #065f46; margin-bottom: 0.25rem;">AI Agent Activated</div>
-                            <div style="font-size: 0.9rem; color: #666;">Your number is now protected 24/7</div>
+                            <div style="font-weight: 700; color: #065f46; margin-bottom: 0.25rem;">AI Scam Screening Active</div>
+                            <div style="font-size: 0.9rem; color: #666;">Your number is now protected 24/7 from scams and fraud</div>
                         </div>
                     </div>
                     <button onclick="finishProvisioning()" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 1.25rem; font-size: 1.1rem;">
@@ -971,6 +1104,7 @@
                     </button>
                 </div>
 
+                <!-- Step Error -->
                 <div id="step-error" style="display: none; text-align: center;">
                     <div style="font-size: 6rem; margin: 1rem 0;">
                         <i class="fas fa-exclamation-circle" style="color: var(--danger);"></i>
@@ -987,12 +1121,14 @@
 
     <script>
         // ============================================
-        // PRODUCTION CONFIGURATION
+        // CONFIGURATION
         // ============================================
         const API = 'https://rootcall.onrender.com';
         let USER_DATA = null;
         let CLIENT_ID = null;
         let SELECTED_AREA_CODE = null;
+        let AVAILABLE_NUMBERS = [];
+        let SELECTED_NUMBER = null;
 
         // Phone validation regex (E.164 format)
         const PHONE_REGEX = /^\+[1-9]\d{1,14}$/;
@@ -1115,6 +1251,13 @@
             try {
                 const payload = JSON.parse(atob(token.split('.')[1]));
                 CLIENT_ID = payload.sub;
+                
+                if (!CLIENT_ID) {
+                    console.error('No client ID in token');
+                    logout();
+                    return;
+                }
+                
                 USER_DATA = payload;
                 
                 document.getElementById('user-name').textContent = payload.email?.split('@')[0] || 'User';
@@ -1160,8 +1303,8 @@
                     const list = document.getElementById('contacts-list');
                     if (config.trusted_contacts && config.trusted_contacts.length > 0) {
                         list.innerHTML = config.trusted_contacts.map(c => {
-                            const phone = typeof c === 'string' ? c : c.phone_number;
-                            const name = typeof c === 'object' ? c.name : '';
+                            const phone = typeof c === 'string' ? c : (c.phone_number || c);
+                            const name = typeof c === 'object' ? (c.name || '') : '';
                             return `
                                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.25rem; background: var(--light-green); border-radius: 12px; margin-bottom: 0.75rem; border: 1px solid var(--green);">
                                     <div>
@@ -1224,6 +1367,8 @@
                 const data = await response.json();
                 const container = document.getElementById('numbers-list');
 
+                console.log('My number response:', data);
+
                 if (data.has_number) {
                     container.innerHTML = `
                         <div style="padding: 2rem; background: linear-gradient(135deg, var(--light-green) 0%, #c6f6d5 100%); border: 3px solid var(--green); border-radius: 16px; box-shadow: 0 8px 20px rgba(13, 61, 47, 0.15);">
@@ -1231,10 +1376,13 @@
                                 <div style="flex: 1;">
                                     <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
                                         <div style="font-size: 0.9rem; color: var(--green); font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">
-                                            <i class="fas fa-shield-check"></i> ${data.friendly_name || 'Your Root Shield Number'}
+                                            <i class="fas fa-shield-check"></i> ${data.friendly_name || 'Your Scam Shield Number'}
                                         </div>
                                         <span style="padding: 0.5rem 1rem; background: var(--success); color: white; border-radius: 20px; font-weight: 700; font-size: 0.85rem;">
                                             <i class="fas fa-robot"></i> AI ACTIVE
+                                        </span>
+                                        <span class="scam-shield-badge">
+                                            <i class="fas fa-ban"></i> SCAM SHIELD
                                         </span>
                                     </div>
                                     <div style="font-size: 2.75rem; font-weight: 900; color: var(--green); margin: 0.75rem 0; letter-spacing: 2px;">${data.number}</div>
@@ -1256,7 +1404,7 @@
                         <div style="text-align: center; padding: 4rem; background: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%); border-radius: 16px; border: 2px dashed #d1d5db;">
                             <i class="fas fa-shield-alt" style="font-size: 5rem; color: #d1d5db; margin-bottom: 1.5rem;"></i>
                             <h4 style="font-size: 1.5rem; font-weight: 800; color: #666; margin-bottom: 0.75rem;">No Shield Number Yet</h4>
-                            <p style="color: #999; margin-bottom: 2rem; font-size: 1.05rem;">Protect your privacy with an AI-powered Root Shield number</p>
+                            <p style="color: #999; margin-bottom: 2rem; font-size: 1.05rem;">Protect yourself from scams with an AI-powered Shield number</p>
                             <button onclick="openProvisionModal()" class="btn btn-primary" style="padding: 1.25rem 2.5rem; font-size: 1.1rem;">
                                 <i class="fas fa-plus"></i> Get Your Shield Number Now
                             </button>
@@ -1285,11 +1433,17 @@
 
         function resetProvisionModal() {
             document.getElementById('step-area-code').style.display = 'block';
+            document.getElementById('step-searching').style.display = 'none';
+            document.getElementById('step-select-number').style.display = 'none';
             document.getElementById('step-provisioning').style.display = 'none';
             document.getElementById('step-success').style.display = 'none';
             document.getElementById('step-error').style.display = 'none';
+            
             SELECTED_AREA_CODE = null;
-            document.getElementById('provision-btn').disabled = true;
+            AVAILABLE_NUMBERS = [];
+            SELECTED_NUMBER = null;
+            
+            document.getElementById('search-btn').disabled = true;
             document.querySelectorAll('.area-code-btn').forEach(btn => btn.classList.remove('selected'));
         }
 
@@ -1299,25 +1453,120 @@
                 btn.classList.remove('selected');
             });
             event.target.closest('.area-code-btn').classList.add('selected');
-            document.getElementById('provision-btn').disabled = false;
+            document.getElementById('search-btn').disabled = false;
         }
 
-        async function provisionNumber() {
+        async function searchNumbers() {
             if (!SELECTED_AREA_CODE) {
-                showAlert('Please select an area code', 'error');
+                showToast('Please select an area code', 'error');
                 return;
             }
 
+            // Show searching step
             document.getElementById('step-area-code').style.display = 'none';
+            document.getElementById('step-searching').style.display = 'block';
+
+            try {
+                // Call backend to get available numbers from Telnyx
+                const response = await authFetch(`${API}/api/rootcall/available-numbers?area_code=${SELECTED_AREA_CODE}`);
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to search numbers');
+                }
+
+                const data = await response.json();
+                console.log('Available numbers:', data);
+
+                AVAILABLE_NUMBERS = data.numbers || [];
+
+                if (AVAILABLE_NUMBERS.length === 0) {
+                    throw new Error('No numbers available in this area code. Please try another.');
+                }
+
+                // Display numbers
+                displayAvailableNumbers();
+
+                document.getElementById('step-searching').style.display = 'none';
+                document.getElementById('step-select-number').style.display = 'block';
+
+            } catch (err) {
+                console.error('Search error:', err);
+                document.getElementById('step-searching').style.display = 'none';
+                document.getElementById('step-error').style.display = 'block';
+                document.getElementById('error-message').textContent = err.message || 'Failed to search numbers. Please try again.';
+            }
+        }
+
+        function displayAvailableNumbers() {
+            const container = document.getElementById('available-numbers');
+            
+            if (AVAILABLE_NUMBERS.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #999; padding: 2rem;">No numbers found</p>';
+                return;
+            }
+
+            container.innerHTML = AVAILABLE_NUMBERS.map((num, index) => {
+                const phoneNumber = num.phone_number || num;
+                const locality = num.locality || '';
+                const region = num.region || '';
+                
+                return `
+                    <div class="number-card" onclick="selectNumber('${phoneNumber}', ${index})" data-number="${phoneNumber}">
+                        <div class="number-info">
+                            <div class="number-text">${formatPhoneNumber(phoneNumber)}</div>
+                            ${locality || region ? `<div class="number-location">${locality}${locality && region ? ', ' : ''}${region}</div>` : ''}
+                        </div>
+                        <div>
+                            <i class="fas fa-shield-alt" style="font-size: 1.5rem; color: var(--green);"></i>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function filterNumbers() {
+            const search = document.getElementById('number-search').value.toLowerCase();
+            const cards = document.querySelectorAll('.number-card');
+            
+            cards.forEach(card => {
+                const number = card.getAttribute('data-number');
+                if (number.includes(search)) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        function selectNumber(phoneNumber, index) {
+            SELECTED_NUMBER = phoneNumber;
+            
+            document.querySelectorAll('.number-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            event.target.closest('.number-card').classList.add('selected');
+            document.getElementById('provision-btn').disabled = false;
+        }
+
+        async function provisionSelectedNumber() {
+            if (!SELECTED_NUMBER) {
+                showToast('Please select a number', 'error');
+                return;
+            }
+
+            document.getElementById('step-select-number').style.display = 'none';
             document.getElementById('step-provisioning').style.display = 'block';
             
             try {
-                document.getElementById('provision-status').textContent = 'Searching for available numbers...';
+                document.getElementById('provision-status').textContent = 'Purchasing number from Telnyx...';
 
                 const response = await authFetch(`${API}/api/rootcall/provision`, {
                     method: 'POST',
                     body: JSON.stringify({ 
-                        area_code: SELECTED_AREA_CODE === 'ALL' ? null : SELECTED_AREA_CODE 
+                        phone_number: SELECTED_NUMBER,
+                        area_code: SELECTED_AREA_CODE
                     })
                 });
 
@@ -1326,20 +1575,21 @@
                     throw new Error(error.detail || 'Provisioning failed');
                 }
 
-                document.getElementById('provision-status').textContent = 'Creating your AI agent...';
+                const data = await response.json();
+                console.log('Provision response:', data);
+
+                document.getElementById('provision-status').textContent = 'Creating your AI scam screening agent...';
                 await new Promise(resolve => setTimeout(resolve, 1000));
 
-                document.getElementById('provision-status').textContent = 'Configuring call screening...';
+                document.getElementById('provision-status').textContent = 'Configuring call routing...';
                 await new Promise(resolve => setTimeout(resolve, 1000));
 
                 document.getElementById('provision-status').textContent = 'Activating scam detection...';
                 await new Promise(resolve => setTimeout(resolve, 800));
 
-                const data = await response.json();
-
                 document.getElementById('step-provisioning').style.display = 'none';
                 document.getElementById('step-success').style.display = 'block';
-                document.getElementById('new-phone-number').textContent = data.rootcall_number || data.phone_number || 'Number provisioned!';
+                document.getElementById('new-phone-number').textContent = formatPhoneNumber(data.rootcall_number || data.phone_number || SELECTED_NUMBER);
 
             } catch (err) {
                 console.error('Provision error:', err);
@@ -1352,8 +1602,18 @@
         function finishProvisioning() {
             closeProvisionModal();
             loadData();
-            showToast('Root Shield number activated successfully! AI protection is now active.', 'success');
+            showToast('Scam Shield number activated successfully! AI protection is now active.', 'success');
             showPage('numbers');
+        }
+
+        function formatPhoneNumber(phone) {
+            // Format +18135551234 to +1 (813) 555-1234
+            if (!phone) return '';
+            const cleaned = phone.replace(/\D/g, '');
+            if (cleaned.length === 11 && cleaned[0] === '1') {
+                return `+1 (${cleaned.slice(1, 4)}) ${cleaned.slice(4, 7)}-${cleaned.slice(7)}`;
+            }
+            return phone;
         }
 
         // ============================================

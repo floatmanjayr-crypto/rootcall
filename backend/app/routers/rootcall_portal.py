@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-RootCall Client Portal API Routes - SECURE VERSION
+RootCall Client Portal API Routes - SECURE VERSION WITH TELNYX + RETELL
 """
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import FileResponse, StreamingResponse
@@ -12,6 +12,8 @@ from datetime import datetime
 import io
 import csv
 import os
+import secrets
+import logging
 import requests
 
 # Database
@@ -23,20 +25,29 @@ from app.models.phone_number import PhoneNumber
 from app.models.rootcall_config import RootCallConfig
 from app.models.rootcall_call_log import RootCallCallLog
 
-# Auth - Use whichever import path works in your project
+# Services
+from app.services.telnyx_service import TelnyxService
+from app.services.retell_service import RetellService
+
+# Auth
 try:
     from app.dependencies import get_current_user
 except ImportError:
     from app.core.deps import get_current_user
 
+log = logging.getLogger(__name__)
 router = APIRouter(tags=["RootCall Portal"])
+
+# Initialize services
+telnyx_service = TelnyxService()
+retell_service = RetellService()
 
 # ============================================
 # PYDANTIC MODELS
 # ============================================
 
 class ConfigUpdate(BaseModel):
-    client_cell: Optional[str] = None  # ✅ ADDED - for forwarding number
+    client_cell: Optional[str] = None
     sms_alerts_enabled: Optional[bool] = None
     alert_on_spam: Optional[bool] = None
     alert_on_unknown: Optional[bool] = None
@@ -47,21 +58,21 @@ class TrustedContactAdd(BaseModel):
     name: Optional[str] = None
 
 class ProvisionRequest(BaseModel):
-    area_code: str = "813"
+    phone_number: Optional[str] = None  # NEW: specific number to provision
+    area_code: Optional[str] = "813"    # Or search by area code
 
 # ============================================
-# ✅ SECURE ENDPOINTS - WITH AUTH
+# STATS & DASHBOARD
 # ============================================
 
 @router.get("/api/rootcall/stats/{client_id}")
 async def get_stats(
     client_id: int,
-    current_user: User = Depends(get_current_user),  # ✅ AUTH REQUIRED
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Get RootCall protection stats - AUTHENTICATED"""
     
-    # ✅ AUTHORIZATION CHECK - User can only access their own data
     if current_user.id != client_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -109,12 +120,11 @@ async def get_stats(
 @router.get("/api/rootcall/calls/{client_id}")
 async def get_recent_calls(
     client_id: int,
-    current_user: User = Depends(get_current_user),  # ✅ AUTH REQUIRED
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Get recent call activity - AUTHENTICATED"""
     
-    # ✅ AUTHORIZATION CHECK
     if current_user.id != client_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -143,15 +153,18 @@ async def get_recent_calls(
     ]
 
 
+# ============================================
+# CONFIGURATION
+# ============================================
+
 @router.get("/api/rootcall/config/{client_id}")
 async def get_config(
     client_id: int,
-    current_user: User = Depends(get_current_user),  # ✅ AUTH REQUIRED
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Get RootCall configuration - AUTHENTICATED"""
     
-    # ✅ AUTHORIZATION CHECK
     if current_user.id != client_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -184,12 +197,11 @@ async def get_config(
 async def update_config(
     client_id: int,
     updates: ConfigUpdate,
-    current_user: User = Depends(get_current_user),  # ✅ AUTH REQUIRED
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Update RootCall configuration - AUTHENTICATED"""
     
-    # ✅ AUTHORIZATION CHECK
     if current_user.id != client_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -204,7 +216,6 @@ async def update_config(
     if not config:
         raise HTTPException(status_code=404, detail="No config")
     
-    # ✅ UPDATE ALL FIELDS
     if updates.client_cell is not None:
         config.client_cell = updates.client_cell
     if updates.sms_alerts_enabled is not None:
@@ -220,16 +231,19 @@ async def update_config(
     return {"success": True}
 
 
+# ============================================
+# TRUSTED CONTACTS
+# ============================================
+
 @router.post("/api/rootcall/trusted-contacts/{client_id}")
 async def add_trusted_contact(
     client_id: int,
     contact: TrustedContactAdd,
-    current_user: User = Depends(get_current_user),  # ✅ AUTH REQUIRED
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Add trusted contact - AUTHENTICATED"""
     
-    # ✅ AUTHORIZATION CHECK
     if current_user.id != client_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -258,12 +272,11 @@ async def add_trusted_contact(
 async def remove_trusted_contact(
     client_id: int,
     phone_number: str,
-    current_user: User = Depends(get_current_user),  # ✅ AUTH REQUIRED
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Remove trusted contact - AUTHENTICATED"""
     
-    # ✅ AUTHORIZATION CHECK
     if current_user.id != client_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -285,15 +298,18 @@ async def remove_trusted_contact(
     return {"success": True}
 
 
+# ============================================
+# EXPORT
+# ============================================
+
 @router.get("/api/rootcall/export/{client_id}")
 async def export_calls(
     client_id: int,
-    current_user: User = Depends(get_current_user),  # ✅ AUTH REQUIRED
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Export call logs as CSV - AUTHENTICATED"""
     
-    # ✅ AUTHORIZATION CHECK
     if current_user.id != client_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -331,84 +347,219 @@ async def export_calls(
     )
 
 
+# ============================================
+# ��� NEW: SEARCH AVAILABLE NUMBERS FROM TELNYX
+# ============================================
+
+@router.get("/api/rootcall/available-numbers")
+async def get_available_numbers(
+    area_code: Optional[str] = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Search for available phone numbers from Telnyx
+    Query params: area_code (optional, e.g., "813")
+    """
+    try:
+        log.info(f"Client {current_user.id} searching numbers for area code: {area_code}")
+        
+        # Search Telnyx for available numbers
+        numbers = telnyx_service.search_available_numbers(
+            area_code=area_code,
+            country_code="US",
+            limit=50
+        )
+        
+        # Format response for frontend
+        formatted_numbers = []
+        for num in numbers:
+            formatted_numbers.append({
+                "phone_number": num.get("phone_number"),
+                "locality": num.get("locality"),
+                "region": num.get("region_information", [{}])[0].get("region_name") if num.get("region_information") else None,
+                "rate_center": num.get("rate_center"),
+            })
+        
+        log.info(f"Found {len(formatted_numbers)} available numbers")
+        
+        return {
+            "success": True,
+            "count": len(formatted_numbers),
+            "numbers": formatted_numbers
+        }
+        
+    except Exception as e:
+        log.error(f"Error searching available numbers: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to search numbers: {str(e)}"
+        )
+
+
+# ============================================
+# ��� ENHANCED: PROVISION WITH RETELL AUTO-IMPORT
+# ============================================
+
 @router.post("/api/rootcall/provision")
 async def provision_rootcall(
     request: ProvisionRequest,
-    current_user: User = Depends(get_current_user),  # ✅ AUTH REQUIRED
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Provision RootCall number - AUTHENTICATED"""
-    
-    # Check if user already has active number
-    existing = db.query(PhoneNumber).filter(
-        PhoneNumber.user_id == current_user.id,
-        PhoneNumber.is_active == True
-    ).first()
-    
-    if existing:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Already have active number"
-        )
-    
-    area_code = request.area_code
-    TELNYX_API_KEY = os.getenv("TELNYX_API_KEY")
-    
-    if not TELNYX_API_KEY:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Telnyx not configured"
-        )
-    
+    """
+    Provision RootCall number with AUTO Retell import
+    - Purchase from Telnyx
+    - Create Retell agent
+    - Import to Retell
+    - Configure for scam screening
+    """
     try:
-        telnyx_headers = {"Authorization": f"Bearer {TELNYX_API_KEY}"}
+        # Check if user already has active number
+        existing = db.query(PhoneNumber).filter(
+            PhoneNumber.user_id == current_user.id,
+            PhoneNumber.is_active == True
+        ).first()
         
-        # Search for available numbers
-        search = requests.get(
-            "https://api.telnyx.com/v2/available_phone_numbers",
-            headers=telnyx_headers,
-            params={
-                "filter[country_code]": "US",
-                "filter[features]": "sms,voice",
-                "filter[national_destination_code]": area_code,
-                "filter[limit]": 1
-            },
-            timeout=15
-        )
-        
-        if search.status_code != 200 or not search.json().get("data"):
+        if existing:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"No numbers available in {area_code}"
+                detail="Already have active number"
             )
         
-        phone_data = search.json()["data"][0]
-        phone_number = phone_data["phone_number"]
+        # Get the selected phone number from request
+        phone_number = request.phone_number
+        area_code = request.area_code
         
-        # Purchase number
-        purchase = requests.post(
-            f"https://api.telnyx.com/v2/phone_numbers/{phone_data['id']}",
-            headers=telnyx_headers,
-            json={},
-            timeout=15
+        # If no specific number provided, search for one
+        if not phone_number:
+            if not area_code:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Either phone_number or area_code required"
+                )
+            
+            log.info(f"Searching for available number in area code {area_code}")
+            
+            # Search for available number
+            available = telnyx_service.search_available_numbers(
+                area_code=area_code,
+                country_code="US",
+                limit=1
+            )
+            
+            if not available:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"No numbers available in area code {area_code}"
+                )
+            
+            phone_number = available[0]["phone_number"]
+        
+        log.info(f"��� Provisioning {phone_number} for user {current_user.id}")
+        
+        # STEP 1: Purchase from Telnyx
+        log.info("STEP 1: Purchasing from Telnyx...")
+        order_result = telnyx_service.order_number(phone_number)
+        
+        if not order_result:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to purchase number from Telnyx"
+            )
+        
+        log.info(f"✅ Purchased: {phone_number}")
+        
+        # STEP 2: Create Telnyx SIP credential connection for Retell
+        log.info("STEP 2: Setting up SIP connection...")
+        
+        connection_name = f"RootCall-{current_user.id}"
+        sip_username = f"rootcall_{current_user.id}"
+        sip_password = f"rc_{secrets.token_urlsafe(16)}"
+        
+        connection, username, password = telnyx_service.get_or_create_credential_connection(
+            connection_name=connection_name,
+            sip_username=sip_username,
+            sip_password=sip_password
         )
         
-        if purchase.status_code not in [200, 201]:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Purchase failed"
-            )
+        connection_id = connection.get("id")
+        log.info(f"✅ SIP Connection: {connection_id}")
         
-        purchased = purchase.json()["data"]
+        # STEP 3: Assign number to connection
+        log.info("STEP 3: Assigning number to SIP trunk...")
+        telnyx_service.assign_number_to_connection(phone_number, connection_id)
+        log.info(f"✅ Number assigned to connection")
         
-        # Create phone record
+        # STEP 4: Create Retell agent
+        log.info("STEP 4: Creating Retell AI agent...")
+        
+        agent_name = f"ScamShield-{current_user.email.split('@')[0]}"
+        
+        # Create LLM with scam screening prompt
+        scam_prompt = """You are an AI scam screening assistant protecting the user from fraud and scams.
+
+Your job is to:
+1. Greet callers professionally
+2. Ask for their name and reason for calling
+3. Detect scam indicators and block suspicious calls
+4. Connect legitimate callers to the user
+
+SCAM INDICATORS TO BLOCK:
+- Requests for money, gift cards, wire transfers, cryptocurrency
+- Claims to be IRS, Social Security, government agencies demanding payment
+- Threats, urgency, or pressure tactics
+- Requests for personal info (SSN, bank details, passwords)
+- Tech support scams (fake Microsoft, Apple, antivirus)
+- Prize/lottery winnings requiring payment
+- Robocalls or clearly automated voices
+
+If SCAM detected, say: "This call appears to be fraudulent and will not be connected. Goodbye." Then hang up.
+
+For LEGITIMATE calls, say: "Thank you, connecting you now." Then transfer.
+
+Be polite but firm with scammers. Protect the user at all costs."""
+
+        llm_id = retell_service.create_llm(
+            general_prompt=scam_prompt,
+            begin_message="Hello, this is the AI scam screening service. May I ask who's calling and the reason for your call?",
+            start_speaker="agent"
+        )
+        
+        agent_id = retell_service.create_agent(
+            name=agent_name,
+            llm_id=llm_id,
+            voice_id="11labs-Adrian",
+            language="en-US",
+            publish=True
+        )
+        
+        log.info(f"✅ Agent created: {agent_id}")
+        
+        # STEP 5: Import number to Retell
+        log.info("STEP 5: Importing number to Retell...")
+        
+        retell_import = retell_service.import_phone_number(
+            phone_number=phone_number,
+            termination_uri="sip.telnyx.com",
+            sip_username=username,
+            sip_password=password,
+            inbound_agent_id=agent_id,
+            outbound_agent_id=agent_id
+        )
+        
+        log.info(f"✅ Imported to Retell")
+        
+        # STEP 6: Save to database
+        log.info("STEP 6: Saving to database...")
+        
         phone_record = PhoneNumber(
             user_id=current_user.id,
             phone_number=phone_number,
-            friendly_name=f"RootCall - {area_code}",
+            friendly_name=f"RootCall Shield - {area_code or phone_number[-10:-7]}",
             country_code="US",
-            telnyx_phone_number_id=purchased["id"],
-            telnyx_connection_id=purchased.get("connection_id", ""),
+            telnyx_phone_number_id=order_result.get("data", {}).get("id", ""),
+            telnyx_connection_id=connection_id,
             is_active=True,
             monthly_cost=1.0
         )
@@ -420,8 +571,8 @@ async def provision_rootcall(
             phone_number_id=phone_record.id,
             user_id=current_user.id,
             client_name=current_user.full_name or current_user.email,
-            client_cell=current_user.email,
-            retell_agent_id="",
+            client_cell="",
+            retell_agent_id=agent_id,
             retell_did=phone_number,
             trusted_contacts=[],
             sms_alerts_enabled=True,
@@ -432,11 +583,18 @@ async def provision_rootcall(
         )
         db.add(config)
         db.commit()
+        db.refresh(phone_record)
+        
+        log.info("��� PROVISIONING COMPLETE!")
         
         return {
             "success": True,
             "rootcall_number": phone_number,
-            "message": f"✅ Activated! {phone_number}"
+            "phone_number": phone_number,
+            "friendly_name": phone_record.friendly_name,
+            "agent_id": agent_id,
+            "purchased_at": phone_record.purchased_at.isoformat(),
+            "message": f"✅ Number activated with AI scam protection!"
         }
         
     except HTTPException:
@@ -444,15 +602,20 @@ async def provision_rootcall(
         raise
     except Exception as e:
         db.rollback()
+        log.error(f"❌ Provision failed: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e)
         )
 
 
+# ============================================
+# MY NUMBER
+# ============================================
+
 @router.get("/api/rootcall/my-number")
 async def get_my_number(
-    current_user: User = Depends(get_current_user),  # ✅ AUTH REQUIRED
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Get current user's number - AUTHENTICATED"""
@@ -473,14 +636,17 @@ async def get_my_number(
     }
 
 
+# ============================================
+# DASHBOARD SETUP
+# ============================================
+
 @router.get("/dashboard-setup")
 async def get_dashboard_setup(
-    current_user: User = Depends(get_current_user),  # ✅ AUTH REQUIRED
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Get dashboard setup status - AUTHENTICATED"""
     
-    # Get first phone number for this user
     phone = db.query(PhoneNumber).filter(
         PhoneNumber.user_id == current_user.id,
         PhoneNumber.is_active == True
@@ -492,7 +658,6 @@ async def get_dashboard_setup(
             RootCallConfig.phone_number_id == phone.id
         ).first()
     
-    # Create config if doesn't exist but user has phone
     if phone and not config:
         config = RootCallConfig(
             phone_number_id=phone.id,
@@ -525,13 +690,8 @@ async def get_dashboard_setup(
 
 
 # ============================================
-# LANDING PAGE
+# IMPORT EXISTING
 # ============================================
-
-@router.get("/", response_class=FileResponse)
-async def landing_page():
-    """Serve RootCall landing page"""
-    return FileResponse("static/index.html")
 
 @router.post("/api/rootcall/import-existing/{phone_number}")
 async def import_existing_number(
@@ -539,22 +699,16 @@ async def import_existing_number(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """
-    Import existing Telnyx number into RootCall
-    Use this when you already have a number in Telnyx but not in database
-    """
+    """Import existing Telnyx number into RootCall"""
     from urllib.parse import unquote
     
-    # Decode URL-encoded phone number
     phone_number = unquote(phone_number)
     
-    # Check if already exists
     existing = db.query(PhoneNumber).filter(
         PhoneNumber.phone_number == phone_number
     ).first()
     
     if existing:
-        # Already exists - check if has config
         existing_config = db.query(RootCallConfig).filter(
             RootCallConfig.phone_number_id == existing.id
         ).first()
@@ -567,7 +721,6 @@ async def import_existing_number(
                 "already_existed": True
             }
         else:
-            # Has phone but no config - create config
             config = RootCallConfig(
                 phone_number_id=existing.id,
                 user_id=current_user.id,
@@ -591,7 +744,6 @@ async def import_existing_number(
                 "phone_id": existing.id
             }
     
-    # Create new phone record
     phone_record = PhoneNumber(
         user_id=current_user.id,
         phone_number=phone_number,
@@ -605,13 +757,12 @@ async def import_existing_number(
     db.add(phone_record)
     db.flush()
     
-    # Create config
     config = RootCallConfig(
         phone_number_id=phone_record.id,
         user_id=current_user.id,
         client_name=current_user.full_name or current_user.email,
-        client_cell="",  # User will update later
-        retell_agent_id="",  # Will be created when needed
+        client_cell="",
+        retell_agent_id="",
         retell_did=phone_number,
         trusted_contacts=[],
         sms_alerts_enabled=True,
@@ -630,3 +781,13 @@ async def import_existing_number(
         "phone_id": phone_record.id,
         "phone_number": phone_number
     }
+
+
+# ============================================
+# LANDING PAGE
+# ============================================
+
+@router.get("/", response_class=FileResponse)
+async def landing_page():
+    """Serve RootCall landing page"""
+    return FileResponse("static/index.html")

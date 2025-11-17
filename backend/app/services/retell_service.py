@@ -136,6 +136,42 @@ class RetellService:
 
     def list_agents(self) -> List[Dict[str, Any]]:
         data = self._get("/list-agents", expected=200)
+
+    def update_agent(
+        self,
+        agent_id: str,
+        general_tools: Optional[List[Dict[str, Any]]] = None,
+        agent_name: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Update agent configuration including tools"""
+        patch: Dict[str, Any] = {}
+        if general_tools is not None:
+            patch["general_tools"] = general_tools
+        if agent_name is not None:
+            patch["agent_name"] = agent_name
+        log.info(f"Updating Retell Agent: {agent_id}")
+        return self._patch(f"/update-agent/{agent_id}", patch, expected=200)
+
+    def configure_transfer_tool(self, agent_id: str, transfer_number: Optional[str] = None) -> Dict[str, Any]:
+        """Configure agent with transfer_call tool for forwarding legitimate calls"""
+        general_tools = [
+            {
+                "type": "end_call",
+                "name": "end_call",
+                "description": "End call for spam/scam callers"
+            }
+        ]
+        if transfer_number:
+            general_tools.append({
+                "type": "transfer_call",
+                "name": "transfer_call",
+                "description": "Transfer legitimate calls to the client's phone",
+                "number": transfer_number
+            })
+            log.info(f"✅ Configured transfer to {transfer_number} for agent {agent_id}")
+        else:
+            log.info(f"⚠️  Removed transfer tool from agent {agent_id}")
+        return self.update_agent(agent_id, general_tools=general_tools)
         # Sometimes API returns a list already
         if isinstance(data, list):
             return data

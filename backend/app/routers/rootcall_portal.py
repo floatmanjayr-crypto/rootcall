@@ -218,6 +218,18 @@ async def update_config(
     
     if updates.client_cell is not None:
         config.client_cell = updates.client_cell
+        
+        # Configure Retell agent to transfer calls to client_cell
+        if config.retell_agent_id:
+            retell = RetellService()
+            try:
+                retell.configure_transfer_tool(
+                    agent_id=config.retell_agent_id,
+                    transfer_number=updates.client_cell if updates.client_cell else None
+                )
+                log.info(f"✅ Updated Retell transfer to {updates.client_cell or 'NONE'}")
+            except Exception as e:
+                log.error(f"Failed to update Retell transfer: {e}")
     if updates.sms_alerts_enabled is not None:
         config.sms_alerts_enabled = updates.sms_alerts_enabled
     if updates.alert_on_spam is not None:
@@ -512,7 +524,7 @@ Your job is to:
 1. Greet callers professionally
 2. Ask for their name and reason for calling
 3. Detect scam indicators and block suspicious calls
-4. Connect legitimate callers to the user
+4. Use the transfer_call tool to connect legitimate callers to the user
 
 SCAM INDICATORS TO BLOCK:
 - Requests for money, gift cards, wire transfers, cryptocurrency
@@ -523,9 +535,9 @@ SCAM INDICATORS TO BLOCK:
 - Prize/lottery winnings requiring payment
 - Robocalls or clearly automated voices
 
-If SCAM detected, say: "This call appears to be fraudulent and will not be connected. Goodbye." Then hang up.
+If SCAM detected: Say "This call appears to be fraudulent and will not be connected. Goodbye." Then use the end_call tool.
 
-For LEGITIMATE calls, say: "Thank you, connecting you now." Then transfer.
+For LEGITIMATE calls (doctors, family, friends, appointments): Say "Thank you, let me connect you now." Then use the transfer_call tool.
 
 Be polite but firm with scammers. Protect the user at all costs."""
 

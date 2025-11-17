@@ -4,7 +4,211 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RootCall - AI Scam Screening Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com">
+
+        // State to Area Codes mapping
+        
+
+        function updateAreaCodes() {
+            const state = document.getElementById('state-selector').value;
+            const container = document.getElementById('area-codes-container');
+            const grid = document.getElementById('area-codes-grid');
+            
+            if (!state) {
+                container.style.display = 'none';
+                return;
+            }
+            
+            container.style.display = 'block';
+            
+            const areaCodes = STATE_AREA_CODES[state] || [];
+            
+            grid.innerHTML = areaCodes.map(ac => `
+                <div class="area-code-btn" onclick="selectAreaCode('${ac.code}', event)" data-code="${ac.code}">
+                    <div style="font-size: 2.25rem; font-weight: 900;">${ac.code}</div>
+                    <div style="font-size: 0.9rem; color: #666; margin-top: 0.5rem;">${ac.city}</div>
+                </div>
+            `).join('');
+        }
+
+    
+
+        // Complete US State to Area Codes mapping (300+ area codes)
+        const STATE_AREA_CODES = {
+            'AL': [{code: '205', city: 'Birmingham'}, {code: '251', city: 'Mobile'}, {code: '256', city: 'Huntsville'}, {code: '334', city: 'Montgomery'}, {code: '938', city: 'Huntsville'}],
+            'AK': [{code: '907', city: 'Anchorage'}],
+            'AZ': [{code: '480', city: 'Mesa'}, {code: '520', city: 'Tucson'}, {code: '602', city: 'Phoenix'}, {code: '623', city: 'Glendale'}, {code: '928', city: 'Flagstaff'}],
+            'AR': [{code: '479', city: 'Fort Smith'}, {code: '501', city: 'Little Rock'}, {code: '870', city: 'Jonesboro'}],
+            'CA': [
+                {code: '209', city: 'Stockton'}, {code: '213', city: 'Los Angeles'}, {code: '310', city: 'Los Angeles'},
+                {code: '323', city: 'Los Angeles'}, {code: '408', city: 'San Jose'}, {code: '415', city: 'San Francisco'},
+                {code: '424', city: 'Los Angeles'}, {code: '442', city: 'Oceanside'}, {code: '510', city: 'Oakland'},
+                {code: '530', city: 'Redding'}, {code: '559', city: 'Fresno'}, {code: '562', city: 'Long Beach'},
+                {code: '619', city: 'San Diego'}, {code: '626', city: 'Pasadena'}, {code: '650', city: 'San Mateo'},
+                {code: '657', city: 'Anaheim'}, {code: '661', city: 'Bakersfield'}, {code: '669', city: 'San Jose'},
+                {code: '707', city: 'Santa Rosa'}, {code: '714', city: 'Orange County'}, {code: '747', city: 'Burbank'},
+                {code: '760', city: 'Oceanside'}, {code: '805', city: 'Santa Barbara'}, {code: '818', city: 'Burbank'},
+                {code: '831', city: 'Monterey'}, {code: '858', city: 'San Diego'}, {code: '909', city: 'San Bernardino'},
+                {code: '916', city: 'Sacramento'}, {code: '925', city: 'Concord'}, {code: '949', city: 'Irvine'},
+                {code: '951', city: 'Riverside'}
+            ],
+            'CO': [{code: '303', city: 'Denver'}, {code: '719', city: 'Colorado Springs'}, {code: '720', city: 'Denver'}, {code: '970', city: 'Fort Collins'}],
+            'CT': [{code: '203', city: 'New Haven'}, {code: '475', city: 'Bridgeport'}, {code: '860', city: 'Hartford'}, {code: '959', city: 'Hartford'}],
+            'DE': [{code: '302', city: 'Wilmington'}],
+            'DC': [{code: '202', city: 'Washington'}],
+            'FL': [
+                {code: '239', city: 'Fort Myers'}, {code: '305', city: 'Miami'}, {code: '321', city: 'Orlando'},
+                {code: '352', city: 'Gainesville'}, {code: '386', city: 'Daytona Beach'}, {code: '407', city: 'Orlando'},
+                {code: '561', city: 'West Palm Beach'}, {code: '727', city: 'St. Petersburg'}, {code: '754', city: 'Fort Lauderdale'},
+                {code: '772', city: 'Port St. Lucie'}, {code: '786', city: 'Miami'}, {code: '813', city: 'Tampa'},
+                {code: '850', city: 'Tallahassee'}, {code: '863', city: 'Lakeland'}, {code: '904', city: 'Jacksonville'},
+                {code: '941', city: 'Sarasota'}, {code: '954', city: 'Fort Lauderdale'}
+            ],
+            'GA': [
+                {code: '229', city: 'Albany'}, {code: '404', city: 'Atlanta'}, {code: '470', city: 'Atlanta'},
+                {code: '478', city: 'Macon'}, {code: '678', city: 'Atlanta'}, {code: '706', city: 'Augusta'},
+                {code: '762', city: 'Augusta'}, {code: '770', city: 'Atlanta'}, {code: '912', city: 'Savannah'}
+            ],
+            'HI': [{code: '808', city: 'Honolulu'}],
+            'ID': [{code: '208', city: 'Boise'}, {code: '986', city: 'Boise'}],
+            'IL': [
+                {code: '217', city: 'Springfield'}, {code: '224', city: 'Elgin'}, {code: '309', city: 'Peoria'},
+                {code: '312', city: 'Chicago'}, {code: '618', city: 'Carbondale'}, {code: '630', city: 'Aurora'},
+                {code: '708', city: 'Cicero'}, {code: '773', city: 'Chicago'}, {code: '815', city: 'Rockford'},
+                {code: '847', city: 'Schaumburg'}, {code: '872', city: 'Chicago'}
+            ],
+            'IN': [
+                {code: '219', city: 'Gary'}, {code: '260', city: 'Fort Wayne'}, {code: '317', city: 'Indianapolis'},
+                {code: '463', city: 'Indianapolis'}, {code: '574', city: 'South Bend'}, {code: '765', city: 'Lafayette'},
+                {code: '812', city: 'Evansville'}
+            ],
+            'IA': [{code: '319', city: 'Cedar Rapids'}, {code: '515', city: 'Des Moines'}, {code: '563', city: 'Davenport'}, {code: '641', city: 'Mason City'}, {code: '712', city: 'Sioux City'}],
+            'KS': [{code: '316', city: 'Wichita'}, {code: '620', city: 'Hutchinson'}, {code: '785', city: 'Topeka'}, {code: '913', city: 'Kansas City'}],
+            'KY': [{code: '270', city: 'Bowling Green'}, {code: '364', city: 'Bowling Green'}, {code: '502', city: 'Louisville'}, {code: '606', city: 'Ashland'}, {code: '859', city: 'Lexington'}],
+            'LA': [{code: '225', city: 'Baton Rouge'}, {code: '318', city: 'Shreveport'}, {code: '337', city: 'Lafayette'}, {code: '504', city: 'New Orleans'}, {code: '985', city: 'Houma'}],
+            'ME': [{code: '207', city: 'Portland'}],
+            'MD': [{code: '240', city: 'Frederick'}, {code: '301', city: 'Frederick'}, {code: '410', city: 'Baltimore'}, {code: '443', city: 'Baltimore'}, {code: '667', city: 'Baltimore'}],
+            'MA': [
+                {code: '339', city: 'Boston'}, {code: '351', city: 'Lowell'}, {code: '413', city: 'Springfield'},
+                {code: '508', city: 'Worcester'}, {code: '617', city: 'Boston'}, {code: '774', city: 'Worcester'},
+                {code: '781', city: 'Boston'}, {code: '857', city: 'Boston'}, {code: '978', city: 'Lowell'}
+            ],
+            'MI': [
+                {code: '231', city: 'Traverse City'}, {code: '248', city: 'Troy'}, {code: '269', city: 'Kalamazoo'},
+                {code: '313', city: 'Detroit'}, {code: '517', city: 'Lansing'}, {code: '586', city: 'Warren'},
+                {code: '616', city: 'Grand Rapids'}, {code: '734', city: 'Ann Arbor'}, {code: '810', city: 'Flint'},
+                {code: '906', city: 'Marquette'}, {code: '947', city: 'Troy'}, {code: '989', city: 'Saginaw'}
+            ],
+            'MN': [{code: '218', city: 'Duluth'}, {code: '320', city: 'St. Cloud'}, {code: '507', city: 'Rochester'}, {code: '612', city: 'Minneapolis'}, {code: '651', city: 'St. Paul'}, {code: '763', city: 'Brooklyn Park'}, {code: '952', city: 'Bloomington'}],
+            'MS': [{code: '228', city: 'Gulfport'}, {code: '601', city: 'Jackson'}, {code: '662', city: 'Tupelo'}, {code: '769', city: 'Jackson'}],
+            'MO': [{code: '314', city: 'St. Louis'}, {code: '417', city: 'Springfield'}, {code: '573', city: 'Columbia'}, {code: '636', city: 'St. Charles'}, {code: '660', city: 'Sedalia'}, {code: '816', city: 'Kansas City'}],
+            'MT': [{code: '406', city: 'Billings'}],
+            'NE': [{code: '308', city: 'Grand Island'}, {code: '402', city: 'Omaha'}, {code: '531', city: 'Omaha'}],
+            'NV': [{code: '702', city: 'Las Vegas'}, {code: '725', city: 'Las Vegas'}, {code: '775', city: 'Reno'}],
+            'NH': [{code: '603', city: 'Manchester'}],
+            'NJ': [
+                {code: '201', city: 'Jersey City'}, {code: '551', city: 'Jersey City'}, {code: '609', city: 'Trenton'},
+                {code: '732', city: 'New Brunswick'}, {code: '848', city: 'New Brunswick'}, {code: '856', city: 'Camden'},
+                {code: '862', city: 'Newark'}, {code: '908', city: 'Elizabeth'}, {code: '973', city: 'Newark'}
+            ],
+            'NM': [{code: '505', city: 'Albuquerque'}, {code: '575', city: 'Las Cruces'}],
+            'NY': [
+                {code: '212', city: 'Manhattan'}, {code: '315', city: 'Syracuse'}, {code: '332', city: 'Manhattan'},
+                {code: '347', city: 'Bronx'}, {code: '516', city: 'Long Island'}, {code: '518', city: 'Albany'},
+                {code: '585', city: 'Rochester'}, {code: '607', city: 'Binghamton'}, {code: '631', city: 'Long Island'},
+                {code: '646', city: 'Manhattan'}, {code: '680', city: 'Syracuse'}, {code: '716', city: 'Buffalo'},
+                {code: '718', city: 'Brooklyn'}, {code: '838', city: 'Albany'}, {code: '845', city: 'Poughkeepsie'},
+                {code: '914', city: 'Yonkers'}, {code: '917', city: 'New York City'}, {code: '929', city: 'Bronx'},
+                {code: '934', city: 'Long Island'}
+            ],
+            'NC': [
+                {code: '252', city: 'Greenville'}, {code: '336', city: 'Greensboro'}, {code: '704', city: 'Charlotte'},
+                {code: '743', city: 'Greensboro'}, {code: '828', city: 'Asheville'}, {code: '910', city: 'Wilmington'},
+                {code: '919', city: 'Raleigh'}, {code: '980', city: 'Charlotte'}, {code: '984', city: 'Raleigh'}
+            ],
+            'ND': [{code: '701', city: 'Fargo'}],
+            'OH': [
+                {code: '216', city: 'Cleveland'}, {code: '220', city: 'Newark'}, {code: '234', city: 'Akron'},
+                {code: '330', city: 'Akron'}, {code: '380', city: 'Columbus'}, {code: '419', city: 'Toledo'},
+                {code: '440', city: 'Cleveland'}, {code: '513', city: 'Cincinnati'}, {code: '567', city: 'Toledo'},
+                {code: '614', city: 'Columbus'}, {code: '740', city: 'Zanesville'}, {code: '937', city: 'Dayton'}
+            ],
+            'OK': [{code: '405', city: 'Oklahoma City'}, {code: '539', city: 'Tulsa'}, {code: '580', city: 'Lawton'}, {code: '918', city: 'Tulsa'}],
+            'OR': [{code: '458', city: 'Eugene'}, {code: '503', city: 'Portland'}, {code: '541', city: 'Eugene'}, {code: '971', city: 'Portland'}],
+            'PA': [
+                {code: '215', city: 'Philadelphia'}, {code: '267', city: 'Philadelphia'}, {code: '272', city: 'Scranton'},
+                {code: '412', city: 'Pittsburgh'}, {code: '445', city: 'Philadelphia'}, {code: '484', city: 'Allentown'},
+                {code: '570', city: 'Scranton'}, {code: '610', city: 'Allentown'}, {code: '717', city: 'Harrisburg'},
+                {code: '724', city: 'Pittsburgh'}, {code: '814', city: 'Erie'}, {code: '878', city: 'Pittsburgh'}
+            ],
+            'RI': [{code: '401', city: 'Providence'}],
+            'SC': [{code: '803', city: 'Columbia'}, {code: '843', city: 'Charleston'}, {code: '854', city: 'Charleston'}, {code: '864', city: 'Greenville'}],
+            'SD': [{code: '605', city: 'Sioux Falls'}],
+            'TN': [
+                {code: '423', city: 'Chattanooga'}, {code: '615', city: 'Nashville'}, {code: '629', city: 'Nashville'},
+                {code: '731', city: 'Jackson'}, {code: '865', city: 'Knoxville'}, {code: '901', city: 'Memphis'},
+                {code: '931', city: 'Clarksville'}
+            ],
+            'TX': [
+                {code: '210', city: 'San Antonio'}, {code: '214', city: 'Dallas'}, {code: '254', city: 'Waco'},
+                {code: '281', city: 'Houston'}, {code: '325', city: 'Abilene'}, {code: '346', city: 'Houston'},
+                {code: '361', city: 'Corpus Christi'}, {code: '409', city: 'Beaumont'}, {code: '430', city: 'Tyler'},
+                {code: '432', city: 'Midland'}, {code: '469', city: 'Dallas'}, {code: '512', city: 'Austin'},
+                {code: '682', city: 'Fort Worth'}, {code: '713', city: 'Houston'}, {code: '737', city: 'Austin'},
+                {code: '806', city: 'Lubbock'}, {code: '817', city: 'Fort Worth'}, {code: '830', city: 'New Braunfels'},
+                {code: '832', city: 'Houston'}, {code: '915', city: 'El Paso'}, {code: '936', city: 'Conroe'},
+                {code: '940', city: 'Denton'}, {code: '956', city: 'Laredo'}, {code: '972', city: 'Dallas'},
+                {code: '979', city: 'College Station'}
+            ],
+            'UT': [{code: '385', city: 'Salt Lake City'}, {code: '435', city: 'St. George'}, {code: '801', city: 'Salt Lake City'}],
+            'VT': [{code: '802', city: 'Burlington'}],
+            'VA': [
+                {code: '276', city: 'Bristol'}, {code: '434', city: 'Lynchburg'}, {code: '540', city: 'Roanoke'},
+                {code: '571', city: 'Arlington'}, {code: '703', city: 'Arlington'}, {code: '757', city: 'Virginia Beach'},
+                {code: '804', city: 'Richmond'}
+            ],
+            'WA': [
+                {code: '206', city: 'Seattle'}, {code: '253', city: 'Tacoma'}, {code: '360', city: 'Olympia'},
+                {code: '425', city: 'Bellevue'}, {code: '509', city: 'Spokane'}, {code: '564', city: 'Olympia'}
+            ],
+            'WV': [{code: '304', city: 'Charleston'}, {code: '681', city: 'Charleston'}],
+            'WI': [
+                {code: '262', city: 'Kenosha'}, {code: '414', city: 'Milwaukee'}, {code: '534', city: 'Eau Claire'},
+                {code: '608', city: 'Madison'}, {code: '715', city: 'Eau Claire'}, {code: '920', city: 'Green Bay'}
+            ],
+            'WY': [{code: '307', city: 'Cheyenne'}]
+        };
+
+        function updateAreaCodes() {
+            const state = document.getElementById('state-selector').value;
+            const container = document.getElementById('area-codes-container');
+            const grid = document.getElementById('area-codes-grid');
+            const searchBtn = document.getElementById('search-btn');
+            
+            if (!state) {
+                container.style.display = 'none';
+                if (searchBtn) searchBtn.disabled = true;
+                return;
+            }
+            
+            container.style.display = 'block';
+            
+            const areaCodes = STATE_AREA_CODES[state] || [];
+            
+            if (areaCodes.length === 0) {
+                grid.innerHTML = '<p style="text-align: center; color: #999; padding: 2rem;">No area codes available for this state</p>';
+                return;
+            }
+            
+            grid.innerHTML = areaCodes.map(ac => `
+                <div class="area-code-btn" onclick="selectAreaCode('${ac.code}', event)" data-code="${ac.code}">
+                    <div style="font-size: 2.25rem; font-weight: 900;">${ac.code}</div>
+                    <div style="font-size: 0.9rem; color: #666; margin-top: 0.5rem;">${ac.city}</div>
+                </div>
+            `).join('');
+        }
+
+    </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
@@ -656,6 +860,66 @@
     font-size: 1.2rem;
     flex-shrink: 0;
 }
+
+    
+        /* Mobile Responsive Enhancements */
+        @media (max-width: 768px) {
+            .onboarding-modal-content {
+                width: 95%;
+                padding: 1rem;
+                max-height: 95vh;
+            }
+            
+            .onboarding-modal-content > div {
+                padding: 1.5rem 1rem !important;
+            }
+            
+            .benefit-list li {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .benefit-icon {
+                margin: 0 auto 0.5rem;
+            }
+            
+            .onboarding-progress {
+                gap: 0.5rem;
+            }
+            
+            .progress-circle {
+                width: 40px;
+                height: 40px;
+                font-size: 1rem;
+            }
+            
+            h2 {
+                font-size: 1.75rem !important;
+            }
+            
+            h3 {
+                font-size: 1.5rem !important;
+            }
+            
+            .btn {
+                padding: 0.875rem 1rem;
+                font-size: 0.95rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .onboarding-modal-content {
+                border-radius: 16px;
+            }
+            
+            h2 {
+                font-size: 1.5rem !important;
+            }
+            
+            .emoji-header {
+                font-size: 3rem !important;
+            }
+        }
 
     </style>
 </head>
@@ -2233,6 +2497,210 @@
             }
         }
 
-</script>
+
+
+        // State to Area Codes mapping
+        
+
+        function updateAreaCodes() {
+            const state = document.getElementById('state-selector').value;
+            const container = document.getElementById('area-codes-container');
+            const grid = document.getElementById('area-codes-grid');
+            
+            if (!state) {
+                container.style.display = 'none';
+                return;
+            }
+            
+            container.style.display = 'block';
+            
+            const areaCodes = STATE_AREA_CODES[state] || [];
+            
+            grid.innerHTML = areaCodes.map(ac => `
+                <div class="area-code-btn" onclick="selectAreaCode('${ac.code}', event)" data-code="${ac.code}">
+                    <div style="font-size: 2.25rem; font-weight: 900;">${ac.code}</div>
+                    <div style="font-size: 0.9rem; color: #666; margin-top: 0.5rem;">${ac.city}</div>
+                </div>
+            `).join('');
+        }
+
+    
+
+        // Complete US State to Area Codes mapping (300+ area codes)
+        const STATE_AREA_CODES = {
+            'AL': [{code: '205', city: 'Birmingham'}, {code: '251', city: 'Mobile'}, {code: '256', city: 'Huntsville'}, {code: '334', city: 'Montgomery'}, {code: '938', city: 'Huntsville'}],
+            'AK': [{code: '907', city: 'Anchorage'}],
+            'AZ': [{code: '480', city: 'Mesa'}, {code: '520', city: 'Tucson'}, {code: '602', city: 'Phoenix'}, {code: '623', city: 'Glendale'}, {code: '928', city: 'Flagstaff'}],
+            'AR': [{code: '479', city: 'Fort Smith'}, {code: '501', city: 'Little Rock'}, {code: '870', city: 'Jonesboro'}],
+            'CA': [
+                {code: '209', city: 'Stockton'}, {code: '213', city: 'Los Angeles'}, {code: '310', city: 'Los Angeles'},
+                {code: '323', city: 'Los Angeles'}, {code: '408', city: 'San Jose'}, {code: '415', city: 'San Francisco'},
+                {code: '424', city: 'Los Angeles'}, {code: '442', city: 'Oceanside'}, {code: '510', city: 'Oakland'},
+                {code: '530', city: 'Redding'}, {code: '559', city: 'Fresno'}, {code: '562', city: 'Long Beach'},
+                {code: '619', city: 'San Diego'}, {code: '626', city: 'Pasadena'}, {code: '650', city: 'San Mateo'},
+                {code: '657', city: 'Anaheim'}, {code: '661', city: 'Bakersfield'}, {code: '669', city: 'San Jose'},
+                {code: '707', city: 'Santa Rosa'}, {code: '714', city: 'Orange County'}, {code: '747', city: 'Burbank'},
+                {code: '760', city: 'Oceanside'}, {code: '805', city: 'Santa Barbara'}, {code: '818', city: 'Burbank'},
+                {code: '831', city: 'Monterey'}, {code: '858', city: 'San Diego'}, {code: '909', city: 'San Bernardino'},
+                {code: '916', city: 'Sacramento'}, {code: '925', city: 'Concord'}, {code: '949', city: 'Irvine'},
+                {code: '951', city: 'Riverside'}
+            ],
+            'CO': [{code: '303', city: 'Denver'}, {code: '719', city: 'Colorado Springs'}, {code: '720', city: 'Denver'}, {code: '970', city: 'Fort Collins'}],
+            'CT': [{code: '203', city: 'New Haven'}, {code: '475', city: 'Bridgeport'}, {code: '860', city: 'Hartford'}, {code: '959', city: 'Hartford'}],
+            'DE': [{code: '302', city: 'Wilmington'}],
+            'DC': [{code: '202', city: 'Washington'}],
+            'FL': [
+                {code: '239', city: 'Fort Myers'}, {code: '305', city: 'Miami'}, {code: '321', city: 'Orlando'},
+                {code: '352', city: 'Gainesville'}, {code: '386', city: 'Daytona Beach'}, {code: '407', city: 'Orlando'},
+                {code: '561', city: 'West Palm Beach'}, {code: '727', city: 'St. Petersburg'}, {code: '754', city: 'Fort Lauderdale'},
+                {code: '772', city: 'Port St. Lucie'}, {code: '786', city: 'Miami'}, {code: '813', city: 'Tampa'},
+                {code: '850', city: 'Tallahassee'}, {code: '863', city: 'Lakeland'}, {code: '904', city: 'Jacksonville'},
+                {code: '941', city: 'Sarasota'}, {code: '954', city: 'Fort Lauderdale'}
+            ],
+            'GA': [
+                {code: '229', city: 'Albany'}, {code: '404', city: 'Atlanta'}, {code: '470', city: 'Atlanta'},
+                {code: '478', city: 'Macon'}, {code: '678', city: 'Atlanta'}, {code: '706', city: 'Augusta'},
+                {code: '762', city: 'Augusta'}, {code: '770', city: 'Atlanta'}, {code: '912', city: 'Savannah'}
+            ],
+            'HI': [{code: '808', city: 'Honolulu'}],
+            'ID': [{code: '208', city: 'Boise'}, {code: '986', city: 'Boise'}],
+            'IL': [
+                {code: '217', city: 'Springfield'}, {code: '224', city: 'Elgin'}, {code: '309', city: 'Peoria'},
+                {code: '312', city: 'Chicago'}, {code: '618', city: 'Carbondale'}, {code: '630', city: 'Aurora'},
+                {code: '708', city: 'Cicero'}, {code: '773', city: 'Chicago'}, {code: '815', city: 'Rockford'},
+                {code: '847', city: 'Schaumburg'}, {code: '872', city: 'Chicago'}
+            ],
+            'IN': [
+                {code: '219', city: 'Gary'}, {code: '260', city: 'Fort Wayne'}, {code: '317', city: 'Indianapolis'},
+                {code: '463', city: 'Indianapolis'}, {code: '574', city: 'South Bend'}, {code: '765', city: 'Lafayette'},
+                {code: '812', city: 'Evansville'}
+            ],
+            'IA': [{code: '319', city: 'Cedar Rapids'}, {code: '515', city: 'Des Moines'}, {code: '563', city: 'Davenport'}, {code: '641', city: 'Mason City'}, {code: '712', city: 'Sioux City'}],
+            'KS': [{code: '316', city: 'Wichita'}, {code: '620', city: 'Hutchinson'}, {code: '785', city: 'Topeka'}, {code: '913', city: 'Kansas City'}],
+            'KY': [{code: '270', city: 'Bowling Green'}, {code: '364', city: 'Bowling Green'}, {code: '502', city: 'Louisville'}, {code: '606', city: 'Ashland'}, {code: '859', city: 'Lexington'}],
+            'LA': [{code: '225', city: 'Baton Rouge'}, {code: '318', city: 'Shreveport'}, {code: '337', city: 'Lafayette'}, {code: '504', city: 'New Orleans'}, {code: '985', city: 'Houma'}],
+            'ME': [{code: '207', city: 'Portland'}],
+            'MD': [{code: '240', city: 'Frederick'}, {code: '301', city: 'Frederick'}, {code: '410', city: 'Baltimore'}, {code: '443', city: 'Baltimore'}, {code: '667', city: 'Baltimore'}],
+            'MA': [
+                {code: '339', city: 'Boston'}, {code: '351', city: 'Lowell'}, {code: '413', city: 'Springfield'},
+                {code: '508', city: 'Worcester'}, {code: '617', city: 'Boston'}, {code: '774', city: 'Worcester'},
+                {code: '781', city: 'Boston'}, {code: '857', city: 'Boston'}, {code: '978', city: 'Lowell'}
+            ],
+            'MI': [
+                {code: '231', city: 'Traverse City'}, {code: '248', city: 'Troy'}, {code: '269', city: 'Kalamazoo'},
+                {code: '313', city: 'Detroit'}, {code: '517', city: 'Lansing'}, {code: '586', city: 'Warren'},
+                {code: '616', city: 'Grand Rapids'}, {code: '734', city: 'Ann Arbor'}, {code: '810', city: 'Flint'},
+                {code: '906', city: 'Marquette'}, {code: '947', city: 'Troy'}, {code: '989', city: 'Saginaw'}
+            ],
+            'MN': [{code: '218', city: 'Duluth'}, {code: '320', city: 'St. Cloud'}, {code: '507', city: 'Rochester'}, {code: '612', city: 'Minneapolis'}, {code: '651', city: 'St. Paul'}, {code: '763', city: 'Brooklyn Park'}, {code: '952', city: 'Bloomington'}],
+            'MS': [{code: '228', city: 'Gulfport'}, {code: '601', city: 'Jackson'}, {code: '662', city: 'Tupelo'}, {code: '769', city: 'Jackson'}],
+            'MO': [{code: '314', city: 'St. Louis'}, {code: '417', city: 'Springfield'}, {code: '573', city: 'Columbia'}, {code: '636', city: 'St. Charles'}, {code: '660', city: 'Sedalia'}, {code: '816', city: 'Kansas City'}],
+            'MT': [{code: '406', city: 'Billings'}],
+            'NE': [{code: '308', city: 'Grand Island'}, {code: '402', city: 'Omaha'}, {code: '531', city: 'Omaha'}],
+            'NV': [{code: '702', city: 'Las Vegas'}, {code: '725', city: 'Las Vegas'}, {code: '775', city: 'Reno'}],
+            'NH': [{code: '603', city: 'Manchester'}],
+            'NJ': [
+                {code: '201', city: 'Jersey City'}, {code: '551', city: 'Jersey City'}, {code: '609', city: 'Trenton'},
+                {code: '732', city: 'New Brunswick'}, {code: '848', city: 'New Brunswick'}, {code: '856', city: 'Camden'},
+                {code: '862', city: 'Newark'}, {code: '908', city: 'Elizabeth'}, {code: '973', city: 'Newark'}
+            ],
+            'NM': [{code: '505', city: 'Albuquerque'}, {code: '575', city: 'Las Cruces'}],
+            'NY': [
+                {code: '212', city: 'Manhattan'}, {code: '315', city: 'Syracuse'}, {code: '332', city: 'Manhattan'},
+                {code: '347', city: 'Bronx'}, {code: '516', city: 'Long Island'}, {code: '518', city: 'Albany'},
+                {code: '585', city: 'Rochester'}, {code: '607', city: 'Binghamton'}, {code: '631', city: 'Long Island'},
+                {code: '646', city: 'Manhattan'}, {code: '680', city: 'Syracuse'}, {code: '716', city: 'Buffalo'},
+                {code: '718', city: 'Brooklyn'}, {code: '838', city: 'Albany'}, {code: '845', city: 'Poughkeepsie'},
+                {code: '914', city: 'Yonkers'}, {code: '917', city: 'New York City'}, {code: '929', city: 'Bronx'},
+                {code: '934', city: 'Long Island'}
+            ],
+            'NC': [
+                {code: '252', city: 'Greenville'}, {code: '336', city: 'Greensboro'}, {code: '704', city: 'Charlotte'},
+                {code: '743', city: 'Greensboro'}, {code: '828', city: 'Asheville'}, {code: '910', city: 'Wilmington'},
+                {code: '919', city: 'Raleigh'}, {code: '980', city: 'Charlotte'}, {code: '984', city: 'Raleigh'}
+            ],
+            'ND': [{code: '701', city: 'Fargo'}],
+            'OH': [
+                {code: '216', city: 'Cleveland'}, {code: '220', city: 'Newark'}, {code: '234', city: 'Akron'},
+                {code: '330', city: 'Akron'}, {code: '380', city: 'Columbus'}, {code: '419', city: 'Toledo'},
+                {code: '440', city: 'Cleveland'}, {code: '513', city: 'Cincinnati'}, {code: '567', city: 'Toledo'},
+                {code: '614', city: 'Columbus'}, {code: '740', city: 'Zanesville'}, {code: '937', city: 'Dayton'}
+            ],
+            'OK': [{code: '405', city: 'Oklahoma City'}, {code: '539', city: 'Tulsa'}, {code: '580', city: 'Lawton'}, {code: '918', city: 'Tulsa'}],
+            'OR': [{code: '458', city: 'Eugene'}, {code: '503', city: 'Portland'}, {code: '541', city: 'Eugene'}, {code: '971', city: 'Portland'}],
+            'PA': [
+                {code: '215', city: 'Philadelphia'}, {code: '267', city: 'Philadelphia'}, {code: '272', city: 'Scranton'},
+                {code: '412', city: 'Pittsburgh'}, {code: '445', city: 'Philadelphia'}, {code: '484', city: 'Allentown'},
+                {code: '570', city: 'Scranton'}, {code: '610', city: 'Allentown'}, {code: '717', city: 'Harrisburg'},
+                {code: '724', city: 'Pittsburgh'}, {code: '814', city: 'Erie'}, {code: '878', city: 'Pittsburgh'}
+            ],
+            'RI': [{code: '401', city: 'Providence'}],
+            'SC': [{code: '803', city: 'Columbia'}, {code: '843', city: 'Charleston'}, {code: '854', city: 'Charleston'}, {code: '864', city: 'Greenville'}],
+            'SD': [{code: '605', city: 'Sioux Falls'}],
+            'TN': [
+                {code: '423', city: 'Chattanooga'}, {code: '615', city: 'Nashville'}, {code: '629', city: 'Nashville'},
+                {code: '731', city: 'Jackson'}, {code: '865', city: 'Knoxville'}, {code: '901', city: 'Memphis'},
+                {code: '931', city: 'Clarksville'}
+            ],
+            'TX': [
+                {code: '210', city: 'San Antonio'}, {code: '214', city: 'Dallas'}, {code: '254', city: 'Waco'},
+                {code: '281', city: 'Houston'}, {code: '325', city: 'Abilene'}, {code: '346', city: 'Houston'},
+                {code: '361', city: 'Corpus Christi'}, {code: '409', city: 'Beaumont'}, {code: '430', city: 'Tyler'},
+                {code: '432', city: 'Midland'}, {code: '469', city: 'Dallas'}, {code: '512', city: 'Austin'},
+                {code: '682', city: 'Fort Worth'}, {code: '713', city: 'Houston'}, {code: '737', city: 'Austin'},
+                {code: '806', city: 'Lubbock'}, {code: '817', city: 'Fort Worth'}, {code: '830', city: 'New Braunfels'},
+                {code: '832', city: 'Houston'}, {code: '915', city: 'El Paso'}, {code: '936', city: 'Conroe'},
+                {code: '940', city: 'Denton'}, {code: '956', city: 'Laredo'}, {code: '972', city: 'Dallas'},
+                {code: '979', city: 'College Station'}
+            ],
+            'UT': [{code: '385', city: 'Salt Lake City'}, {code: '435', city: 'St. George'}, {code: '801', city: 'Salt Lake City'}],
+            'VT': [{code: '802', city: 'Burlington'}],
+            'VA': [
+                {code: '276', city: 'Bristol'}, {code: '434', city: 'Lynchburg'}, {code: '540', city: 'Roanoke'},
+                {code: '571', city: 'Arlington'}, {code: '703', city: 'Arlington'}, {code: '757', city: 'Virginia Beach'},
+                {code: '804', city: 'Richmond'}
+            ],
+            'WA': [
+                {code: '206', city: 'Seattle'}, {code: '253', city: 'Tacoma'}, {code: '360', city: 'Olympia'},
+                {code: '425', city: 'Bellevue'}, {code: '509', city: 'Spokane'}, {code: '564', city: 'Olympia'}
+            ],
+            'WV': [{code: '304', city: 'Charleston'}, {code: '681', city: 'Charleston'}],
+            'WI': [
+                {code: '262', city: 'Kenosha'}, {code: '414', city: 'Milwaukee'}, {code: '534', city: 'Eau Claire'},
+                {code: '608', city: 'Madison'}, {code: '715', city: 'Eau Claire'}, {code: '920', city: 'Green Bay'}
+            ],
+            'WY': [{code: '307', city: 'Cheyenne'}]
+        };
+
+        function updateAreaCodes() {
+            const state = document.getElementById('state-selector').value;
+            const container = document.getElementById('area-codes-container');
+            const grid = document.getElementById('area-codes-grid');
+            const searchBtn = document.getElementById('search-btn');
+            
+            if (!state) {
+                container.style.display = 'none';
+                if (searchBtn) searchBtn.disabled = true;
+                return;
+            }
+            
+            container.style.display = 'block';
+            
+            const areaCodes = STATE_AREA_CODES[state] || [];
+            
+            if (areaCodes.length === 0) {
+                grid.innerHTML = '<p style="text-align: center; color: #999; padding: 2rem;">No area codes available for this state</p>';
+                return;
+            }
+            
+            grid.innerHTML = areaCodes.map(ac => `
+                <div class="area-code-btn" onclick="selectAreaCode('${ac.code}', event)" data-code="${ac.code}">
+                    <div style="font-size: 2.25rem; font-weight: 900;">${ac.code}</div>
+                    <div style="font-size: 0.9rem; color: #666; margin-top: 0.5rem;">${ac.city}</div>
+                </div>
+            `).join('');
+        }
+
+    </script>
 </body>
 </html>

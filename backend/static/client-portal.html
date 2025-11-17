@@ -557,6 +557,106 @@
             align-items: center;
             gap: 0.5rem;
         }
+    
+/* ============================================
+   ONBOARDING MODAL STYLES
+   ============================================ */
+.onboarding-modal-content {
+    background: white;
+    border-radius: 24px;
+    max-width: 700px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    position: relative;
+    z-index: 1;
+}
+
+.onboarding-step {
+    display: none;
+}
+
+.onboarding-step.active {
+    display: block;
+    animation: slideIn 0.4s ease;
+}
+
+.onboarding-progress {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+}
+
+.progress-circle {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: #e5e5e5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 1.1rem;
+    color: #999;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.progress-circle.active {
+    background: linear-gradient(135deg, var(--green), var(--accent));
+    color: white;
+    transform: scale(1.15);
+    box-shadow: 0 4px 12px rgba(13, 61, 47, 0.3);
+}
+
+.progress-circle.completed {
+    background: var(--success);
+    color: white;
+}
+
+.progress-circle.completed::after {
+    content: '✓';
+    position: absolute;
+    font-size: 1.5rem;
+}
+
+.benefit-list {
+    list-style: none;
+    padding: 0;
+    margin: 1.5rem 0;
+}
+
+.benefit-list li {
+    padding: 1rem;
+    background: var(--ivory);
+    border-radius: 10px;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: all 0.3s ease;
+}
+
+.benefit-list li:hover {
+    background: var(--light-green);
+    transform: translateX(4px);
+}
+
+.benefit-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, var(--green), var(--accent));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
     </style>
 </head>
 <body>
@@ -1119,7 +1219,180 @@
         </div>
     </div>
 
-    <script>
+    
+    <!-- Onboarding Modal -->
+    <div id="onboarding-modal" class="modal">
+        <div class="modal-backdrop" onclick="skipOnboarding()"></div>
+        <div class="onboarding-modal-content">
+            <div style="padding: 2.5rem;">
+                <!-- Close Button -->
+                <button onclick="skipOnboarding()" style="position: absolute; top: 1.5rem; right: 1.5rem; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #999; transition: all 0.3s;" onmouseover="this.style.color='var(--danger)'" onmouseout="this.style.color='#999'">
+                    <i class="fas fa-times"></i>
+                </button>
+
+                <!-- Header -->
+                <div style="text-align: center; margin-bottom: 2rem;">
+                    <div style="font-size: 4rem; margin-bottom: 1rem;">&#128737;&#65039;</div>
+                    <h2 style="font-size: 2.5rem; font-weight: 900; color: var(--green); margin-bottom: 0.5rem;">
+                        Welcome to RootCall!
+                    </h2>
+                    <p style="color: #666; font-size: 1.1rem;">Let's get you protected in 3 simple steps</p>
+                </div>
+
+                <!-- Progress Indicator -->
+                <div class="onboarding-progress">
+                    <div class="progress-circle active" id="progress-1">1</div>
+                    <div class="progress-circle" id="progress-2">2</div>
+                    <div class="progress-circle" id="progress-3">3</div>
+                </div>
+
+                <!-- Step 1: Choose Shield Number -->
+                <div id="onboarding-step-1" class="onboarding-step active">
+                    <h3 style="font-size: 1.75rem; font-weight: 800; color: var(--green); margin-bottom: 1rem; text-align: center;">
+                        <i class="fas fa-shield-alt"></i> Step 1: Get Your Shield Number
+                    </h3>
+                    <p style="text-align: center; color: #666; margin-bottom: 2rem; font-size: 1.05rem;">
+                        A phone number protected by AI that blocks 99% of scams automatically
+                    </p>
+
+                    <ul class="benefit-list">
+                        <li>
+                            <div class="benefit-icon"><i class="fas fa-robot"></i></div>
+                            <div>
+                                <div style="font-weight: 700; color: var(--green); margin-bottom: 0.25rem;">AI Scam Screening</div>
+                                <div style="font-size: 0.9rem; color: #666;">Every call is analyzed by AI before reaching you</div>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="benefit-icon"><i class="fas fa-ban"></i></div>
+                            <div>
+                                <div style="font-weight: 700; color: var(--green); margin-bottom: 0.25rem;">Auto-Block Scams</div>
+                                <div style="font-size: 0.9rem; color: #666;">IRS scams, tech support fraud, and robocalls blocked instantly</div>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="benefit-icon"><i class="fas fa-shield-check"></i></div>
+                            <div>
+                                <div style="font-weight: 700; color: var(--green); margin-bottom: 0.25rem;">24/7 Protection</div>
+                                <div style="font-size: 0.9rem; color: #666;">Your AI agent never sleeps - always protecting you</div>
+                            </div>
+                        </li>
+                    </ul>
+
+                    <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                        <button onclick="skipOnboarding()" class="btn" style="flex: 1; background: white; border: 2px solid #e5e5e5; color: #666; justify-content: center; padding: 1rem;">
+                            Skip for now
+                        </button>
+                        <button onclick="startProvisioning()" class="btn btn-primary" style="flex: 2; justify-content: center; padding: 1rem; font-size: 1.05rem;">
+                            <i class="fas fa-arrow-right"></i> Get Shield Number
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 2: Add Forwarding Number -->
+                <div id="onboarding-step-2" class="onboarding-step">
+                    <h3 style="font-size: 1.75rem; font-weight: 800; color: var(--green); margin-bottom: 1rem; text-align: center;">
+                        <i class="fas fa-phone-alt"></i> Step 2: Add Forwarding Number
+                    </h3>
+                    <p style="text-align: center; color: #666; margin-bottom: 1rem; font-size: 1.05rem;">
+                        (Optional) Your real phone for legitimate call transfers
+                    </p>
+
+                    <div style="background: var(--light-green); padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; border-left: 4px solid var(--green);">
+                        <h4 style="font-weight: 700; color: var(--green); margin-bottom: 0.75rem;">
+                            <i class="fas fa-magic"></i> How AI Call Transfer Works:
+                        </h4>
+                        <ol style="margin: 0; padding-left: 1.5rem; color: #666; line-height: 1.8;">
+                            <li>AI answers all calls to your Shield Number</li>
+                            <li>Screens caller for scam indicators</li>
+                            <li><strong>Legitimate calls</strong> are automatically transferred to you</li>
+                            <li><strong>Scam calls</strong> are blocked and logged</li>
+                        </ol>
+                    </div>
+
+                    <div style="margin-bottom: 2rem;">
+                        <label style="display: block; font-weight: 700; margin-bottom: 0.75rem; color: var(--green);">
+                            Your Real Phone Number (E.164 format)
+                        </label>
+                        <input type="tel" id="onboarding-forwarding" placeholder="+17543670370" style="width: 100%; padding: 1rem; border: 2px solid #e5e5e5; border-radius: 10px; font-size: 1.1rem;" />
+                        <p style="font-size: 0.85rem; color: #999; margin-top: 0.5rem;">
+                            <i class="fas fa-info-circle"></i> Example: +1 (754) 367-0370 becomes +17543670370
+                        </p>
+                    </div>
+
+                    <div class="info-badge" style="margin-bottom: 2rem;">
+                        <i class="fas fa-lock" style="font-size: 1.5rem;"></i>
+                        <div>
+                            <div style="font-weight: 700; margin-bottom: 0.25rem;">100% Private</div>
+                            <div style="font-size: 0.9rem;">Your real number stays hidden from scammers. Only verified legitimate callers reach you.</div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 1rem;">
+                        <button onclick="previousOnboardingStep()" class="btn" style="flex: 1; background: white; border: 2px solid var(--green); color: var(--green); justify-content: center; padding: 1rem;">
+                            <i class="fas fa-arrow-left"></i> Back
+                        </button>
+                        <button onclick="saveForwardingAndNext()" class="btn btn-primary" style="flex: 2; justify-content: center; padding: 1rem;">
+                            <i class="fas fa-arrow-right"></i> Next Step
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 3: Add Trusted Contacts -->
+                <div id="onboarding-step-3" class="onboarding-step">
+                    <h3 style="font-size: 1.75rem; font-weight: 800; color: var(--green); margin-bottom: 1rem; text-align: center;">
+                        <i class="fas fa-users"></i> Step 3: Add Trusted Contacts
+                    </h3>
+                    <p style="text-align: center; color: #666; margin-bottom: 1rem; font-size: 1.05rem;">
+                        (Optional) Numbers that bypass AI and ring through directly
+                    </p>
+
+                    <div style="background: var(--light-green); padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; border-left: 4px solid var(--green);">
+                        <h4 style="font-weight: 700; color: var(--green); margin-bottom: 0.75rem;">
+                            <i class="fas fa-star"></i> Who should you add?
+                        </h4>
+                        <ul style="margin: 0; padding-left: 1.5rem; color: #666; line-height: 1.8;">
+                            <li>Family members</li>
+                            <li>Work colleagues</li>
+                            <li>Your doctor's office</li>
+                            <li>Bank and financial institutions</li>
+                            <li>Expected delivery services</li>
+                        </ul>
+                    </div>
+
+                    <div style="background: white; border: 2px solid #e5e5e5; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;">
+                        <label style="display: block; font-weight: 700; margin-bottom: 0.5rem; color: var(--green);">Contact Name</label>
+                        <input type="text" id="onboarding-contact-name" placeholder="Mom" style="width: 100%; padding: 0.875rem; border: 2px solid #e5e5e5; border-radius: 8px; margin-bottom: 1rem;" />
+
+                        <label style="display: block; font-weight: 700; margin-bottom: 0.5rem; color: var(--green);">Phone Number</label>
+                        <input type="tel" id="onboarding-contact-phone" placeholder="+1234567890" style="width: 100%; padding: 0.875rem; border: 2px solid #e5e5e5; border-radius: 8px; margin-bottom: 1rem;" />
+
+                        <button onclick="addOnboardingContact()" class="btn btn-primary" style="width: 100%; justify-content: center;">
+                            <i class="fas fa-plus"></i> Add Contact
+                        </button>
+                    </div>
+
+                    <div id="onboarding-contacts-list" style="margin-bottom: 2rem; min-height: 60px;">
+                        <p style="text-align: center; color: #999; padding: 1.5rem; font-size: 0.9rem;">
+                            No contacts added yet. Add your first one above!
+                        </p>
+                    </div>
+
+                    <div style="display: flex; gap: 1rem;">
+                        <button onclick="previousOnboardingStep()" class="btn" style="flex: 1; background: white; border: 2px solid var(--green); color: var(--green); justify-content: center; padding: 1rem;">
+                            <i class="fas fa-arrow-left"></i> Back
+                        </button>
+                        <button onclick="finishOnboarding()" class="btn btn-primary" style="flex: 2; justify-content: center; padding: 1rem; font-size: 1.05rem;">
+                            <i class="fas fa-check-circle"></i> Complete Setup
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+<script>
         // ============================================
         // CONFIGURATION
         // ============================================
@@ -1265,6 +1538,8 @@
                 document.getElementById('user-email').value = payload.email || '';
 
                 await loadData();
+
+                await checkOnboarding();
             } catch (err) {
                 console.error('Init error:', err);
                 logout();
@@ -1781,6 +2056,183 @@
                 document.getElementById('sidebar').classList.remove('open');
             }
         });
-    </script>
+    
+        // ============================================
+        // ONBOARDING FLOW
+        // ============================================
+        let currentOnboardingStep = 1;
+        let onboardingContacts = [];
+
+        function showOnboardingModal() {
+            document.getElementById('onboarding-modal').classList.add('active');
+            currentOnboardingStep = 1;
+            updateOnboardingProgress();
+        }
+
+        function closeOnboardingModal() {
+            document.getElementById('onboarding-modal').classList.remove('active');
+        }
+
+        function skipOnboarding() {
+            if (confirm('Skip onboarding? You can always set this up later in Settings.')) {
+                closeOnboardingModal();
+                localStorage.setItem('onboarding_seen', 'true');
+            }
+        }
+
+        function updateOnboardingProgress() {
+            for (let i = 1; i <= 3; i++) {
+                const circle = document.getElementById(`progress-${i}`);
+                circle.classList.remove('active', 'completed');
+                if (i < currentOnboardingStep) {
+                    circle.classList.add('completed');
+                } else if (i === currentOnboardingStep) {
+                    circle.classList.add('active');
+                }
+            }
+
+            for (let i = 1; i <= 3; i++) {
+                const step = document.getElementById(`onboarding-step-${i}`);
+                step.classList.toggle('active', i === currentOnboardingStep);
+            }
+        }
+
+        function nextOnboardingStep() {
+            if (currentOnboardingStep < 3) {
+                currentOnboardingStep++;
+                updateOnboardingProgress();
+            }
+        }
+
+        function previousOnboardingStep() {
+            if (currentOnboardingStep > 1) {
+                currentOnboardingStep--;
+                updateOnboardingProgress();
+            }
+        }
+
+        function startProvisioning() {
+            closeOnboardingModal();
+            openProvisionModal();
+        }
+
+        async function saveForwardingAndNext() {
+            const phone = document.getElementById('onboarding-forwarding').value.trim();
+            
+            if (phone && !PHONE_REGEX.test(phone)) {
+                showToast('Phone number must be in E.164 format (e.g., +1234567890)', 'error');
+                return;
+            }
+
+            if (phone && CLIENT_ID) {
+                try {
+                    showLoading(true);
+                    const response = await authFetch(`${API}/api/rootcall/config/${CLIENT_ID}`, {
+                        method: 'PATCH',
+                        body: JSON.stringify({ client_cell: phone })
+                    });
+
+                    if (response.ok) {
+                        showToast('Forwarding number saved!', 'success');
+                    }
+                } catch (err) {
+                    console.error('Error saving forwarding:', err);
+                } finally {
+                    showLoading(false);
+                }
+            }
+
+            nextOnboardingStep();
+        }
+
+        function addOnboardingContact() {
+            const name = document.getElementById('onboarding-contact-name').value.trim();
+            const phone = document.getElementById('onboarding-contact-phone').value.trim();
+
+            if (!phone) {
+                showToast('Please enter a phone number', 'error');
+                return;
+            }
+
+            if (!PHONE_REGEX.test(phone)) {
+                showToast('Phone number must be in E.164 format (e.g., +1234567890)', 'error');
+                return;
+            }
+
+            onboardingContacts.push({ name, phone });
+            updateOnboardingContactsList();
+
+            document.getElementById('onboarding-contact-name').value = '';
+            document.getElementById('onboarding-contact-phone').value = '';
+
+            showToast('Contact added!', 'success');
+        }
+
+        function updateOnboardingContactsList() {
+            const container = document.getElementById('onboarding-contacts-list');
+            
+            if (onboardingContacts.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #999; padding: 1.5rem; font-size: 0.9rem;">No contacts added yet. Add your first one above!</p>';
+                return;
+            }
+
+            container.innerHTML = onboardingContacts.map((c, index) => `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: var(--light-green); border-radius: 10px; margin-bottom: 0.75rem;">
+                    <div>
+                        ${c.name ? `<div style="font-weight: 700; color: var(--green);">${c.name}</div>` : ''}
+                        <div style="font-size: 0.9rem; color: #666;">${c.phone}</div>
+                    </div>
+                    <button onclick="removeOnboardingContact(${index})" style="background: none; border: none; color: var(--danger); cursor: pointer; font-size: 1.2rem;">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function removeOnboardingContact(index) {
+            onboardingContacts.splice(index, 1);
+            updateOnboardingContactsList();
+        }
+
+        async function finishOnboarding() {
+            if (onboardingContacts.length > 0 && CLIENT_ID) {
+                showLoading(true);
+                for (const contact of onboardingContacts) {
+                    try {
+                        await authFetch(`${API}/api/rootcall/trusted-contacts/${CLIENT_ID}`, {
+                            method: 'POST',
+                            body: JSON.stringify({ phone_number: contact.phone, name: contact.name })
+                        });
+                    } catch (err) {
+                        console.error('Error adding contact:', err);
+                    }
+                }
+                showLoading(false);
+            }
+
+            localStorage.setItem('onboarding_seen', 'true');
+            closeOnboardingModal();
+            showToast('Setup complete! Your RootCall protection is active!', 'success');
+            await loadData();
+            showPage('dashboard');
+        }
+
+        async function checkOnboarding() {
+            const onboardingSeen = localStorage.getItem('onboarding_seen');
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            
+            try {
+                const response = await authFetch(`${API}/api/rootcall/my-number`);
+                const data = await response.json();
+                
+                if (!onboardingSeen && !data.has_number) {
+                    showOnboardingModal();
+                }
+            } catch (err) {
+                console.error('Error checking onboarding:', err);
+            }
+        }
+
+</script>
 </body>
 </html>

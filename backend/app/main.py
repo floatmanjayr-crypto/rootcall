@@ -29,7 +29,6 @@ Base.metadata.create_all(bind=engine)
 
 # Initialize FastAPI
 app = FastAPI(
-
     title="VoIP Platform API",
     description="Complete VoIP platform with conversational AI",
     version="1.0.0"
@@ -43,6 +42,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Mount static files FIRST - before routers
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Include all routers
 app.include_router(telnyx_webhooks.router)
@@ -63,6 +65,7 @@ app.include_router(payments.router)
 app.include_router(number_management.router)
 app.include_router(auth.router)
 app.include_router(admin.router)
+
 @app.get("/")
 async def root():
     return {
@@ -78,5 +81,3 @@ async def health():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
-
-app.mount("/static", StaticFiles(directory="static"), name="static")

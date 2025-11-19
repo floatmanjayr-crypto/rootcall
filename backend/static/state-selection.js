@@ -70,35 +70,43 @@ function showStateSelection() {
             <i class="fas fa-map-marked-alt"></i> Step 1: Choose Your State
         </p>
 
-        <input type="text" id="state-search" class="search-input" placeholder="í´ Search for a state..." oninput="filterStates()" />
-
-        <div class="numbers-grid" style="max-height: 500px;">
-            ${states.map(state => `
-                <div class="area-code-btn" onclick="selectState('${state}', event)" data-state="${state}" style="text-align: left; padding: 1.25rem;">
-                    <div style="font-size: 1.1rem; font-weight: 700;">${state}</div>
-                    <div style="font-size: 0.75rem; color: #666; margin-top: 0.25rem;">${US_STATES_AREA_CODES[state].length} area code${US_STATES_AREA_CODES[state].length > 1 ? 's' : ''}</div>
-                </div>
-            `).join('')}
+        <div style="margin-bottom: 2rem;">
+            <label style="display: block; font-weight: 600; color: var(--green); margin-bottom: 0.75rem; font-size: 0.95rem;">
+                Select Your State
+            </label>
+            <select id="state-dropdown" onchange="selectStateFromDropdown()" class="search-input" style="cursor: pointer; font-size: 1rem; padding: 1rem 1.5rem;">
+                <option value="">-- Select a State --</option>
+                ${states.map(state => `
+                    <option value="${state}">${state} (${US_STATES_AREA_CODES[state].length} area code${US_STATES_AREA_CODES[state].length > 1 ? 's' : ''})</option>
+                `).join('')}
+            </select>
         </div>
 
-        <button onclick="proceedToAreaCodes()" id="state-next-btn" disabled class="btn btn-primary" style="width: 100%; justify-content: center; padding: 1.25rem; font-size: 1.1rem; margin-top: 1.5rem;">
+        <div class="info-badge" style="margin-bottom: 1.5rem;">
+            <i class="fas fa-shield-alt" style="font-size: 1.5rem;"></i>
+            <div>
+                <div style="font-weight: 700; margin-bottom: 0.25rem;">All 50 US States Available</div>
+                <div style="font-size: 0.9rem;">Choose your state to see available area codes and phone numbers in your region.</div>
+            </div>
+        </div>
+
+        <button onclick="proceedToAreaCodes()" id="state-next-btn" disabled class="btn btn-primary" style="width: 100%; justify-content: center; padding: 1.25rem; font-size: 1.1rem;">
             <i class="fas fa-arrow-right"></i> Next: Choose Area Code
         </button>
     `;
 }
 
-function filterStates() {
-    const search = document.getElementById('state-search').value.toLowerCase();
-    const stateBtns = document.querySelectorAll('[data-state]');
+function selectStateFromDropdown() {
+    const dropdown = document.getElementById('state-dropdown');
+    const selectedState = dropdown.value;
     
-    stateBtns.forEach(btn => {
-        const state = btn.getAttribute('data-state').toLowerCase();
-        if (state.includes(search)) {
-            btn.style.display = 'block';
-        } else {
-            btn.style.display = 'none';
-        }
-    });
+    if (selectedState) {
+        SELECTED_STATE = selectedState;
+        document.getElementById('state-next-btn').disabled = false;
+    } else {
+        SELECTED_STATE = null;
+        document.getElementById('state-next-btn').disabled = true;
+    }
 }
 
 function selectState(state, event) {
@@ -127,23 +135,29 @@ function proceedToAreaCodes() {
         </div>
 
         <p style="margin-bottom: 1.5rem; font-weight: 700; color: var(--green); font-size: 1.2rem;">
-            <i class="fas fa-map-marker-alt"></i> Step 2: Choose Area Code in ${SELECTED_STATE}
+            <i class="fas fa-map-marker-alt"></i> Step 2: Choose Area Code
         </p>
 
-        <div style="margin-bottom: 1.5rem; padding: 1rem; background: var(--ivory); border-radius: 12px; text-align: center;">
-            <span style="color: #666; font-size: 0.9rem;">Selected State:</span>
-            <strong style="color: var(--green); font-size: 1.1rem; margin-left: 0.5rem;">${SELECTED_STATE}</strong>
-            <button onclick="resetToStateSelection()" style="margin-left: 1rem; padding: 0.35rem 0.75rem; border-radius: 6px; border: 1px solid var(--green); background: white; color: var(--green); cursor: pointer; font-size: 0.75rem;">
-                <i class="fas fa-undo"></i> Change
+        <div style="margin-bottom: 1.5rem; padding: 1rem; background: var(--ivory); border-radius: 12px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <span style="color: #666; font-size: 0.85rem;">Selected State:</span>
+                <strong style="color: var(--green); font-size: 1.1rem; margin-left: 0.5rem;">${SELECTED_STATE}</strong>
+            </div>
+            <button onclick="resetToStateSelection()" class="btn" style="padding: 0.5rem 1rem; background: white; border: 2px solid var(--green); color: var(--green); font-size: 0.85rem;">
+                <i class="fas fa-undo"></i> Change State
             </button>
         </div>
 
-        <div class="grid-4" style="margin-bottom: 2rem; max-height: 400px; overflow-y: auto;">
-            ${areaCodes.map(code => `
-                <div class="area-code-btn" onclick="selectAreaCode('${code}', event)" data-code="${code}">
-                    <div style="font-size: 2.25rem; font-weight: 900;">${code}</div>
-                </div>
-            `).join('')}
+        <div style="margin-bottom: 2rem;">
+            <label style="display: block; font-weight: 600; color: var(--green); margin-bottom: 0.75rem; font-size: 0.95rem;">
+                Select Area Code
+            </label>
+            <select id="area-code-dropdown" onchange="selectAreaCodeFromDropdown()" class="search-input" style="cursor: pointer; font-size: 1rem; padding: 1rem 1.5rem;">
+                <option value="">-- Select an Area Code --</option>
+                ${areaCodes.map(code => `
+                    <option value="${code}">${code}</option>
+                `).join('')}
+            </select>
         </div>
 
         <div class="info-badge" style="margin-bottom: 1.5rem;">
@@ -160,6 +174,19 @@ function proceedToAreaCodes() {
     `;
 
     document.getElementById('step-area-code').innerHTML = areaCodeHTML;
+}
+
+function selectAreaCodeFromDropdown() {
+    const dropdown = document.getElementById('area-code-dropdown');
+    const selectedCode = dropdown.value;
+    
+    if (selectedCode) {
+        SELECTED_AREA_CODE = selectedCode;
+        document.getElementById('search-btn').disabled = false;
+    } else {
+        SELECTED_AREA_CODE = null;
+        document.getElementById('search-btn').disabled = true;
+    }
 }
 
 function resetToStateSelection() {

@@ -39,40 +39,9 @@
         }
 
         .sidebar-header {
-            padding: 1rem 1rem;
+            padding: 2rem 1.5rem;
             border-bottom: 1px solid #e5e5e5;
-            background: linear-gradient(135deg, #ffffff 0%, #f8fffe 100%);
-        }
-
-        .logo-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .logo-img {
-            width: 150px;
-            height: auto;
-            filter: drop-shadow(0 2px 4px rgba(13, 61, 47, 0.1));
-            transition: transform 0.3s ease;
-        }
-
-        .logo-img:hover {
-            transform: scale(1.02);
-        }
-
-        .tagline {
-            font-size: 0.65rem;
-            color: var(--green);
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            padding: 0.3rem 0.65rem;
-            background: linear-gradient(135deg, var(--light-green) 0%, #d4f4dd 100%);
-            border-radius: 12px;
-            border: 1px solid rgba(13, 61, 47, 0.15);
-        }
+            background: white;
         }
 
         .sidebar-nav {
@@ -574,12 +543,10 @@
 
         .step-dot.completed {
             background: var(--success);
-        <div class="sidebar-header">
-            <div class="logo-container">
-                <img src="rootcall-logo.png" alt="RootCall Logo" class="logo-img">
-                <span class="tagline">AI Scam Call Shield</span>
-            </div>
-        </div>
+        }
+
+        .scam-shield-badge {
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
             color: white;
             padding: 0.5rem 1rem;
             border-radius: 20px;
@@ -1809,6 +1776,5 @@
             }
         });
     </script>
-    <script src="state-selection.js"></script>
 </body>
-</html>/* Updated Wed, Nov 19, 2025  3:25:11 AM */
+</html>

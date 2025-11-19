@@ -427,7 +427,7 @@
         showMessage('Login successful! Redirecting...', 'success');
 
         // Redirect to dashboard the same way as before
-        window.location.href = '/static/client-portal.html';
+        window.location.href = '/static/portal-v2.html';
 
       } catch (err) {
         console.error(err);
@@ -441,7 +441,7 @@
     (function autoRedirectIfLoggedIn() {
       const token = localStorage.getItem('access_token');
       if (token) {
-        window.location.href = '/static/client-portal.html';
+        window.location.href = '/static/portal-v2.html';
       }
     })();
   </script>

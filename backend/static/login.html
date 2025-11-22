@@ -369,6 +369,11 @@
   </div>
 
   <script>
+    // ============================================
+    // 🌍 API Configuration - Points to Render Backend
+    // ============================================
+    const API_BASE_URL = 'https://rootcall.onrender.com';
+    
     document.getElementById('year').textContent = new Date().getFullYear();
 
     const messageBox = document.getElementById('login-message');
@@ -402,8 +407,9 @@
         body.append('password', password);
 
         console.log('🔐 Attempting login with email:', email);
+        console.log('🌍 API endpoint:', `${API_BASE_URL}/api/auth/login`);
 
-        const res = await fetch('/api/auth/login', {
+        const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
@@ -413,22 +419,24 @@
 
         console.log('📡 Response status:', res.status);
 
+        // ✅ FIX: Read response body ONCE as text first
+        const responseText = await res.text();
+        console.log('📦 Raw response:', responseText);
+
+        // Try to parse as JSON
         let data;
         try {
-          data = await res.json();
-          console.log('📦 Response data:', data);
+          data = JSON.parse(responseText);
+          console.log('✅ Parsed data:', data);
         } catch (e) {
-          const text = await res.text();
-          console.error('❌ Could not parse JSON. Response:', text);
-          throw new Error('Invalid server response');
+          console.error('❌ Could not parse JSON:', e);
+          throw new Error('Invalid server response: ' + responseText.substring(0, 100));
         }
 
         if (!res.ok) {
           const errorMsg = data.detail || data.message || `Login failed (${res.status})`;
           console.error('❌ Login error:', errorMsg);
           showMessage(errorMsg, 'error');
-          loginBtn.disabled = false;
-          loginBtn.textContent = 'Sign In';
           return;
         }
 
@@ -450,7 +458,9 @@
 
       } catch (err) {
         console.error('💥 Error:', err);
-        showMessage('Network error. Please try again.', 'error');
+        showMessage(err.message || 'Network error. Please try again.', 'error');
+      } finally {
+        // ✅ FIX: Always re-enable button in finally block
         loginBtn.disabled = false;
         loginBtn.textContent = 'Sign In';
       }

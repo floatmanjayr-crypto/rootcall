@@ -21,56 +21,222 @@
       --radius:18px;
     }
     *{box-sizing:border-box}
-    html,body{margin:0;background:var(--ivory);color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+    html,body{
+      margin:0;
+      background:var(--ivory);
+      color:var(--ink);
+      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif
+    }
     a{color:inherit;text-decoration:none}
     .container{max-width:1120px;margin:0 auto;padding:24px}
-    .btn{display:inline-flex;align-items:center;gap:.6rem;padding:14px 20px;border-radius:12px;font-weight:700;letter-spacing:.2px;cursor:pointer;border:none}
-    .btn-primary{background:var(--green);color:#fff;box-shadow:var(--shadow)}
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      gap:.6rem;
+      padding:14px 20px;
+      border-radius:12px;
+      font-weight:700;
+      letter-spacing:.2px;
+      cursor:pointer;
+      border:none
+    }
+    .btn-primary{
+      background:var(--green);
+      color:#fff;
+      box-shadow:var(--shadow)
+    }
     .btn-primary:hover{filter:brightness(1.05)}
     .btn-ghost{border:2px solid var(--green);color:var(--green);background:transparent}
-    .badge{display:inline-block;background:#e8f5ef;color:var(--green);padding:6px 10px;border-radius:999px;font-weight:700;font-size:.78rem}
-    header{position:sticky;top:0;backdrop-filter:saturate(180%) blur(6px);background:color-mix(in oklab, var(--ivory) 85%, white 15%);border-bottom:1px solid #ece7e2;z-index:20}
-    .nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0}
+    .badge{
+      display:inline-block;
+      background:#e8f5ef;
+      color:var(--green);
+      padding:6px 10px;
+      border-radius:999px;
+      font-weight:700;
+      font-size:.78rem
+    }
+    header{
+      position:sticky;
+      top:0;
+      backdrop-filter:saturate(180%) blur(6px);
+      background:color-mix(in oklab, var(--ivory) 85%, white 15%);
+      border-bottom:1px solid #ece7e2;
+      z-index:20
+    }
+    .nav{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:14px 0
+    }
     .nav a.cta{margin-left:auto}
-    .logo{display:flex;align-items:center;gap:12px;font-weight:800;color:var(--green);letter-spacing:.5px}
-    .logo svg{width:42px;height:42px}
-    .hero{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center;padding:54px 0 18px}
-    .hero h1{font-size:clamp(2.1rem, 3.6vw + 1rem, 3.2rem);line-height:1.05;margin:14px 0;color:var(--green);}
-    .hero p{font-size:1.125rem;color:var(--muted);margin:10px 0 24px}
-    .hero-card{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:24px;border:1px solid #eee}
-    .stat{display:flex;align-items:center;gap:12px;margin:10px 0;color:var(--muted)}
+    .logo{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      font-weight:800;
+      color:var(--green);
+      letter-spacing:.5px
+    }
+    .hero{
+      display:grid;
+      grid-template-columns:1.1fr .9fr;
+      gap:40px;
+      align-items:center;
+      padding:54px 0 18px
+    }
+    .hero h1{
+      font-size:clamp(2.1rem, 3.6vw + 1rem, 3.2rem);
+      line-height:1.05;
+      margin:14px 0;
+      color:var(--green);
+    }
+    .hero p{
+      font-size:1.125rem;
+      color:var(--muted);
+      margin:10px 0 24px
+    }
+    .hero-card{
+      background:#fff;
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:24px;
+      border:1px solid #eee
+    }
+    .stat{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      margin:10px 0;
+      color:var(--muted)
+    }
     .stat strong{color:var(--green)}
     .section{padding:56px 0}
     .grid{display:grid;gap:22px}
     .grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}
-    .card{background:#fff;border-radius:var(--radius);padding:22px;border:1px solid #eee;box-shadow:var(--shadow)}
+    .card{
+      background:#fff;
+      border-radius:var(--radius);
+      padding:22px;
+      border:1px solid #eee;
+      box-shadow:var(--shadow)
+    }
     .card h3{margin:6px 0 8px}
     .list{margin:10px 0 0;padding:0;list-style:none}
-    .list li{display:flex;gap:10px;margin:8px 0;color:var(--muted)}
+    .list li{
+      display:flex;
+      gap:10px;
+      margin:8px 0;
+      color:var(--muted)
+    }
     .tick{color:var(--accent);font-weight:900}
     .price-wrap{display:grid;gap:22px}
-    .price{border:2px solid var(--green);background:linear-gradient(180deg,#ffffff, #f7fbf9);border-radius:var(--radius);padding:24px}
+    .price{
+      border:2px solid var(--green);
+      background:linear-gradient(180deg,#ffffff, #f7fbf9);
+      border-radius:var(--radius);
+      padding:24px
+    }
     .price h4{margin:0 0 6px}
     .price .amt{font-size:2rem;font-weight:800;color:var(--green)}
-    .ribbon{background:var(--green);color:#fff;display:inline-block;padding:6px 10px;border-radius:8px;font-size:.82rem;margin-bottom:10px}
-    .bar{height:8px;border-radius:999px;background:linear-gradient(90deg,var(--green),#1d7c5f)}
-    .proof{display:flex;gap:14px;align-items:center;color:var(--muted);font-size:.95rem;margin-top:6px}
-    .faq details{background:#fff;border:1px solid #eee;border-radius:12px;padding:16px;margin:10px 0;box-shadow:var(--shadow)}
+    .ribbon{
+      background:var(--green);
+      color:#fff;
+      display:inline-block;
+      padding:6px 10px;
+      border-radius:8px;
+      font-size:.82rem;
+      margin-bottom:10px
+    }
+    .bar{
+      height:8px;
+      border-radius:999px;
+      background:linear-gradient(90deg,var(--green),#1d7c5f)
+    }
+    .proof{
+      display:flex;
+      gap:14px;
+      align-items:center;
+      color:var(--muted);
+      font-size:.95rem;
+      margin-top:6px
+    }
+    .faq details{
+      background:#fff;
+      border:1px solid #eee;
+      border-radius:12px;
+      padding:16px;
+      margin:10px 0;
+      box-shadow:var(--shadow)
+    }
     .faq summary{cursor:pointer;font-weight:700;color:var(--green)}
     footer{border-top:1px solid #ece7e2;margin-top:40px}
-    .foot{display:flex;justify-content:space-between;gap:18px;align-items:center;padding:24px 0;color:var(--muted);font-size:.95rem}
+    .foot{
+      display:flex;
+      justify-content:space-between;
+      gap:18px;
+      align-items:center;
+      padding:24px 0;
+      color:var(--muted);
+      font-size:.95rem
+    }
     
     /* Modal styles */
-    .modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center}
+    .modal{
+      display:none;
+      position:fixed;
+      top:0;
+      left:0;
+      right:0;
+      bottom:0;
+      background:rgba(0,0,0,0.5);
+      z-index:1000;
+      align-items:center;
+      justify-content:center
+    }
     .modal.active{display:flex}
-    .modal-content{background:#fff;border-radius:var(--radius);padding:40px;max-width:500px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.3)}
+    .modal-content{
+      background:#fff;
+      border-radius:var(--radius);
+      padding:40px;
+      max-width:500px;
+      width:90%;
+      box-shadow:0 20px 60px rgba(0,0,0,0.3)
+    }
     .modal-content h3{color:var(--green);margin-top:0}
     .form-group{margin-bottom:20px}
-    .form-group label{display:block;font-weight:600;color:var(--green);margin-bottom:8px}
-    .form-group input,.form-group select{width:100%;padding:12px;border:2px solid #e5e7eb;border-radius:8px;font-size:16px}
-    .form-group input:focus,.form-group select:focus{outline:none;border-color:var(--green)}
-    .close-modal{position:absolute;top:20px;right:20px;font-size:24px;cursor:pointer;color:var(--muted)}
-    .message{padding:12px;border-radius:8px;margin-bottom:15px;display:none}
+    .form-group label{
+      display:block;
+      font-weight:600;
+      color:var(--green);
+      margin-bottom:8px
+    }
+    .form-group input,.form-group select{
+      width:100%;
+      padding:12px;
+      border:2px solid #e5e7eb;
+      border-radius:8px;
+      font-size:16px
+    }
+    .form-group input:focus,.form-group select:focus{
+      outline:none;
+      border-color:var(--green)
+    }
+    .close-modal{
+      position:absolute;
+      top:20px;
+      right:20px;
+      font-size:24px;
+      cursor:pointer;
+      color:var(--muted)
+    }
+    .message{
+      padding:12px;
+      border-radius:8px;
+      margin-bottom:15px;
+      display:none
+    }
     .message.error{background:#fee;color:#c00;border:1px solid #fcc}
     .message.success{background:#efe;color:#060;border:1px solid #cfc}
     
@@ -78,6 +244,10 @@
       .hero{grid-template-columns:1fr} 
       .nav .hide-sm{display:none} 
       .grid-3{grid-template-columns:1fr} 
+      .foot{
+        flex-direction:column;
+        align-items:flex-start
+      }
     }
   </style>
 </head>
@@ -86,13 +256,11 @@
   <header>
     <div class="container nav">
       <div class="logo" aria-label="RootCall logo">
-        <svg viewBox="0 0 64 64" role="img" aria-label="shield with phone">
-          <path fill="var(--green)" d="M32 6c7 4 15 6 23 7-1 20-10 34-23 39C19 47 10 33 9 13c8-1 16-3 23-7z"/>
-          <path fill="#fff" d="M37.9 42.1c-4.6-1.9-8.6-5.9-10.5-10.5-.5-1.3 0-2.8 1.2-3.5l2.7-1.6c.9-.5 1.2-1.6.8-2.5l-2-4.2c-.5-1.1-1.8-1.6-2.9-1.1l-2.9 1.3c-2.1.9-3.3 3.1-3 5.4.9 6.8 6.9 12.8 13.7 13.7 2.3.3 4.5-.9 5.4-3l1.3-2.9c.5-1.1 0-2.4-1.1-2.9l-4.2-2c-.9-.4-2 .0-2.5.8l-1.6 2.7c-.7 1.2-2.2 1.7-3.5 1.2z"/>
-        </svg>
-        <span>ROOTCALL</span>
+        <!-- Your PNG logo -->
+        <img src="rootcall-logo.png" alt="RootCall Logo" style="height:50px;">
       </div>
-      <nav class="hide-sm" aria-label="Main navigation">
+      <!-- Moved nav a bit to the right to give logo space -->
+      <nav class="hide-sm" aria-label="Main navigation" style="margin-left:40px">
         <a href="#how" class="hide-sm" style="margin-right:18px">How it works</a>
         <a href="#pricing" class="hide-sm" style="margin-right:18px">Pricing</a>
         <a href="#faq" class="hide-sm" style="margin-right:18px">FAQ</a>
@@ -110,7 +278,10 @@
         <a href="#" onclick="openSignup(event)" class="btn btn-primary">Get Protected Now</a>
         <a href="#how" class="btn btn-ghost">See how it works</a>
       </div>
-      <div class="stat"><span class="bar" style="width:160px"></span> <span><strong>Peace-of-Mind Guarantee</strong> — cancel anytime.</span></div>
+      <div class="stat">
+        <span class="bar" style="width:160px"></span>
+        <span><strong>Peace-of-Mind Guarantee</strong> — cancel anytime.</span>
+      </div>
     </div>
     <div class="hero-card" role="group" aria-label="Highlights">
       <div class="stat"><span class="tick">✓</span> Answers unknown calls for you</div>
@@ -182,7 +353,11 @@
           <li><span class="tick">•</span> Spoof & scam blocking</li>
           <li><span class="tick">•</span> Verified call forwarding</li>
         </ul>
-        <div style="margin-top:14px"><button onclick="selectPlan('essential')" class="btn btn-primary" style="width:100%;justify-content:center">Start Essential</button></div>
+        <div style="margin-top:14px">
+          <button onclick="selectPlan('essential')" class="btn btn-primary" style="width:100%;justify-content:center">
+            Start Essential
+          </button>
+        </div>
       </div>
 
       <div class="price" style="border-color:#1c6b53" aria-label="Family plan">
@@ -195,7 +370,11 @@
           <li><span class="tick">•</span> Caregiver SMS alerts</li>
           <li><span class="tick">•</span> Priority screening queue</li>
         </ul>
-        <div style="margin-top:14px"><button onclick="selectPlan('family')" class="btn btn-primary" style="width:100%;justify-content:center">Secure My Family</button></div>
+        <div style="margin-top:14px">
+          <button onclick="selectPlan('family')" class="btn btn-primary" style="width:100%;justify-content:center">
+            Secure My Family
+          </button>
+        </div>
       </div>
 
       <div class="price" style="border-color:#0b3629" aria-label="Guardian plan">
@@ -207,7 +386,11 @@
           <li><span class="tick">•</span> Expanded allow/deny lists</li>
           <li><span class="tick">•</span> Priority support</li>
         </ul>
-        <div style="margin-top:14px"><button onclick="selectPlan('guardian')" class="btn btn-primary" style="width:100%;justify-content:center">Get Guardian</button></div>
+        <div style="margin-top:14px">
+          <button onclick="selectPlan('guardian')" class="btn btn-primary" style="width:100%;justify-content:center">
+            Get Guardian
+          </button>
+        </div>
       </div>
     </div>
   </section>
@@ -216,19 +399,27 @@
     <h2 style="color:var(--green);margin:0 0 10px">Frequently asked questions</h2>
     <details>
       <summary>Will this work with my current phone number?</summary>
-      <div style="margin-top:10px;color:var(--muted)">Yes. We use safe forwarding and screening. Known contacts can be whitelisted; unknown callers are screened first.</div>
+      <div style="margin-top:10px;color:var(--muted)">
+        Yes. We use safe forwarding and screening. Known contacts can be whitelisted; unknown callers are screened first.
+      </div>
     </details>
     <details>
       <summary>What happens if a scammer calls?</summary>
-      <div style="margin-top:10px;color:var(--muted)">RootCall challenges them, detects risk, and hangs up. You never feel the pressure or urgency tactics.</div>
+      <div style="margin-top:10px;color:var(--muted)">
+        RootCall challenges them, detects risk, and hangs up. You never feel the pressure or urgency tactics.
+      </div>
     </details>
     <details>
       <summary>Can my caregiver receive alerts?</summary>
-      <div style="margin-top:10px;color:var(--muted)">Yes, Family and Guardian plans include optional SMS alerts with quick summaries.</div>
+      <div style="margin-top:10px;color:var(--muted)">
+        Yes, Family and Guardian plans include optional SMS alerts with quick summaries.
+      </div>
     </details>
     <details>
       <summary>Is my data private?</summary>
-      <div style="margin-top:10px;color:var(--muted)">We only use call metadata to protect you. You control allow/deny lists and can opt out anytime.</div>
+      <div style="margin-top:10px;color:var(--muted)">
+        We only use call metadata to protect you. You control allow/deny lists and can opt out anytime.
+      </div>
     </details>
   </section>
 
@@ -260,10 +451,13 @@
             <option value="guardian">Guardian - $129/mo</option>
           </select>
         </div>
-        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">Create Account & Subscribe</button>
+        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">
+          Create Account &amp; Subscribe
+        </button>
       </form>
       <p style="text-align:center;margin-top:15px;color:var(--muted);font-size:14px">
-        Already have an account? <a href="/static/login.html" style="color:var(--green);font-weight:700">Sign in</a>
+        Already have an account?
+        <a href="/static/login.html" style="color:var(--green);font-weight:700">Sign in</a>
       </p>
     </div>
   </div>
@@ -271,13 +465,14 @@
   <footer>
     <div class="container foot">
       <div class="logo" style="opacity:.9">
-        <svg viewBox="0 0 64 64" aria-hidden="true">
-          <path fill="var(--green)" d="M32 6c7 4 15 6 23 7-1 20-10 34-23 39C19 47 10 33 9 13c8-1 16-3 23-7z"/>
-          <path fill="#fff" d="M37.9 42.1c-4.6-1.9-8.6-5.9-10.5-10.5-.5-1.3 0-2.8 1.2-3.5l2.7-1.6c.9-.5 1.2-1.6.8-2.5l-2-4.2c-.5-1.1-1.8-1.6-2.9-1.1l-2.9 1.3c-2.1.9-3.3 3.1-3 5.4.9 6.8 6.9 12.8 13.7 13.7 2.3.3 4.5-.9 5.4-3l1.3-2.9c.5-1.1 0-2.4-1.1-2.9l-4.2-2c-.9-.4-2 .0-2.5.8l-1.6 2.7c-.7 1.2-2.2 1.7-3.5 1.2z"/>
-        </svg>
+        <img src="rootcall-logo.png" alt="RootCall Logo" style="height:40px;">
         <span>ROOTCALL</span>
       </div>
-      <div>© <span id="y"></span> RootCall. Peace-of-Mind Guarantee.</div>
+      <div>
+        © <span id="y"></span> RootCall. Peace-of-Mind Guarantee.
+        &nbsp;|&nbsp;
+        Contact: <a href="mailto:info@getrootcall.com">info@getrootcall.com</a>
+      </div>
     </div>
   </footer>
 
@@ -357,7 +552,7 @@
             if (checkoutResponse.ok) {
               window.location.href = checkoutData.checkout_url;
             } else {
-              showMessage('Payment setup failed: ' + checkoutData.detail, true);
+              showMessage('Payment setup failed: ' + (checkoutData.detail || 'Unknown error'), true);
             }
           } catch (err) {
             showMessage('Error: ' + err.message, true);
@@ -369,7 +564,7 @@
       }
     }
 
-    // Smooth scroll
+    // Smooth scroll for internal links
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
       anchor.addEventListener('click', function (e) {
         if (this.getAttribute('href') !== '#') {
@@ -382,27 +577,5 @@
       });
     });
   </script>
-</body>
-</html>
-
-<!-- ========================================= -->
-<!-- ��� RootCall Footer -->
-<!-- ========================================= -->
-<footer style="margin-top:80px;background:#0A1220;border-top:1px solid rgba(255,255,255,0.08);padding:40px 20px;text-align:center;font-family:Inter,system-ui,Arial;color:#E6F0FF">
-  <div style="max-width:900px;margin:0 auto;">
-    <img src="logo.png" alt="RootCall Logo" style="height:44px;vertical-align:middle;margin-bottom:10px;">
-    <p style="margin:10px 0;font-size:15px;opacity:0.9">
-      Stay protected from phone scams. RootCall shields your calls with AI precision.
-    </p>
-    <p style="margin:16px 0 8px;">
-      <a href="/privacy.html" style="color:#2FD7C4;text-decoration:none;margin-right:20px;">Privacy Policy</a>
-      <a href="/terms.html" style="color:#2FD7C4;text-decoration:none;">Terms of Service</a>
-    </p>
-    <p style="margin-top:12px;font-size:13px;opacity:0.7">
-      &copy; 2025 RootCall — All rights reserved.
-    </p>
-  </div>
-</footer>
-
 </body>
 </html>

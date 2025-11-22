@@ -19,240 +19,563 @@
       --accent:#13a161;
       --shadow: 0 10px 30px rgba(13,61,47,.12);
       --radius:18px;
-    }*{box-sizing:border-box}
-    html,body{margin:0;background:var(--ivory);color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}
-    a{text-decoration:none}
+    }
+    *{box-sizing:border-box}
+    html,body{
+      margin:0;
+      background:var(--ivory);
+      color:var(--ink);
+      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif
+    }
+    a{color:inherit;text-decoration:none}
     .container{max-width:1120px;margin:0 auto;padding:24px}
-
-    .btn{display:inline-flex;align-items:center;gap:.6rem;padding:14px 20px;border-radius:12px;font-weight:700;letter-spacing:.2px;cursor:pointer;border:none;}
-    .btn-primary{background:var(--green);color:#fff;box-shadow:var(--shadow);}
-    .btn-primary:link,.btn-primary:visited{color:#fff;}
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      gap:.6rem;
+      padding:14px 20px;
+      border-radius:12px;
+      font-weight:700;
+      letter-spacing:.2px;
+      cursor:pointer;
+      border:none
+    }
+    .btn-primary{
+      background:var(--green);
+      color:#fff;
+      box-shadow:var(--shadow)
+    }
     .btn-primary:hover{filter:brightness(1.05)}
     .btn-ghost{border:2px solid var(--green);color:var(--green);background:transparent}
-    .badge{display:inline-block;background:#e8f5ef;color:var(--green);padding:6px 10px;border-radius:999px;font-weight:700;font-size:.78rem}
-
-    header{position:sticky;top:0;backdrop-filter:saturate(180%) blur(6px);background:color-mix(in oklab, var(--ivory) 85%, white 15%);border-bottom:1px solid #ece7e2;z-index:20}
-    .nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0}
+    .badge{
+      display:inline-block;
+      background:#e8f5ef;
+      color:var(--green);
+      padding:6px 10px;
+      border-radius:999px;
+      font-weight:700;
+      font-size:.78rem
+    }
+    header{
+      position:sticky;
+      top:0;
+      backdrop-filter:saturate(180%) blur(6px);
+      background:color-mix(in oklab, var(--ivory) 85%, white 15%);
+      border-bottom:1px solid #ece7e2;
+      z-index:20
+    }
+    .nav{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:14px 0
+    }
     .nav a.cta{margin-left:auto}
-    .logo{display:flex;align-items:center;gap:12px;font-weight:800;color:var(--green);letter-spacing:.5px}
-    .hero{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center;padding:54px 0 18px}
-    .hero h1{font-size:clamp(2.1rem, 3.6vw + 1rem, 3.2rem);line-height:1.05;margin:14px 0;color:var(--green);}
-    .hero p{font-size:1.125rem;color:var(--muted);margin:10px 0 24px}
-    .hero-card{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:24px;border:1px solid #eee}
-    .stat{display:flex;align-items:center;gap:12px;margin:10px 0;color:var(--muted)}
+    .logo{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      font-weight:800;
+      color:var(--green);
+      letter-spacing:.5px
+    }
+    .hero{
+      display:grid;
+      grid-template-columns:1.1fr .9fr;
+      gap:40px;
+      align-items:center;
+      padding:54px 0 18px
+    }
+    .hero h1{
+      font-size:clamp(2.1rem, 3.6vw + 1rem, 3.2rem);
+      line-height:1.05;
+      margin:14px 0;
+      color:var(--green);
+    }
+    .hero p{
+      font-size:1.125rem;
+      color:var(--muted);
+      margin:10px 0 24px
+    }
+    .hero-card{
+      background:#fff;
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:24px;
+      border:1px solid #eee
+    }
+    .stat{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      margin:10px 0;
+      color:var(--muted)
+    }
     .stat strong{color:var(--green)}
     .section{padding:56px 0}
     .grid{display:grid;gap:22px}
     .grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}
-    .card{background:#fff;border-radius:var(--radius);padding:22px;border:1px solid #eee;box-shadow:var(--shadow)}
+    .card{
+      background:#fff;
+      border-radius:var(--radius);
+      padding:22px;
+      border:1px solid #eee;
+      box-shadow:var(--shadow)
+    }
     .card h3{margin:6px 0 8px}
     .list{margin:10px 0 0;padding:0;list-style:none}
-    .list li{display:flex;gap:10px;margin:8px 0;color:var(--muted)}
+    .list li{
+      display:flex;
+      gap:10px;
+      margin:8px 0;
+      color:var(--muted)
+    }
     .tick{color:var(--accent);font-weight:900}
     .price-wrap{display:grid;gap:22px}
-    .price{border:2px solid var(--green);background:linear-gradient(180deg,#ffffff, #f7fbf9);border-radius:var(--radius);padding:24px}
+    .price{
+      border:2px solid var(--green);
+      background:linear-gradient(180deg,#ffffff, #f7fbf9);
+      border-radius:var(--radius);
+      padding:24px
+    }
     .price h4{margin:0 0 6px}
     .price .amt{font-size:2rem;font-weight:800;color:var(--green)}
-    .ribbon{background:var(--green);color:#fff;display:inline-block;padding:6px 10px;border-radius:8px;font-size:.82rem;margin-bottom:10px}
-    .bar{height:8px;border-radius:999px;background:linear-gradient(90deg,var(--green),#1d7c5f)}
-    .proof{display:flex;gap:14px;align-items:center;color:var(--muted);font-size:.95rem;margin-top:6px}
-    .faq details{background:#fff;border:1px solid #eee;border-radius:12px;padding:16px;margin:10px 0;box-shadow:var(--shadow)}
+    .ribbon{
+      background:var(--green);
+      color:#fff;
+      display:inline-block;
+      padding:6px 10px;
+      border-radius:8px;
+      font-size:.82rem;
+      margin-bottom:10px
+    }
+    .bar{
+      height:8px;
+      border-radius:999px;
+      background:linear-gradient(90deg,var(--green),#1d7c5f)
+    }
+    .proof{
+      display:flex;
+      gap:14px;
+      align-items:center;
+      color:var(--muted);
+      font-size:.95rem;
+      margin-top:6px
+    }
+    .faq details{
+      background:#fff;
+      border:1px solid #eee;
+      border-radius:12px;
+      padding:16px;
+      margin:10px 0;
+      box-shadow:var(--shadow)
+    }
     .faq summary{cursor:pointer;font-weight:700;color:var(--green)}
     footer{border-top:1px solid #ece7e2;margin-top:40px}
-    .foot{display:flex;justify-content:space-between;gap:18px;align-items:center;padding:24px 0;color:var(--muted);font-size:.95rem}
-
-    .modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center}
+    .foot{
+      display:flex;
+      justify-content:space-between;
+      gap:18px;
+      align-items:center;
+      padding:24px 0;
+      color:var(--muted);
+      font-size:.95rem
+    }
+    
+    /* Modal styles */
+    .modal{
+      display:none;
+      position:fixed;
+      top:0;
+      left:0;
+      right:0;
+      bottom:0;
+      background:rgba(0,0,0,0.5);
+      z-index:1000;
+      align-items:center;
+      justify-content:center
+    }
     .modal.active{display:flex}
-    .modal-content{background:#fff;border-radius:var(--radius);padding:40px;max-width:500px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.3)}
+    .modal-content{
+      background:#fff;
+      border-radius:var(--radius);
+      padding:40px;
+      max-width:500px;
+      width:90%;
+      box-shadow:0 20px 60px rgba(0,0,0,0.3)
+    }
     .modal-content h3{color:var(--green);margin-top:0}
     .form-group{margin-bottom:20px}
-    .form-group label{display:block;font-weight:600;color:var(--green);margin-bottom:8px}
-    .form-group input,.form-group select{width:100%;padding:12px;border:2px solid #e5e7eb;border-radius:8px;font-size:16px}
-    .form-group input:focus,.form-group select:focus{outline:none;border-color:var(--green)}
-    .close-modal{position:absolute;top:20px;right:20px;font-size:24px;cursor:pointer;color:var(--muted)}
-    .message{padding:12px;border-radius:8px;margin-bottom:15px;display:none}
+    .form-group label{
+      display:block;
+      font-weight:600;
+      color:var(--green);
+      margin-bottom:8px
+    }
+    .form-group input,.form-group select{
+      width:100%;
+      padding:12px;
+      border:2px solid #e5e7eb;
+      border-radius:8px;
+      font-size:16px
+    }
+    .form-group input:focus,.form-group select:focus{
+      outline:none;
+      border-color:var(--green)
+    }
+    .close-modal{
+      position:absolute;
+      top:20px;
+      right:20px;
+      font-size:24px;
+      cursor:pointer;
+      color:var(--muted)
+    }
+    .message{
+      padding:12px;
+      border-radius:8px;
+      margin-bottom:15px;
+      display:none
+    }
     .message.error{background:#fee;color:#c00;border:1px solid #fcc}
     .message.success{background:#efe;color:#060;border:1px solid #cfc}
-
+    
     @media (max-width: 960px){ 
       .hero{grid-template-columns:1fr} 
       .nav .hide-sm{display:none} 
       .grid-3{grid-template-columns:1fr} 
+      .foot{
+        flex-direction:column;
+        align-items:flex-start
+      }
     }
   </style>
 </head>
 <body>
 
-<header>
-  <div class="container nav">
-    <div class="logo" aria-label="RootCall logo">
-      <img src="rootcall-logo.png" alt="RootCall Logo" style="height:50px;">
-    </div>
-    <nav class="hide-sm" aria-label="Main navigation" style="margin-left:40px">
-      <a href="#how" class="hide-sm" style="margin-right:18px">How it works</a>
-      <a href="#pricing" class="hide-sm" style="margin-right:18px">Pricing</a>
-      <a href="#faq" class="hide-sm" style="margin-right:18px">FAQ</a>
-    </nav>
-    <a href="https://rootcall.onrender.com/static/login.html" class="btn btn-primary cta">
-      Sign In
-    </a>
-  </div>
-</header>
-
-<section class="container hero" id="top">
-  <div>
-    <span class="badge">Your AI Call Shield</span>
-    <h1>Stop phone scams at the gate.<br/>RootCall answers, screens and protects.</h1>
-    <p><strong>Billions are lost every year to spoof calls and fraud.</strong> RootCall picks up first, verifies the caller, and only then forwards to you — or hangs up on scammers instantly.</p>
-    <div style="display:flex;gap:12px;flex-wrap:wrap">
-      <a href="#" onclick="openSignup(event)" class="btn btn-primary">Get Protected Now</a>
-      <a href="#how" class="btn btn-ghost">See how it works</a>
-    </div>
-    <div class="stat"><span class="bar" style="width:160px"></span> <span><strong>Peace-of-Mind Guarantee</strong> — cancel anytime.</span></div>
-  </div>
-  <div class="hero-card" role="group" aria-label="Highlights">
-    <div class="stat"><span class="tick">✓</span> Answers unknown calls for you</div>
-    <div class="stat"><span class="tick">✓</span> Blocks spoofed & high-risk callers</div>
-    <div class="stat"><span class="tick">✓</span> Forwards only verified callers</div>
-    <div class="stat"><span class="tick">✓</span> Works with your current number</div>
-    <div class="stat"><span class="tick">✓</span> Caregiver alerts & call summaries</div>
-  </div>
-</section>
-
-<section class="container section" id="why">
-  <div class="card" style="display:flex;align-items:center;gap:18px">
-    <div style="width:10px;height:48px;background:var(--green);border-radius:6px"></div>
-    <p style="margin:0;font-size:1.05rem;color:var(--muted)">
-      <strong>Last year, seniors lost billions to phone scams.</strong> The trick of a scam is convincing you it's not a scam. RootCall removes that moment of pressure by answering first and filtering risk before it ever reaches you.
-    </p>
-  </div>
-</section>
-
-<section class="container section" id="how">
-  <h2 style="color:var(--green);margin:0 0 14px">How RootCall protects you</h2>
-  <div class="grid grid-3">
-    <div class="card">
-      <h3>1) RootCall picks up</h3>
-      <p>Unknown or suspicious calls go to RootCall first. Our AI politely identifies the caller and the reason for the call.</p>
-      <ul class="list">
-        <li><span class="tick">•</span> Human vs. bot & spoof checks</li>
-        <li><span class="tick">•</span> Bank/IRS/utility "claims" challenged</li>
-      </ul>
-    </div>
-    <div class="card">
-      <h3>2) Screens & verifies</h3>
-      <p>We cross-check risk signals in real-time. Scams are ended fast. Legitimate callers are verified.</p>
-      <ul class="list">
-        <li><span class="tick">•</span> Caller intent classification</li>
-        <li><span class="tick">•</span> Known-good whitelist honored</li>
-      </ul>
-    </div>
-    <div class="card">
-      <h3>3) You get only the good calls</h3>
-      <p>Verified callers are forwarded to your phone. You stay protected and in control.</p>
-      <ul class="list">
-        <li><span class="tick">•</span> Optional caregiver SMS alerts</li>
-        <li><span class="tick">•</span> Post-call summary for your records</li>
-      </ul>
-    </div>
-  </div>
-</section>
-
-<section class="container section" id="trust">
-  <div class="card">
-    <div class="proof"><span class="tick">✓</span> Designed for seniors & families</div>
-    <div class="proof"><span class="tick">✓</span> Works with your existing number</div>
-    <div class="proof"><span class="tick">✓</span> Secure by design — privacy first</div>
-  </div>
-</section>
-
-<section class="container section" id="pricing" aria-label="Pricing">
-  <h2 style="color:var(--green);margin:0 0 12px">Simple plans — priceless protection</h2>
-  <p style="color:var(--muted);margin-top:0">You're not buying minutes. You're buying peace of mind.</p>
-
-  <div class="grid grid-3 price-wrap">
-    <div class="price" aria-label="Essential plan">
-      <h4>Essential</h4>
-      <div class="amt">$39<span style="font-size:.9rem">/mo</span></div>
-      <p class="muted">Solo protection for one line</p>
-      <ul class="list">
-        <li><span class="tick">•</span> AI answers & screens</li>
-        <li><span class="tick">•</span> Spoof & scam blocking</li>
-        <li><span class="tick">•</span> Verified call forwarding</li>
-      </ul>
-      <div style="margin-top:14px"><button onclick="selectPlan('essential')" class="btn btn-primary" style="width:100%;justify-content:center">Start Essential</button></div>
-    </div>
-
-    <div class="price" style="border-color:#1c6b53" aria-label="Family plan">
-      <span class="ribbon">Most Popular</span>
-      <h4>Family</h4>
-      <div class="amt">$79<span style="font-size:.9rem">/mo</span></div>
-      <p class="muted">Protect up to 3 lines</p>
-      <ul class="list">
-        <li><span class="tick">•</span> Everything in Essential</li>
-        <li><span class="tick">•</span> Caregiver SMS alerts</li>
-        <li><span class="tick">•</span> Priority screening queue</li>
-      </ul>
-      <div style="margin-top:14px"><button onclick="selectPlan('family')" class="btn btn-primary" style="width:100%;justify-content:center">Secure My Family</button></div>
-    </div>
-
-    <div class="price" style="border-color:#0b3629" aria-label="Guardian plan">
-      <h4>Guardian</h4>
-      <div class="amt">$129<span style="font-size:.9rem">/mo</span></div>
-      <p class="muted">Maximum protection + white-glove setup</p>
-      <ul class="list">
-        <li><span class="tick">•</span> Dedicated onboarding</li>
-        <li><span class="tick">•</span> Expanded allow/deny lists</li>
-        <li><span class="tick">•</span> Priority support</li>
-      </ul>
-      <div style="margin-top:14px"><button onclick="selectPlan('guardian')" class="btn btn-primary" style="width:100%;justify-content:center">Get Guardian</button></div>
-    </div>
-  </div>
-</section>
-
-<section class="container section faq" id="faq">
-  <h2 style="color:var(--green);margin:0 0 10px">Frequently asked questions</h2>
-  <details>
-    <summary>Will this work with my current phone number?</summary>
-    <div style="margin-top:10px;color:var(--muted)">Yes. We use safe forwarding and screening. Known contacts can be whitelisted; unknown callers are screened first.</div>
-  </details>
-  <details>
-    <summary>What happens if a scammer calls?</summary>
-    <div style="margin-top:10px;color:var(--muted)">RootCall challenges them, detects risk, and hangs up. You never feel the pressure or urgency tactics.</div>
-  </details>
-  <details>
-    <summary>Can my caregiver receive alerts?</summary>
-    <div style="margin-top:10px;color:var(--muted)">Yes, Family and Guardian plans include optional SMS alerts with quick summaries.</div>
-  </details>
-  <details>
-    <summary>Is my data private?</summary>
-    <div style="margin-top:10px;color:var(--muted)">We only use call metadata to protect you. You control allow/deny lists and can opt out anytime.</div>
-  </details>
-</section>
-
-<!-- Signup Modal -->
-<div id="signup-modal" class="modal">
-  <div class="modal-content" style="position:relative">
-    <span class="close-modal" onclick="closeSignup()">&times;</span>
-    <h3>Get Protected with RootCall</h3>
-    <div id="modal-message" class="message"></div>
-    <form onsubmit="handleSignup(event)">
-      <div class="form-group">
-        <label>Full Name</label>
-        <input type="text" id="signup-name" required>
+  <header>
+    <div class="container nav">
+      <div class="logo" aria-label="RootCall logo">
+        <!-- Your PNG logo -->
+        <img src="rootcall-logo.png" alt="RootCall Logo" style="height:50px;">
       </div>
-      <div class="form-group">
-        <label>Email</label>
-        <input type="email" id="signup-email" required>
+      <!-- Moved nav a bit to the right to give logo space -->
+      <nav class="hide-sm" aria-label="Main navigation" style="margin-left:40px">
+        <a href="#how" class="hide-sm" style="margin-right:18px">How it works</a>
+        <a href="#pricing" class="hide-sm" style="margin-right:18px">Pricing</a>
+        <a href="#faq" class="hide-sm" style="margin-right:18px">FAQ</a>
+      </nav>
+      <a href="/static/login.html" class="btn btn-primary cta">Sign In</a>
+    </div>
+  </header>
+
+  <section class="container hero" id="top">
+    <div>
+      <span class="badge">Your AI Call Shield</span>
+      <h1>Stop phone scams at the gate.<br/>RootCall answers, screens and protects.</h1>
+      <p><strong>Billions are lost every year to spoof calls and fraud.</strong> RootCall picks up first, verifies the caller, and only then forwards to you — or hangs up on scammers instantly.</p>
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <a href="#" onclick="openSignup(event)" class="btn btn-primary">Get Protected Now</a>
+        <a href="#how" class="btn btn-ghost">See how it works</a>
       </div>
-      <div class="form-group">
-        <label>Password</label>
-        <input type="password" id="signup-password" required minlength="6">
+      <div class="stat">
+        <span class="bar" style="width:160px"></span>
+        <span><strong>Peace-of-Mind Guarantee</strong> — cancel anytime.</span>
       </div>
-      <div class="form-group">
-        <label>Select Plan</label>
-        <select id="signup-plan" required>
-          <option value="">Choose your plan...</option>
-          <option value="essential">Essential - $39/mo</option>
-          <option value="family">Family - $
-```
+    </div>
+    <div class="hero-card" role="group" aria-label="Highlights">
+      <div class="stat"><span class="tick">✓</span> Answers unknown calls for you</div>
+      <div class="stat"><span class="tick">✓</span> Blocks spoofed & high-risk callers</div>
+      <div class="stat"><span class="tick">✓</span> Forwards only verified callers</div>
+      <div class="stat"><span class="tick">✓</span> Works with your current number</div>
+      <div class="stat"><span class="tick">✓</span> Caregiver alerts & call summaries</div>
+    </div>
+  </section>
+
+  <section class="container section" id="why">
+    <div class="card" style="display:flex;align-items:center;gap:18px">
+      <div style="width:10px;height:48px;background:var(--green);border-radius:6px"></div>
+      <p style="margin:0;font-size:1.05rem;color:var(--muted)">
+        <strong>Last year, seniors lost billions to phone scams.</strong> The trick of a scam is convincing you it's not a scam. RootCall removes that moment of pressure by answering first and filtering risk before it ever reaches you.
+      </p>
+    </div>
+  </section>
+
+  <section class="container section" id="how">
+    <h2 style="color:var(--green);margin:0 0 14px">How RootCall protects you</h2>
+    <div class="grid grid-3">
+      <div class="card">
+        <h3>1) RootCall picks up</h3>
+        <p>Unknown or suspicious calls go to RootCall first. Our AI politely identifies the caller and the reason for the call.</p>
+        <ul class="list">
+          <li><span class="tick">•</span> Human vs. bot & spoof checks</li>
+          <li><span class="tick">•</span> Bank/IRS/utility "claims" challenged</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>2) Screens & verifies</h3>
+        <p>We cross-check risk signals in real-time. Scams are ended fast. Legitimate callers are verified.</p>
+        <ul class="list">
+          <li><span class="tick">•</span> Caller intent classification</li>
+          <li><span class="tick">•</span> Known-good whitelist honored</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>3) You get only the good calls</h3>
+        <p>Verified callers are forwarded to your phone. You stay protected and in control.</p>
+        <ul class="list">
+          <li><span class="tick">•</span> Optional caregiver SMS alerts</li>
+          <li><span class="tick">•</span> Post-call summary for your records</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="container section" id="trust">
+    <div class="card">
+      <div class="proof"><span class="tick">✓</span> Designed for seniors & families</div>
+      <div class="proof"><span class="tick">✓</span> Works with your existing number</div>
+      <div class="proof"><span class="tick">✓</span> Secure by design — privacy first</div>
+    </div>
+  </section>
+
+  <section class="container section" id="pricing" aria-label="Pricing">
+    <h2 style="color:var(--green);margin:0 0 12px">Simple plans — priceless protection</h2>
+    <p style="color:var(--muted);margin-top:0">You're not buying minutes. You're buying peace of mind.</p>
+
+    <div class="grid grid-3 price-wrap">
+      <div class="price" aria-label="Essential plan">
+        <h4>Essential</h4>
+        <div class="amt">$39<span style="font-size:.9rem">/mo</span></div>
+        <p class="muted">Solo protection for one line</p>
+        <ul class="list">
+          <li><span class="tick">•</span> AI answers & screens</li>
+          <li><span class="tick">•</span> Spoof & scam blocking</li>
+          <li><span class="tick">•</span> Verified call forwarding</li>
+        </ul>
+        <div style="margin-top:14px">
+          <button onclick="selectPlan('essential')" class="btn btn-primary" style="width:100%;justify-content:center">
+            Start Essential
+          </button>
+        </div>
+      </div>
+
+      <div class="price" style="border-color:#1c6b53" aria-label="Family plan">
+        <span class="ribbon">Most Popular</span>
+        <h4>Family</h4>
+        <div class="amt">$79<span style="font-size:.9rem">/mo</span></div>
+        <p class="muted">Protect up to 3 lines</p>
+        <ul class="list">
+          <li><span class="tick">•</span> Everything in Essential</li>
+          <li><span class="tick">•</span> Caregiver SMS alerts</li>
+          <li><span class="tick">•</span> Priority screening queue</li>
+        </ul>
+        <div style="margin-top:14px">
+          <button onclick="selectPlan('family')" class="btn btn-primary" style="width:100%;justify-content:center">
+            Secure My Family
+          </button>
+        </div>
+      </div>
+
+      <div class="price" style="border-color:#0b3629" aria-label="Guardian plan">
+        <h4>Guardian</h4>
+        <div class="amt">$129<span style="font-size:.9rem">/mo</span></div>
+        <p class="muted">Maximum protection + white-glove setup</p>
+        <ul class="list">
+          <li><span class="tick">•</span> Dedicated onboarding</li>
+          <li><span class="tick">•</span> Expanded allow/deny lists</li>
+          <li><span class="tick">•</span> Priority support</li>
+        </ul>
+        <div style="margin-top:14px">
+          <button onclick="selectPlan('guardian')" class="btn btn-primary" style="width:100%;justify-content:center">
+            Get Guardian
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="container section faq" id="faq">
+    <h2 style="color:var(--green);margin:0 0 10px">Frequently asked questions</h2>
+    <details>
+      <summary>Will this work with my current phone number?</summary>
+      <div style="margin-top:10px;color:var(--muted)">
+        Yes. We use safe forwarding and screening. Known contacts can be whitelisted; unknown callers are screened first.
+      </div>
+    </details>
+    <details>
+      <summary>What happens if a scammer calls?</summary>
+      <div style="margin-top:10px;color:var(--muted)">
+        RootCall challenges them, detects risk, and hangs up. You never feel the pressure or urgency tactics.
+      </div>
+    </details>
+    <details>
+      <summary>Can my caregiver receive alerts?</summary>
+      <div style="margin-top:10px;color:var(--muted)">
+        Yes, Family and Guardian plans include optional SMS alerts with quick summaries.
+      </div>
+    </details>
+    <details>
+      <summary>Is my data private?</summary>
+      <div style="margin-top:10px;color:var(--muted)">
+        We only use call metadata to protect you. You control allow/deny lists and can opt out anytime.
+      </div>
+    </details>
+  </section>
+
+  <!-- Signup Modal -->
+  <div id="signup-modal" class="modal">
+    <div class="modal-content" style="position:relative">
+      <span class="close-modal" onclick="closeSignup()">&times;</span>
+      <h3>Get Protected with RootCall</h3>
+      <div id="modal-message" class="message"></div>
+      <form onsubmit="handleSignup(event)">
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" id="signup-name" required>
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="signup-email" required>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="signup-password" required minlength="6">
+        </div>
+        <div class="form-group">
+          <label>Select Plan</label>
+          <select id="signup-plan" required>
+            <option value="">Choose your plan...</option>
+            <option value="essential">Essential - $39/mo</option>
+            <option value="family">Family - $79/mo (Most Popular)</option>
+            <option value="guardian">Guardian - $129/mo</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">
+          Create Account &amp; Subscribe
+        </button>
+      </form>
+      <p style="text-align:center;margin-top:15px;color:var(--muted);font-size:14px">
+        Already have an account?
+        <a href="/static/login.html" style="color:var(--green);font-weight:700">Sign in</a>
+      </p>
+    </div>
+  </div>
+
+  <footer>
+    <div class="container foot">
+      <div class="logo" style="opacity:.9">
+        <img src="rootcall-logo.png" alt="RootCall Logo" style="height:40px;">
+        <span>ROOTCALL</span>
+      </div>
+      <div>
+        © <span id="y"></span> RootCall. Peace-of-Mind Guarantee.
+        &nbsp;|&nbsp;
+        Contact: <a href="mailto:info@getrootcall.com">info@getrootcall.com</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    const API = 'https://rootcall.onrender.com';
+    document.getElementById('y').textContent = new Date().getFullYear();
+
+    function openSignup(e) {
+      if (e) e.preventDefault();
+      document.getElementById('signup-modal').classList.add('active');
+    }
+
+    function closeSignup() {
+      document.getElementById('signup-modal').classList.remove('active');
+    }
+
+    function selectPlan(plan) {
+      document.getElementById('signup-plan').value = plan;
+      openSignup();
+    }
+
+    function showMessage(text, isError = false) {
+      const msg = document.getElementById('modal-message');
+      msg.textContent = text;
+      msg.className = 'message ' + (isError ? 'error' : 'success');
+      msg.style.display = 'block';
+    }
+
+    async function handleSignup(e) {
+      e.preventDefault();
+      
+      const name = document.getElementById('signup-name').value;
+      const email = document.getElementById('signup-email').value;
+      const password = document.getElementById('signup-password').value;
+      const plan = document.getElementById('signup-plan').value;
+
+      try {
+        // Create account
+        const signupResponse = await fetch(API + '/api/auth/signup', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            full_name: name,
+            email: email,
+            password: password
+          })
+        });
+
+        const signupData = await signupResponse.json();
+        
+        if (!signupResponse.ok) {
+          showMessage(signupData.detail || 'Signup failed', true);
+          return;
+        }
+
+        // Store user data
+        localStorage.setItem('token', signupData.access_token);
+        localStorage.setItem('user', JSON.stringify(signupData.user));
+        localStorage.setItem('selected_plan', plan);
+
+        showMessage('Account created! Redirecting to payment...');
+        
+        // Redirect to Stripe checkout
+        setTimeout(async () => {
+          try {
+            const checkoutResponse = await fetch(API + '/api/payments/create-checkout', {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify({
+                tier: plan,
+                user_id: signupData.user.id
+              })
+            });
+
+            const checkoutData = await checkoutResponse.json();
+            
+            if (checkoutResponse.ok) {
+              window.location.href = checkoutData.checkout_url;
+            } else {
+              showMessage('Payment setup failed: ' + (checkoutData.detail || 'Unknown error'), true);
+            }
+          } catch (err) {
+            showMessage('Error: ' + err.message, true);
+          }
+        }, 1500);
+
+      } catch (err) {
+        showMessage('Error: ' + err.message, true);
+      }
+    }
+
+    // Smooth scroll for internal links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        if (this.getAttribute('href') !== '#') {
+          e.preventDefault();
+          const target = document.querySelector(this.getAttribute('href'));
+          if (target) {
+            target.scrollIntoView({ behavior: 'smooth' });
+          }
+        }
+      });
+    });
+  </script>
+</body>
+</html>

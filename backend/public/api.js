@@ -1,5 +1,6 @@
 export async function provisionTelnyxNumber(phone) {
-  const response = await fetch("https://rootcall.onrender.com/api/rootcall/provision", {
+  const response = fetch("/api/rootcall/provision", ...
+ {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

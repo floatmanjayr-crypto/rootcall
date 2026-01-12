@@ -372,9 +372,10 @@
     // ============================================
     // 🌍 API Configuration - Points to Render Backend
     // ============================================
-    const API_BASE_URL = 'https://rootcall.onrender.com';
-    
-    document.getElementById('year').textContent = new Date().getFullYear();
+    const API_BASE_URL = const API_BASE_URL = window.location.origin;
+
+
+     document.getElementById('year').textContent = new Date().getFullYear();
 
     const messageBox = document.getElementById('login-message');
     const loginBtn = document.getElementById('login-btn');

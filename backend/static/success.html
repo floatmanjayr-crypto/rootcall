@@ -132,17 +132,18 @@
     </div>
     
     <div id="actions" style="display:none">
-      <a href="https://rootcall.onrender.com/static/client-portal.html" class="btn btn-primary">
-        <strong>🚀 Go to Dashboard</strong>
-      </a>
-      <a href="https://rootcall.onrender.com/static/login.html" class="btn">
-        <strong>🔐 Sign In</strong>
-      </a>
-    </div>
-  </div>
+  <a href="/static/client-portal.html" class="btn btn-primary">
+    <strong>🚀 Go to Dashboard</strong>
+  </a>
+
+  <a href="/static/login.html" class="btn">
+    <strong>🔐 Sign In</strong>
+  </a>
+</div>
+
   
   <script>
-    const API = 'https://rootcall.onrender.com';
+    const API = window.location.origin;
     
     async function simulateProvisioning() {
       const steps = ['step1', 'step2', 'step3', 'step4'];

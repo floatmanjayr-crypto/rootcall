@@ -102,7 +102,6 @@
       box-shadow:none;
     }
 
-    /* Main layout */
     .main{
       flex:1;
       display:flex;
@@ -164,7 +163,6 @@
       margin-top:1px;
     }
 
-    /* Card */
     .card{
       background:#fff;
       border-radius:var(--radius);
@@ -182,9 +180,7 @@
       font-size:.95rem;
       color:var(--muted);
     }
-    .field{
-      margin-bottom:16px;
-    }
+    .field{ margin-bottom:16px; }
     .field label{
       display:block;
       font-size:.82rem;
@@ -269,28 +265,18 @@
     }
 
     @media (max-width:900px){
-      .shell{
-        grid-template-columns:1fr;
-        max-width:480px;
-      }
-      .promo{
-        order:-1;
-        text-align:left;
-      }
+      .shell{ grid-template-columns:1fr; max-width:480px; }
+      .promo{ order:-1; text-align:left; }
     }
     @media (max-width:640px){
       .nav{padding:10px 16px}
       .main{padding:24px 12px 32px}
-      .foot{
-        flex-direction:column;
-        align-items:flex-start;
-      }
+      .foot{flex-direction:column;align-items:flex-start}
     }
   </style>
 </head>
 <body>
   <div class="page">
-    <!-- Header matching landing -->
     <header>
       <div class="nav">
         <div class="logo">
@@ -306,10 +292,8 @@
       </div>
     </header>
 
-    <!-- Main content -->
     <main class="main">
       <div class="shell">
-        <!-- Left side promo (like landing copy) -->
         <section class="promo" aria-label="RootCall benefits">
           <span class="badge">Sign in to your shield</span>
           <h1 class="promo-title">Manage your RootCall protection.</h1>
@@ -323,7 +307,6 @@
           </ul>
         </section>
 
-        <!-- Right side login card -->
         <section class="card" aria-label="Sign in form">
           <h1>Sign in to RootCall</h1>
           <p>Enter your email and password to access your dashboard.</p>
@@ -342,12 +325,10 @@
 
             <div class="helper-row">
               <span></span>
-              <a href="/">Need a plan? Go to homepage</a>
+              <a href="/" id="plan-link">Need a plan? Go to homepage</a>
             </div>
 
-            <button type="button" id="login-btn" class="btn btn-primary">
-              Sign In
-            </button>
+            <button type="button" id="login-btn" class="btn btn-primary">Sign In</button>
           </form>
 
           <div class="small-note">
@@ -369,13 +350,19 @@
   </div>
 
   <script>
-    // ============================================
-    // 🌍 API Configuration - Points to Render Backend
-    // ============================================
-    const API_BASE_URL = const API_BASE_URL = window.location.origin;
+    /**
+     * ✅ IMPORTANT:
+     * Hostinger may serve this login page, but the API + dashboard are on App Runner.
+     * So we call App Runner and redirect to App Runner static portal.
+     */
+    const APP_RUNNER_BASE = 'https://wajw72dmej.us-east-1.awsapprunner.com';
+    const API_BASE_URL = APP_RUNNER_BASE; // backend is same origin as App Runner
 
+    document.getElementById('year').textContent = new Date().getFullYear();
 
-     document.getElementById('year').textContent = new Date().getFullYear();
+    // Make "Need a plan?" point to App Runner homepage (optional)
+    const planLink = document.getElementById('plan-link');
+    if (planLink) planLink.href = APP_RUNNER_BASE + '/';
 
     const messageBox = document.getElementById('login-message');
     const loginBtn = document.getElementById('login-btn');
@@ -407,82 +394,54 @@
         body.append('username', email);
         body.append('password', password);
 
-        console.log('🔐 Attempting login with email:', email);
-        console.log('🌍 API endpoint:', `${API_BASE_URL}/api/auth/login`);
-
         const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
           body: body.toString()
         });
 
-        console.log('📡 Response status:', res.status);
-
-        // ✅ FIX: Read response body ONCE as text first
         const responseText = await res.text();
-        console.log('📦 Raw response:', responseText);
 
-        // Try to parse as JSON
         let data;
         try {
           data = JSON.parse(responseText);
-          console.log('✅ Parsed data:', data);
         } catch (e) {
-          console.error('❌ Could not parse JSON:', e);
-          throw new Error('Invalid server response: ' + responseText.substring(0, 100));
+          throw new Error('Invalid server response: ' + responseText.substring(0, 120));
         }
 
         if (!res.ok) {
           const errorMsg = data.detail || data.message || `Login failed (${res.status})`;
-          console.error('❌ Login error:', errorMsg);
           showMessage(errorMsg, 'error');
           return;
         }
 
-        // Success!
-        console.log('✅ Login successful');
-        
-        if (data.access_token) {
-          localStorage.setItem('access_token', data.access_token);
-        }
-        if (data.user) {
-          localStorage.setItem('user', JSON.stringify(data.user));
-        }
+        // store token + user
+        if (data.access_token) localStorage.setItem('access_token', data.access_token);
+        if (data.user) localStorage.setItem('user', JSON.stringify(data.user));
 
         showMessage('Login successful! Redirecting...', 'success');
 
+        // ✅ redirect to App Runner portal (not Hostinger)
         setTimeout(() => {
-          window.location.href = '/client-portal.html';
-        }, 800);
+          window.location.href = `${APP_RUNNER_BASE}/static/client-portal.html`;
+        }, 600);
 
       } catch (err) {
-        console.error('💥 Error:', err);
         showMessage(err.message || 'Network error. Please try again.', 'error');
       } finally {
-        // ✅ FIX: Always re-enable button in finally block
         loginBtn.disabled = false;
         loginBtn.textContent = 'Sign In';
       }
     }
 
-    // Click handler
     loginBtn.addEventListener('click', handleLogin);
+    emailInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLogin(); });
+    passwordInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLogin(); });
 
-    // Enter key handler
-    emailInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') handleLogin();
-    });
-    passwordInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') handleLogin();
-    });
-
-    // Check if already logged in
+    // If already logged in, go straight to App Runner portal
     const existingToken = localStorage.getItem('access_token');
     if (existingToken) {
-      console.log('🔑 Already logged in, redirecting...');
-      window.location.href = '/client-portal.html';
+      window.location.href = `${APP_RUNNER_BASE}/static/client-portal.html`;
     }
   </script>
 </body>

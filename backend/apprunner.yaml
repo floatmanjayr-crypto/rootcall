@@ -8,6 +8,6 @@ build:
       - python3 -m pip install -r requirements.txt
 
 run:
-  command: sh -c "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080}"
+  command: uvicorn app.main:app --host 0.0.0.0 --port $PORT
   network:
     port: 8080

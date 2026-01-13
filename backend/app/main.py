@@ -80,3 +80,12 @@ async def health():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+from fastapi.responses import RedirectResponse
+
+@app.get("/login.html", include_in_schema=False)
+def login_redirect():
+    return RedirectResponse(url="/static/login.html")
+
+@app.get("/client-portal.html", include_in_schema=False)
+def portal_redirect():
+    return RedirectResponse(url="/static/client-portal.html")

@@ -25,7 +25,6 @@ from app.routers import agent_templates
 from app.routers.rootcall_screen import router as rootcall_screen_router
 
 # Create database tables
-Base.metadata.create_all(bind=engine)
 
 # Initialize FastAPI
 app = FastAPI(

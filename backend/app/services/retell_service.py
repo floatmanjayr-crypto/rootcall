@@ -299,4 +299,10 @@ class RetellService:
         return result
 
 # Global singleton for legacy imports
-retell_service = RetellService()
+retell_service = None
+
+def get_retell_service():
+    global retell_service
+    if retell_service is None:
+        retell_service = RetellService()
+    return retell_service

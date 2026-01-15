@@ -3,718 +3,1831 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RootCall Call Shield - Your Protection Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>RootCall - AI Scam Screening Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-        
-        .gradient-hero { 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            position: relative;
-            overflow: hidden;
+        :root {
+            --green: #0d3d2f;
+            --ivory: #f9f6f3;
+            --light-green: #e8f5e9;
+            --accent: #2d7a5f;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --success: #10b981;
         }
         
-        .gradient-hero::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-            animation: pulse 15s ease-in-out infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-        }
-        
-        .stat-card {
-            transition: all 0.3s ease;
-        }
-        
-        .stat-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-        }
-        
-        .scam-alert {
-            animation: slideIn 0.5s ease-out;
-        }
-        
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateX(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-        
-        .pricing-card {
-            transition: all 0.3s ease;
-            border: 3px solid transparent;
-        }
-        
-        .pricing-card:hover {
-            transform: scale(1.05);
-            border-color: #667eea;
-        }
-        
-        .feature-check {
-            animation: checkPop 0.3s ease-out;
-        }
-        
-        @keyframes checkPop {
-            0% { transform: scale(0); }
-            50% { transform: scale(1.2); }
-            100% { transform: scale(1); }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--ivory);
+            color: #1a1a1a;
+            margin: 0;
+            padding: 0;
         }
 
-        .sticky-nav {
+        .sidebar {
+            background: linear-gradient(180deg, #ffffff 0%, #fafafa 100%);
+            width: 280px;
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            border-right: 1px solid #e5e5e5;
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+            transition: transform 0.3s ease;
+            box-shadow: 2px 0 8px rgba(0,0,0,0.03);
+        }
+
+        .sidebar-header {
+            padding: 1rem 1rem;
+            border-bottom: 1px solid #e5e5e5;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fffe 100%);
+        }
+
+        .logo-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logo-img {
+            width: 150px;
+            height: auto;
+            filter: drop-shadow(0 2px 4px rgba(13, 61, 47, 0.1));
+            transition: transform 0.3s ease;
+        }
+
+        .logo-img:hover {
+            transform: scale(1.02);
+        }
+
+        .tagline {
+            font-size: 0.65rem;
+            color: var(--green);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            padding: 0.3rem 0.65rem;
+            background: linear-gradient(135deg, var(--light-green) 0%, #d4f4dd 100%);
+            border-radius: 12px;
+            border: 1px solid rgba(13, 61, 47, 0.15);
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 1.5rem 0;
+            overflow-y: auto;
+        }
+
+        .nav-item {
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            position: relative;
+        }
+
+        .nav-item:hover {
+            background: var(--ivory);
+            color: var(--green);
+        }
+
+        .nav-item.active {
+            background: var(--light-green);
+            color: var(--green);
+            border-right: 3px solid var(--green);
+            font-weight: 600;
+        }
+
+        .nav-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 4px;
+            height: 60%;
+            background: var(--green);
+            border-radius: 0 4px 4px 0;
+        }
+
+        .main-content {
+            margin-left: 280px;
+            min-height: 100vh;
+        }
+
+        .top-bar {
+            background: white;
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid #e5e5e5;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             position: sticky;
             top: 0;
             z-index: 50;
-            backdrop-filter: blur(10px);
-            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
 
-        .section-divider {
-            height: 4px;
-            background: linear-gradient(90deg, transparent, #667eea, transparent);
-            margin: 4rem 0;
+        .content-area {
+            padding: 2rem;
+            max-width: 1600px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .card:hover {
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+            transform: translateY(-2px);
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.75rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            border-left: 5px solid var(--green);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+            transform: translateY(-4px);
+        }
+
+        .stat-number {
+            font-size: 2.75rem;
+            font-weight: 900;
+            color: var(--green);
+            margin: 0.5rem 0;
+            letter-spacing: -1px;
+        }
+
+        .fraud-alert-card {
+            background: linear-gradient(135deg, #fff5f5 0%, #ffe5e5 100%);
+            border-left: 5px solid var(--danger);
+            padding: 1.25rem;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .fraud-alert-card:hover {
+            transform: translateX(4px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+        }
+
+        .trending-badge {
+            background: var(--danger);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--green) 0%, var(--accent) 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(13, 61, 47, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(13, 61, 47, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 24px;
+            max-width: 900px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .modal-backdrop {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        select {
+            width: 100%;
+            padding: 1.25rem;
+            border: 3px solid #e5e5e5;
+            border-radius: 12px;
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: var(--green);
+            cursor: pointer;
+            background: white;
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
+        }
+
+        select:hover {
+            border-color: var(--accent);
+        }
+
+        select:focus {
+            outline: none;
+            border-color: var(--green);
+            box-shadow: 0 0 0 4px rgba(13, 61, 47, 0.1);
+            background: var(--light-green);
+        }
+
+        select option {
+            padding: 1rem;
+            font-weight: 600;
+        }
+
+        .number-card {
+            padding: 1.5rem;
+            border: 3px solid #e5e5e5;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .number-card:hover {
+            border-color: var(--accent);
+            transform: translateX(4px);
+            box-shadow: 0 4px 12px rgba(45, 122, 95, 0.2);
+        }
+
+        .number-card.selected {
+            background: linear-gradient(135deg, var(--light-green) 0%, #c6f6d5 100%);
+            border-color: var(--green);
+            border-width: 4px;
+            box-shadow: 0 8px 20px rgba(13, 61, 47, 0.2);
+        }
+
+        .number-card.selected .number-text {
+            color: var(--green);
+            font-weight: 900;
+        }
+
+        .number-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .number-text {
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            color: #1a1a1a;
+        }
+
+        .number-location {
+            font-size: 0.85rem;
+            color: #666;
+            font-weight: 600;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 1rem 1.5rem;
+            border: 2px solid #e5e5e5;
+            border-radius: 12px;
+            font-size: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--green);
+            box-shadow: 0 0 0 4px rgba(13, 61, 47, 0.1);
+        }
+
+        .numbers-grid {
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+        }
+
+        .numbers-grid::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .numbers-grid::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .numbers-grid::-webkit-scrollbar-thumb {
+            background: var(--accent);
+            border-radius: 10px;
+        }
+
+        .numbers-grid::-webkit-scrollbar-thumb:hover {
+            background: var(--green);
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--green);
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .page-content {
+            display: none;
+        }
+
+        .page-content.active {
+            display: block;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 2px solid #10b981;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 2px solid #ef4444;
+        }
+
+        input[type="text"],
+        input[type="tel"] {
+            width: 100%;
+            padding: 0.875rem 1.25rem;
+            border: 2px solid #e5e5e5;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--green);
+            box-shadow: 0 0 0 4px rgba(13, 61, 47, 0.1);
+        }
+
+        .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; }
+
+        .mobile-menu-btn {
+            display: none;
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            z-index: 150;
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 12px;
+            padding: 0.75rem;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        @media (max-width: 1024px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { margin-left: 0; }
+            .grid-4, .grid-3 { grid-template-columns: repeat(2, 1fr); }
+            .grid-2 { grid-template-columns: 1fr; }
+            .mobile-menu-btn { display: block; }
+        }
+
+        @media (max-width: 640px) {
+            .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: white;
+            padding: 1.25rem 1.75rem;
+            border-radius: 16px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            z-index: 2000;
+            animation: slideIn 0.3s ease;
+            border-left: 4px solid var(--success);
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(400px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            backdrop-filter: blur(4px);
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .protection-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: #d1fae5;
+            color: #065f46;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .protection-status::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+            animation: blink 2s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .info-badge {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            color: #1e40af;
+            padding: 0.75rem 1rem;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-top: 1rem;
+            border: 1px solid #93c5fd;
+        }
+
+        .step-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            justify-content: center;
+        }
+
+        .step-dot {
+            width: 10px;
+            height: 10px;
+            background: #d1d5db;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .step-dot.active {
+            background: var(--green);
+            width: 32px;
+            border-radius: 5px;
+        }
+
+        .step-dot.completed {
+            background: var(--success);
+        }
+
+        .scam-shield-badge {
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.75rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
         }
     </style>
 </head>
-<body class="bg-gray-50">
+<body>
+    <button class="mobile-menu-btn" onclick="toggleSidebar()">
+        <i class="fas fa-bars" style="font-size: 1.5rem; color: var(--green);"></i>
+    </button>
 
-    <!-- Sticky Navigation -->
-    <nav class="sticky-nav shadow-lg">
-        <div class="container mx-auto px-6 py-4">
-            <div class="flex justify-between items-center">
-                <div class="flex items-center gap-3">
-                    <div class="w-12 h-12 bg-gradient-to-br from-purple-600 to-blue-600 rounded-full flex items-center justify-center">
-                        <i class="fas fa-shield-alt text-white text-xl"></i>
+    <div id="loading-overlay" class="loading-overlay">
+        <div style="text-align: center;">
+            <div class="spinner"></div>
+            <p style="margin-top: 1.5rem; color: var(--green); font-weight: 600;">Loading...</p>
+        </div>
+    </div>
+
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo-container">
+                <img src="rootcall-logo.png" alt="RootCall Logo" class="logo-img">
+                <span class="tagline">AI Scam Call Shield</span>
+            </div>
+        </div>
+
+        <div class="sidebar-nav">
+            <div class="nav-item active" onclick="showPage('dashboard', event)">
+                <i class="fas fa-home"></i>
+                <span>Dashboard</span>
+            </div>
+            <div class="nav-item" onclick="showPage('numbers', event)">
+                <i class="fas fa-phone-alt"></i>
+                <span>Shield Numbers</span>
+            </div>
+            <div class="nav-item" onclick="showPage('contacts', event)">
+                <i class="fas fa-user-shield"></i>
+                <span>Trusted Contacts</span>
+            </div>
+            <div class="nav-item" onclick="showPage('activity', event)">
+                <i class="fas fa-history"></i>
+                <span>Call Activity</span>
+            </div>
+            <div class="nav-item" onclick="showPage('settings', event)">
+                <i class="fas fa-cog"></i>
+                <span>Settings</span>
+            </div>
+        </div>
+
+        <div style="padding: 1.5rem; border-top: 1px solid #e5e5e5;">
+            <button onclick="logout()" class="btn btn-primary" style="width: 100%; justify-content: center;">
+                <i class="fas fa-sign-out-alt"></i>
+                Logout
+            </button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="top-bar">
+            <div>
+                <h1 style="font-size: 1.75rem; font-weight: 800; color: var(--green); margin-bottom: 0.25rem;">
+                    Welcome, <span id="user-name">User</span> 👋
+                </h1>
+                <div class="protection-status">
+                    <span>AI Scam Protection Active 24/7</span>
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <span class="scam-shield-badge">
+                    <i class="fas fa-ban"></i>
+                    SCAM SHIELD
+                </span>
+            </div>
+        </div>
+
+        <div id="page-dashboard" class="page-content active">
+            <div class="content-area">
+                <div class="grid-4" style="margin-bottom: 2rem;">
+                    <div class="stat-card">
+                        <i class="fas fa-ban" style="color: var(--danger); font-size: 1.75rem;"></i>
+                        <div class="stat-number" id="spam-blocked">0</div>
+                        <div style="color: #666; font-size: 0.9rem; font-weight: 600;">Scams Blocked</div>
                     </div>
+                    <div class="stat-card">
+                        <i class="fas fa-shield-check" style="color: var(--success); font-size: 1.75rem;"></i>
+                        <div class="stat-number" id="calls-screened">0</div>
+                        <div style="color: #666; font-size: 0.9rem; font-weight: 600;">Calls Screened</div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-user-check" style="color: #3b82f6; font-size: 1.75rem;"></i>
+                        <div class="stat-number" id="trusted-connected">0</div>
+                        <div style="color: #666; font-size: 0.9rem; font-weight: 600;">Trusted Connected</div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-robot" style="color: #8b5cf6; font-size: 1.75rem;"></i>
+                        <div class="stat-number">AI</div>
+                        <div style="color: #666; font-size: 0.9rem; font-weight: 600;">Powered Screening</div>
+                    </div>
+                </div>
+
+                <div class="grid-3" style="grid-template-columns: 2fr 1fr;">
                     <div>
-                        <h1 class="text-2xl font-bold text-gray-800">RootCall Call Shield</h1>
-                        <p class="text-xs text-gray-600">AI-Powered Protection</p>
-                    </div>
-                </div>
-                <div class="flex items-center gap-4">
-                    <a href="#threats" class="text-gray-700 hover:text-purple-600 transition">Threats</a>
-                    <a href="#protection" class="text-gray-700 hover:text-purple-600 transition">Protection</a>
-                    <a href="#pricing" class="text-gray-700 hover:text-purple-600 transition">Pricing</a>
-                    <div class="flex items-center gap-3 ml-6">
-                        <span id="user-name" class="text-gray-700 font-semibold"></span>
-                        <a href="/static/shield-pricing.html" class="px-5 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-full hover:shadow-lg transition font-semibold">
-                            Upgrade Now
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Hero Section with Live Stats -->
-    <section class="gradient-hero text-white py-16 relative">
-        <div class="container mx-auto px-6 relative z-10">
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-                <div>
-                    <h2 class="text-5xl font-black mb-4 leading-tight">
-                        Your Protection is <span class="text-yellow-300">Active</span>
-                    </h2>
-                    <p class="text-xl text-purple-100 mb-8">
-                        We've blocked <span id="total-threats" class="text-3xl font-bold text-yellow-300">0</span> threats for you this month
-                    </p>
-                    <div class="flex gap-4">
-                        <a href="#scams" class="px-8 py-4 bg-white text-purple-600 rounded-full font-bold hover:bg-yellow-300 hover:text-purple-900 transition shadow-xl">
-                            See Latest Scams
-                        </a>
-                        <a href="#protection" class="px-8 py-4 bg-purple-800 bg-opacity-50 backdrop-blur text-white rounded-full font-bold hover:bg-opacity-70 transition">
-                            My Protection
-                        </a>
-                    </div>
-                </div>
-                
-                <!-- Live Protection Stats -->
-                <div class="grid grid-cols-2 gap-6">
-                    <div class="bg-white bg-opacity-20 backdrop-blur-lg rounded-2xl p-6 stat-card">
-                        <div class="text-yellow-300 text-4xl mb-2">
-                            <i class="fas fa-ban"></i>
-                        </div>
-                        <div class="text-4xl font-bold mb-1" id="spam-blocked">0</div>
-                        <div class="text-purple-200 font-medium">Spam Blocked</div>
-                    </div>
-                    
-                    <div class="bg-white bg-opacity-20 backdrop-blur-lg rounded-2xl p-6 stat-card">
-                        <div class="text-green-300 text-4xl mb-2">
-                            <i class="fas fa-shield-check"></i>
-                        </div>
-                        <div class="text-4xl font-bold mb-1" id="calls-screened">0</div>
-                        <div class="text-purple-200 font-medium">Calls Screened</div>
-                    </div>
-                    
-                    <div class="bg-white bg-opacity-20 backdrop-blur-lg rounded-2xl p-6 stat-card">
-                        <div class="text-blue-300 text-4xl mb-2">
-                            <i class="fas fa-user-check"></i>
-                        </div>
-                        <div class="text-4xl font-bold mb-1" id="trusted-connected">0</div>
-                        <div class="text-purple-200 font-medium">Trusted Connected</div>
-                    </div>
-                    
-                    <div class="bg-white bg-opacity-20 backdrop-blur-lg rounded-2xl p-6 stat-card">
-                        <div class="text-pink-300 text-4xl mb-2">
-                            <i class="fas fa-clock"></i>
-                        </div>
-                        <div class="text-4xl font-bold mb-1">24/7</div>
-                        <div class="text-purple-200 font-medium">Active Protection</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <div class="container mx-auto px-6">
-
-        <!-- Current Scam Alerts Section -->
-        <section id="scams" class="py-16">
-            <div class="text-center mb-12">
-                <div class="inline-block px-4 py-2 bg-red-100 text-red-600 rounded-full font-semibold mb-4">
-                    <i class="fas fa-exclamation-triangle mr-2"></i>ACTIVE THREATS
-                </div>
-                <h2 class="text-4xl font-black text-gray-900 mb-4">
-                    Scams Targeting Your Area Right Now
-                </h2>
-                <p class="text-xl text-gray-600">
-                    Stay informed. Stay protected. We monitor these 24/7.
-                </p>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- Scam Alert Cards -->
-                <div class="scam-alert bg-white rounded-xl shadow-lg overflow-hidden border-l-4 border-red-500">
-                    <div class="p-6">
-                        <div class="flex items-start justify-between mb-4">
-                            <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-                                <i class="fas fa-user-secret text-red-600 text-xl"></i>
-                            </div>
-                            <span class="px-3 py-1 bg-red-100 text-red-600 text-xs font-bold rounded-full">CRITICAL</span>
-                        </div>
-                        <h3 class="text-xl font-bold text-gray-900 mb-2">IRS Tax Scam</h3>
-                        <p class="text-gray-600 mb-4">Fake IRS agents threatening arrest over unpaid taxes. Demanding immediate payment via gift cards or wire transfer.</p>
-                        <div class="bg-red-50 border border-red-200 rounded-lg p-3">
-                            <div class="flex items-center text-sm">
-                                <i class="fas fa-chart-line text-red-600 mr-2"></i>
-                                <span class="font-semibold text-red-900">↑ 340% this week</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="scam-alert bg-white rounded-xl shadow-lg overflow-hidden border-l-4 border-orange-500" style="animation-delay: 0.1s;">
-                    <div class="p-6">
-                        <div class="flex items-start justify-between mb-4">
-                            <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
-                                <i class="fas fa-pills text-orange-600 text-xl"></i>
-                            </div>
-                            <span class="px-3 py-1 bg-orange-100 text-orange-600 text-xs font-bold rounded-full">HIGH</span>
-                        </div>
-                        <h3 class="text-xl font-bold text-gray-900 mb-2">Medicare Card Replacement</h3>
-                        <p class="text-gray-600 mb-4">Scammers claiming to need personal info to send a "new" Medicare card. Real Medicare never calls asking for details.</p>
-                        <div class="bg-orange-50 border border-orange-200 rounded-lg p-3">
-                            <div class="flex items-center text-sm">
-                                <i class="fas fa-chart-line text-orange-600 mr-2"></i>
-                                <span class="font-semibold text-orange-900">↑ 215% this week</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="scam-alert bg-white rounded-xl shadow-lg overflow-hidden border-l-4 border-yellow-500" style="animation-delay: 0.2s;">
-                    <div class="p-6">
-                        <div class="flex items-start justify-between mb-4">
-                            <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
-                                <i class="fas fa-laptop text-yellow-600 text-xl"></i>
-                            </div>
-                            <span class="px-3 py-1 bg-yellow-100 text-yellow-600 text-xs font-bold rounded-full">MEDIUM</span>
-                        </div>
-                        <h3 class="text-xl font-bold text-gray-900 mb-2">Tech Support Scam</h3>
-                        <p class="text-gray-600 mb-4">"Microsoft" or "Apple" claiming your computer has viruses. They want remote access or payment for fake support.</p>
-                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                            <div class="flex items-center text-sm">
-                                <i class="fas fa-chart-line text-yellow-600 mr-2"></i>
-                                <span class="font-semibold text-yellow-900">↑ 180% this week</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="scam-alert bg-white rounded-xl shadow-lg overflow-hidden border-l-4 border-purple-500" style="animation-delay: 0.3s;">
-                    <div class="p-6">
-                        <div class="flex items-start justify-between mb-4">
-                            <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                                <i class="fas fa-heart text-purple-600 text-xl"></i>
-                            </div>
-                            <span class="px-3 py-1 bg-purple-100 text-purple-600 text-xs font-bold rounded-full">HIGH</span>
-                        </div>
-                        <h3 class="text-xl font-bold text-gray-900 mb-2">Grandparent Scam</h3>
-                        <p class="text-gray-600 mb-4">Impersonating grandchildren claiming emergency. Asking for money without telling parents. Emotional manipulation.</p>
-                        <div class="bg-purple-50 border border-purple-200 rounded-lg p-3">
-                            <div class="flex items-center text-sm">
-                                <i class="fas fa-chart-line text-purple-600 mr-2"></i>
-                                <span class="font-semibold text-purple-900">↑ 290% this week</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="scam-alert bg-white rounded-xl shadow-lg overflow-hidden border-l-4 border-blue-500" style="animation-delay: 0.4s;">
-                    <div class="p-6">
-                        <div class="flex items-start justify-between mb-4">
-                            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                                <i class="fas fa-award text-blue-600 text-xl"></i>
-                            </div>
-                            <span class="px-3 py-1 bg-blue-100 text-blue-600 text-xs font-bold rounded-full">MEDIUM</span>
-                        </div>
-                        <h3 class="text-xl font-bold text-gray-900 mb-2">Prize & Lottery Scam</h3>
-                        <p class="text-gray-600 mb-4">You've "won" money or prizes but need to pay taxes/fees upfront. Real prizes never require payment to claim.</p>
-                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                            <div class="flex items-center text-sm">
-                                <i class="fas fa-chart-line text-blue-600 mr-2"></i>
-                                <span class="font-semibold text-blue-900">↑ 155% this week</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="scam-alert bg-white rounded-xl shadow-lg overflow-hidden border-l-4 border-pink-500" style="animation-delay: 0.5s;">
-                    <div class="p-6">
-                        <div class="flex items-start justify-between mb-4">
-                            <div class="w-12 h-12 bg-pink-100 rounded-full flex items-center justify-center">
-                                <i class="fas fa-donate text-pink-600 text-xl"></i>
-                            </div>
-                            <span class="px-3 py-1 bg-pink-100 text-pink-600 text-xs font-bold rounded-full">HIGH</span>
-                        </div>
-                        <h3 class="text-xl font-bold text-gray-900 mb-2">Charity Fraud</h3>
-                        <p class="text-gray-600 mb-4">Fake charities exploiting disasters or emotions. Money goes to scammers, not causes. Always verify charities independently.</p>
-                        <div class="bg-pink-50 border border-pink-200 rounded-lg p-3">
-                            <div class="flex items-center text-sm">
-                                <i class="fas fa-chart-line text-pink-600 mr-2"></i>
-                                <span class="font-semibold text-pink-900">↑ 200% this week</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- CTA Banner -->
-            <div class="mt-12 bg-gradient-to-r from-red-600 to-orange-600 rounded-2xl p-8 text-white text-center shadow-2xl">
-                <h3 class="text-3xl font-bold mb-4">We Block These Automatically</h3>
-                <p class="text-xl mb-6 text-red-100">Our AI recognizes these scam patterns instantly. You never even see the call.</p>
-                <a href="#pricing" class="inline-block px-8 py-4 bg-white text-red-600 rounded-full font-bold hover:bg-yellow-300 transition shadow-xl text-lg">
-                    Upgrade Your Protection Now
-                </a>
-            </div>
-        </section>
-
-        <div class="section-divider"></div>
-
-        <!-- Your Protection Section -->
-        <section id="protection" class="py-16">
-            <div class="text-center mb-12">
-                <div class="inline-block px-4 py-2 bg-green-100 text-green-600 rounded-full font-semibold mb-4">
-                    <i class="fas fa-shield-check mr-2"></i>YOUR SHIELD
-                </div>
-                <h2 class="text-4xl font-black text-gray-900 mb-4">
-                    Your Protection Dashboard
-                </h2>
-            </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <!-- Shield Numbers -->
-                <div class="lg:col-span-2">
-                    <div class="bg-white rounded-2xl shadow-lg p-8">
-                        <div class="flex justify-between items-center mb-6">
-                            <h3 class="text-2xl font-bold text-gray-900">
-                                <i class="fas fa-phone-alt text-purple-600 mr-2"></i>
-                                Your Shield Numbers
+                        <div class="card" style="margin-bottom: 1.5rem;">
+                            <h3 style="font-size: 1.4rem; font-weight: 800; color: var(--green); margin-bottom: 1.5rem;">
+                                <i class="fas fa-chart-line"></i> Scam Protection Summary
                             </h3>
-                            <a href="/static/purchase-number.html" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
-                                <i class="fas fa-plus mr-2"></i>Add Number
-                            </a>
+                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem;">
+                                <div style="padding: 1.25rem; background: var(--ivory); border-radius: 12px;">
+                                    <div style="color: #666; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem;">TOTAL CALLS</div>
+                                    <div style="font-size: 2rem; font-weight: 800; color: var(--green);" id="total-calls-summary">0</div>
+                                </div>
+                                <div style="padding: 1.25rem; background: var(--ivory); border-radius: 12px;">
+                                    <div style="color: #666; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem;">PROTECTION RATE</div>
+                                    <div style="font-size: 2rem; font-weight: 800; color: var(--success);">99.8%</div>
+                                </div>
+                                <div style="padding: 1.25rem; background: var(--ivory); border-radius: 12px;">
+                                    <div style="color: #666; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem;">AI RESPONSE</div>
+                                    <div style="font-size: 2rem; font-weight: 800; color: #3b82f6;">&lt;1s</div>
+                                </div>
+                                <div style="padding: 1.25rem; background: var(--ivory); border-radius: 12px;">
+                                    <div style="color: #666; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem;">SCAM ACCURACY</div>
+                                    <div style="font-size: 2rem; font-weight: 800; color: #8b5cf6;">99.9%</div>
+                                </div>
+                            </div>
                         </div>
-                        <div id="shield-numbers" class="space-y-4"></div>
-                    </div>
 
-                    <!-- Alert Settings -->
-                    <div class="bg-white rounded-2xl shadow-lg p-8 mt-8">
-                        <h3 class="text-2xl font-bold text-gray-900 mb-6">
-                            <i class="fas fa-bell text-purple-600 mr-2"></i>
-                            Alert Settings
-                        </h3>
-                        
-                        <div class="mb-6 p-4 bg-blue-50 rounded-xl border-2 border-blue-200">
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">
-                                <i class="fas fa-mobile-alt mr-2"></i>Alert Phone Number
-                            </label>
-                            <div class="flex gap-2">
-                                <input type="tel" id="client-cell" class="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500" placeholder="+17543670370">
-                                <button onclick="updatePhone()" class="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-semibold">
-                                    <i class="fas fa-save mr-2"></i>Update
+                        <div class="card">
+                            <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--green); margin-bottom: 1.5rem;">
+                                <i class="fas fa-bolt"></i> Quick Actions
+                            </h3>
+                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+                                <button onclick="showPage('numbers', event)" class="btn btn-primary" style="justify-content: center; padding: 1rem;">
+                                    <i class="fas fa-plus-circle"></i>
+                                    Add Shield Number
+                                </button>
+                                <button onclick="showPage('contacts', event)" class="btn" style="background: white; border: 2px solid var(--green); color: var(--green); justify-content: center; padding: 1rem;">
+                                    <i class="fas fa-user-plus"></i>
+                                    Add Contact
                                 </button>
                             </div>
                         </div>
-
-                        <div class="space-y-4">
-                            <label class="flex items-center p-4 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition border-2 border-transparent hover:border-purple-200">
-                                <input type="checkbox" id="sms-alerts" class="w-6 h-6 text-purple-600 rounded focus:ring-purple-500 mr-4">
-                                <div class="flex-1">
-                                    <div class="font-semibold text-gray-800">SMS Alerts</div>
-                                    <div class="text-sm text-gray-600">Get text notifications for all calls</div>
-                                </div>
-                            </label>
-
-                            <label class="flex items-center p-4 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition border-2 border-transparent hover:border-purple-200">
-                                <input type="checkbox" id="alert-spam" class="w-6 h-6 text-purple-600 rounded focus:ring-purple-500 mr-4">
-                                <div class="flex-1">
-                                    <div class="font-semibold text-gray-800">Spam Blocked Alerts</div>
-                                    <div class="text-sm text-gray-600">Notify when spam is automatically blocked</div>
-                                </div>
-                            </label>
-
-                            <label class="flex items-center p-4 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition border-2 border-transparent hover:border-purple-200">
-                                <input type="checkbox" id="alert-unknown" class="w-6 h-6 text-purple-600 rounded focus:ring-purple-500 mr-4">
-                                <div class="flex-1">
-                                    <div class="font-semibold text-gray-800">Unknown Caller Alerts</div>
-                                    <div class="text-sm text-gray-600">Alert when screening unknown callers</div>
-                                </div>
-                            </label>
-
-                            <button onclick="saveSettings()" class="w-full px-6 py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl hover:shadow-xl transition font-bold text-lg">
-                                <i class="fas fa-save mr-2"></i>Save All Settings
-                            </button>
-                        </div>
                     </div>
-                </div>
 
-                <!-- Trusted Contacts Sidebar -->
-                <div>
-                    <div class="bg-white rounded-2xl shadow-lg p-6 sticky top-24">
-                        <h3 class="text-xl font-bold text-gray-900 mb-4">
-                            <i class="fas fa-user-shield text-green-600 mr-2"></i>
-                            Trusted Contacts
+                    <div class="card" style="background: linear-gradient(180deg, #ffffff 0%, #fff5f5 100%);">
+                        <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--danger); margin-bottom: 1.5rem;">
+                            <i class="fas fa-exclamation-triangle"></i> Trending Scam Alerts
                         </h3>
-                        <p class="text-sm text-gray-600 mb-4">These numbers always get through</p>
-                        
-                        <div class="mb-4">
-                            <input type="tel" id="new-contact" placeholder="+1234567890" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg mb-2 focus:ring-2 focus:ring-green-500 focus:border-green-500">
-                            <input type="text" id="new-contact-name" placeholder="Name (e.g., Dr. Smith)" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg mb-3 focus:ring-2 focus:ring-green-500 focus:border-green-500">
-                            <button onclick="addContact()" class="w-full px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-semibold">
-                                <i class="fas fa-plus-circle mr-2"></i>Add Trusted Contact
-                            </button>
+                        <div id="fraud-alerts-container">
+                            <div class="fraud-alert-card">
+                                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.75rem;">
+                                    <div style="font-weight: 700; font-size: 0.95rem; color: var(--danger);">
+                                        <i class="fas fa-fire" style="margin-right: 0.5rem;"></i>
+                                        IRS Impersonation
+                                    </div>
+                                    <span class="trending-badge">HOT</span>
+                                </div>
+                                <p style="font-size: 0.85rem; color: #666; line-height: 1.6;">
+                                    Scammers claiming to be IRS agents demanding immediate payment via gift cards or cryptocurrency.
+                                </p>
+                                <div style="margin-top: 0.75rem; font-size: 0.75rem; color: #999; font-weight: 600;">
+                                    <i class="fas fa-clock"></i> Updated 2 hours ago
+                                </div>
+                            </div>
+
+                            <div class="fraud-alert-card">
+                                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.75rem;">
+                                    <div style="font-weight: 700; font-size: 0.95rem; color: var(--danger);">
+                                        <i class="fas fa-fire" style="margin-right: 0.5rem;"></i>
+                                        Tech Support Scam
+                                    </div>
+                                    <span class="trending-badge">HOT</span>
+                                </div>
+                                <p style="font-size: 0.85rem; color: #666; line-height: 1.6;">
+                                    Fake Microsoft/Apple support claiming your computer is infected and requesting remote access.
+                                </p>
+                                <div style="margin-top: 0.75rem; font-size: 0.75rem; color: #999; font-weight: 600;">
+                                    <i class="fas fa-clock"></i> Updated 5 hours ago
+                                </div>
+                            </div>
+
+                            <div class="fraud-alert-card">
+                                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.75rem;">
+                                    <div style="font-weight: 700; font-size: 0.95rem; color: var(--danger);">
+                                        <i class="fas fa-fire" style="margin-right: 0.5rem;"></i>
+                                        Social Security Fraud
+                                    </div>
+                                    <span class="trending-badge">NEW</span>
+                                </div>
+                                <p style="font-size: 0.85rem; color: #666; line-height: 1.6;">
+                                    Calls claiming your SSN has been suspended or involved in criminal activity.
+                                </p>
+                                <div style="margin-top: 0.75rem; font-size: 0.75rem; color: #999; font-weight: 600;">
+                                    <i class="fas fa-clock"></i> Updated 1 day ago
+                                </div>
+                            </div>
                         </div>
-                        
-                        <div id="contacts-list" class="space-y-2 max-h-96 overflow-y-auto"></div>
                     </div>
                 </div>
-            </div>
-        </section>
-
-        <div class="section-divider"></div>
-
-        <!-- Recent Activity -->
-        <section class="py-16">
-            <div class="bg-white rounded-2xl shadow-lg p-8">
-                <div class="flex justify-between items-center mb-6">
-                    <h3 class="text-2xl font-bold text-gray-900">
-                        <i class="fas fa-history text-purple-600 mr-2"></i>
-                        Recent Activity
-                    </h3>
-                    <a href="/api/rootcall/export/1" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
-                        <i class="fas fa-download mr-2"></i>Export CSV
-                    </a>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full">
-                        <thead class="bg-gray-100">
-                            <tr>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-gray-700">Time</th>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-gray-700">From</th>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-gray-700">Caller ID</th>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-gray-700">Action</th>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-gray-700">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="call-history"></tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-
-        <div class="section-divider"></div>
-
-        <!-- Upgrade Pricing Section -->
-        <section id="pricing" class="py-16">
-            <div class="text-center mb-12">
-                <div class="inline-block px-4 py-2 bg-purple-100 text-purple-600 rounded-full font-semibold mb-4">
-                    <i class="fas fa-arrow-up mr-2"></i>UPGRADE YOUR PROTECTION
-                </div>
-                <h2 class="text-4xl font-black text-gray-900 mb-4">
-                    Choose Your Shield Level
-                </h2>
-                <p class="text-xl text-gray-600">
-                    More protection. More peace of mind.
-                </p>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8" id="pricing-cards"></div>
-        </section>
-
-    </div>
-
-    <!-- Footer -->
-    <footer class="bg-gray-900 text-white py-12 mt-16">
-        <div class="container mx-auto px-6 text-center">
-            <div class="mb-6">
-                <div class="w-16 h-16 bg-gradient-to-br from-purple-600 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i class="fas fa-shield-alt text-white text-2xl"></i>
-                </div>
-                <h3 class="text-2xl font-bold">RootCall Call Shield</h3>
-                <p class="text-gray-400">Protecting what matters most</p>
-            </div>
-            <div class="flex justify-center gap-6 text-gray-400">
-                <a href="#" class="hover:text-white transition">Privacy</a>
-                <a href="#" class="hover:text-white transition">Terms</a>
-                <a href="#" class="hover:text-white transition">Support</a>
             </div>
         </div>
-    </footer>
+
+        <div id="page-numbers" class="page-content">
+            <div class="content-area">
+                <div style="margin-bottom: 2rem;">
+                    <h2 style="font-size: 2.25rem; font-weight: 900; color: var(--green); margin-bottom: 0.5rem;">Shield Numbers</h2>
+                    <p style="color: #666; font-size: 1.05rem;">AI-protected phone numbers with automatic scam detection & blocking</p>
+                </div>
+
+                <div id="alert-container"></div>
+
+                <div class="card" style="margin-bottom: 2rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <h3 style="font-size: 1.4rem; font-weight: 800; color: var(--green);">
+                            <i class="fas fa-shield-alt"></i> Your Protected Numbers
+                        </h3>
+                        <button onclick="openProvisionModal()" class="btn btn-primary">
+                            <i class="fas fa-plus"></i>
+                            Get Shield Number
+                        </button>
+                    </div>
+                    <div id="numbers-list">
+                        <div style="text-align: center; padding: 3rem; color: #999;">
+                            <i class="fas fa-spinner fa-spin" style="font-size: 2.5rem; margin-bottom: 1rem;"></i>
+                            <p style="font-weight: 600;">Loading your numbers...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-contacts" class="page-content">
+            <div class="content-area">
+                <div style="margin-bottom: 2rem;">
+                    <h2 style="font-size: 2.25rem; font-weight: 900; color: var(--green); margin-bottom: 0.5rem;">Trusted Contacts</h2>
+                    <p style="color: #666; font-size: 1.05rem;">Numbers that bypass AI screening and connect directly</p>
+                </div>
+
+                <div class="grid-2">
+                    <div class="card">
+                        <h3 style="font-size: 1.4rem; font-weight: 800; color: var(--green); margin-bottom: 1.5rem;">
+                            <i class="fas fa-plus-circle"></i> Add Trusted Contact
+                        </h3>
+                        <div style="display: flex; flex-direction: column; gap: 1rem;">
+                            <input type="text" id="new-contact-name" placeholder="Contact Name (optional)" />
+                            <input type="tel" id="new-contact" placeholder="+1234567890" />
+                            <button onclick="addContact()" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 1rem;">
+                                <i class="fas fa-save"></i>
+                                Add Contact
+                            </button>
+                        </div>
+                        <div class="info-badge">
+                            <i class="fas fa-info-circle" style="font-size: 1.25rem;"></i>
+                            <span>Trusted contacts bypass AI screening and ring through immediately</span>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3 style="font-size: 1.4rem; font-weight: 800; color: var(--green); margin-bottom: 1.5rem;">
+                            <i class="fas fa-user-shield"></i> Your Contacts
+                        </h3>
+                        <div id="contacts-list"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-activity" class="page-content">
+            <div class="content-area">
+                <div style="margin-bottom: 2rem;">
+                    <h2 style="font-size: 2.25rem; font-weight: 900; color: var(--green); margin-bottom: 0.5rem;">Call Activity</h2>
+                    <p style="color: #666; font-size: 1.05rem;">Complete history of all screened and blocked calls</p>
+                </div>
+
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 1.5rem;">
+                        <h3 style="font-size: 1.4rem; font-weight: 800; color: var(--green);">Recent Calls</h3>
+                        <button onclick="exportCalls()" class="btn btn-primary">
+                            <i class="fas fa-download"></i> Export CSV
+                        </button>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background: var(--ivory);">
+                                    <th style="padding: 1rem; text-align: left; font-weight: 700;">Time</th>
+                                    <th style="padding: 1rem; text-align: left; font-weight: 700;">From</th>
+                                    <th style="padding: 1rem; text-align: left; font-weight: 700;">Caller</th>
+                                    <th style="padding: 1rem; text-align: left; font-weight: 700;">AI Action</th>
+                                    <th style="padding: 1rem; text-align: left; font-weight: 700;">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="call-history"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-settings" class="page-content">
+            <div class="content-area">
+                <div style="margin-bottom: 2rem;">
+                    <h2 style="font-size: 2.25rem; font-weight: 900; color: var(--green); margin-bottom: 0.5rem;">Settings</h2>
+                    <p style="color: #666; font-size: 1.05rem;">Configure your AI scam protection preferences</p>
+                </div>
+
+                <div class="grid-2">
+                    <div class="card">
+                        <h3 style="font-size: 1.4rem; font-weight: 800; color: var(--green); margin-bottom: 1.5rem;">
+                            <i class="fas fa-bell"></i> Alert Settings
+                        </h3>
+                        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                            <div>
+                                <label style="display: block; font-weight: 700; margin-bottom: 0.5rem; color: var(--green);">Forwarding Number</label>
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <input type="tel" id="client-cell" placeholder="+1234567890" style="flex: 1;" />
+                                    <button onclick="updatePhone()" class="btn btn-primary">
+                                        <i class="fas fa-save"></i>
+                                    </button>
+                                </div>
+                                <p style="font-size: 0.85rem; color: #666; margin-top: 0.5rem;">Trusted calls forward here after AI verification</p>
+                            </div>
+
+                            <label style="display: flex; align-items: center; gap: 1rem; padding: 1.25rem; background: var(--ivory); border-radius: 12px; cursor: pointer; transition: all 0.3s ease;">
+                                <input type="checkbox" id="sms-alerts" onchange="saveSettings()" style="width: 22px; height: 22px; cursor: pointer;" />
+                                <div>
+                                    <div style="font-weight: 700;">SMS Alerts</div>
+                                    <div style="font-size: 0.85rem; color: #666;">Get text notifications for all calls</div>
+                                </div>
+                            </label>
+
+                            <label style="display: flex; align-items: center; gap: 1rem; padding: 1.25rem; background: var(--ivory); border-radius: 12px; cursor: pointer;">
+                                <input type="checkbox" id="alert-spam" onchange="saveSettings()" style="width: 22px; height: 22px; cursor: pointer;" />
+                                <div>
+                                    <div style="font-weight: 700;">Scam Alerts</div>
+                                    <div style="font-size: 0.85rem; color: #666;">Notify when scams are blocked</div>
+                                </div>
+                            </label>
+
+                            <label style="display: flex; align-items: center; gap: 1rem; padding: 1.25rem; background: var(--ivory); border-radius: 12px; cursor: pointer;">
+                                <input type="checkbox" id="alert-unknown" onchange="saveSettings()" style="width: 22px; height: 22px; cursor: pointer;" />
+                                <div>
+                                    <div style="font-weight: 700;">Unknown Alerts</div>
+                                    <div style="font-size: 0.85rem; color: #666;">Notify for unknown callers</div>
+                                </div>
+                            </label>
+
+                            <label style="display: flex; align-items: center; gap: 1rem; padding: 1.25rem; background: var(--ivory); border-radius: 12px; cursor: pointer;">
+                                <input type="checkbox" id="auto-block-spam" onchange="saveSettings()" style="width: 22px; height: 22px; cursor: pointer;" />
+                                <div>
+                                    <div style="font-weight: 700;">Auto-Block Scams</div>
+                                    <div style="font-size: 0.85rem; color: #666;">AI automatically blocks confirmed scams</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3 style="font-size: 1.4rem; font-weight: 800; color: var(--green); margin-bottom: 1.5rem;">
+                            <i class="fas fa-user"></i> Account Info
+                        </h3>
+                        <div style="display: flex; flex-direction: column; gap: 1rem;">
+                            <div>
+                                <label style="display: block; font-weight: 700; margin-bottom: 0.5rem; color: var(--green);">Name</label>
+                                <input type="text" id="user-fullname" disabled style="background: #f5f5f5; cursor: not-allowed;" />
+                            </div>
+                            <div>
+                                <label style="display: block; font-weight: 700; margin-bottom: 0.5rem; color: var(--green);">Email</label>
+                                <input type="text" id="user-email" disabled style="background: #f5f5f5; cursor: not-allowed;" />
+                            </div>
+                        </div>
+
+                        <div class="info-badge" style="margin-top: 1.5rem;">
+                            <i class="fas fa-shield-check" style="font-size: 1.25rem;"></i>
+                            <div>
+                                <div style="font-weight: 700; margin-bottom: 0.25rem;">AI Call Protection Active</div>
+                                <div style="font-size: 0.85rem;">All your numbers are protected by advanced AI screening</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="provision-modal" class="modal">
+        <div class="modal-backdrop" onclick="closeProvisionModal()"></div>
+        <div class="modal-content" style="position: relative; z-index: 1;">
+            <div style="padding: 2.5rem;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 2rem;">
+                    <div>
+                        <h2 style="font-size: 2.25rem; font-weight: 900; color: var(--green); margin-bottom: 0.5rem;">
+                            <i class="fas fa-shield-alt"></i> Get Your Scam Shield Number
+                        </h2>
+                        <p style="color: #666;">Powered by Telnyx • AI scam screening included</p>
+                    </div>
+                    <button onclick="closeProvisionModal()" style="background: none; border: none; font-size: 2rem; cursor: pointer; color: #999; transition: all 0.3s ease;" onmouseover="this.style.color='var(--danger)'" onmouseout="this.style.color='#999'">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <!-- STEP 1: SELECT STATE -->
+                <div id="step-select-state">
+                    <div class="step-indicator">
+                        <div class="step-dot active"></div>
+                        <div class="step-dot"></div>
+                        <div class="step-dot"></div>
+                        <div class="step-dot"></div>
+                        <div class="step-dot"></div>
+                    </div>
+
+                    <p style="margin-bottom: 1.5rem; font-weight: 700; color: var(--green); font-size: 1.2rem;">
+                        <i class="fas fa-map-marker-alt"></i> Step 1: Select Your State
+                    </p>
+
+                    <select id="state-select" onchange="loadAreaCodes()">
+                        <option value="">-- Choose Your State --</option>
+                    </select>
+
+                    <div class="info-badge">
+                        <i class="fas fa-info-circle" style="font-size: 1.25rem;"></i>
+                        <span>Select your state to see available area codes</span>
+                    </div>
+                </div>
+
+                <!-- STEP 2: SELECT AREA CODE -->
+                <div id="step-select-area-code" style="display: none;">
+                    <div class="step-indicator">
+                        <div class="step-dot completed"></div>
+                        <div class="step-dot active"></div>
+                        <div class="step-dot"></div>
+                        <div class="step-dot"></div>
+                        <div class="step-dot"></div>
+                    </div>
+
+                    <button onclick="backToStates()" class="btn" style="background: white; border: 2px solid var(--green); color: var(--green); margin-bottom: 1rem;">
+                        <i class="fas fa-arrow-left"></i> Back to States
+                    </button>
+
+                    <p style="margin-bottom: 1.5rem; font-weight: 700; color: var(--green); font-size: 1.2rem;">
+                        <i class="fas fa-phone"></i> Step 2: Select Area Code in <span id="selected-state-name"></span>
+                    </p>
+
+                    <select id="area-code-select" onchange="handleAreaCodeChange()">
+                        <option value="">-- Choose Area Code --</option>
+                    </select>
+
+                    <div class="info-badge">
+                        <i class="fas fa-robot" style="font-size: 1.5rem;"></i>
+                        <div>
+                            <div style="font-weight: 700; margin-bottom: 0.25rem;">AI Call Screening Included</div>
+                            <div style="font-size: 0.9rem;">Every number comes with 24/7 AI protection</div>
+                        </div>
+                    </div>
+
+                    <button onclick="searchNumbers()" id="search-btn" disabled class="btn btn-primary" style="width: 100%; justify-content: center; padding: 1.25rem; margin-top: 1.5rem;">
+                        <i class="fas fa-search"></i> Search Available Numbers
+                    </button>
+                </div>
+
+                <!-- STEP 3: SEARCHING -->
+                <div id="step-searching" style="display: none; text-align: center;">
+                    <div class="step-indicator">
+                        <div class="step-dot completed"></div>
+                        <div class="step-dot completed"></div>
+                        <div class="step-dot active"></div>
+                        <div class="step-dot"></div>
+                        <div class="step-dot"></div>
+                    </div>
+                    <div class="spinner" style="margin-bottom: 2rem;"></div>
+                    <h3 style="font-size: 1.75rem; font-weight: 800; margin-bottom: 1rem; color: var(--green);">Searching Telnyx Network...</h3>
+                    <p style="color: #666; font-size: 1.05rem;">Finding available numbers in your area</p>
+                </div>
+
+                <!-- STEP 4: SELECT NUMBER -->
+                <div id="step-select-number" style="display: none;">
+                    <div class="step-indicator">
+                        <div class="step-dot completed"></div>
+                        <div class="step-dot completed"></div>
+                        <div class="step-dot completed"></div>
+                        <div class="step-dot active"></div>
+                        <div class="step-dot"></div>
+                    </div>
+
+                    <button onclick="backToAreaCodes()" class="btn" style="background: white; border: 2px solid var(--green); color: var(--green); margin-bottom: 1rem;">
+                        <i class="fas fa-arrow-left"></i> Back to Area Codes
+                    </button>
+
+                    <p style="margin-bottom: 1.5rem; font-weight: 700; color: var(--green); font-size: 1.2rem;">
+                        <i class="fas fa-list"></i> Step 3: Choose Your Number
+                    </p>
+
+                    <input type="text" id="number-search" class="search-input" placeholder="🔍 Search by digits (e.g., 555, 1234)" oninput="filterNumbers()" />
+
+                    <div id="available-numbers" class="numbers-grid"></div>
+
+                    <button onclick="provisionSelectedNumber()" id="provision-btn" disabled class="btn btn-primary" style="width: 100%; justify-content: center; padding: 1.25rem; font-size: 1.1rem; margin-top: 1.5rem;">
+                        <i class="fas fa-shield-alt"></i> Activate This Number
+                    </button>
+                </div>
+
+                <!-- STEP 5: PROVISIONING -->
+                <div id="step-provisioning" style="display: none; text-align: center;">
+                    <div class="step-indicator">
+                        <div class="step-dot completed"></div>
+                        <div class="step-dot completed"></div>
+                        <div class="step-dot completed"></div>
+                        <div class="step-dot completed"></div>
+                        <div class="step-dot active"></div>
+                    </div>
+                    <div class="spinner" style="margin-bottom: 2rem;"></div>
+                    <h3 style="font-size: 1.75rem; font-weight: 800; margin-bottom: 1rem; color: var(--green);">Activating Your Protection...</h3>
+                    <p id="provision-status" style="color: #666; font-size: 1.05rem;"></p>
+                </div>
+
+                <!-- SUCCESS -->
+                <div id="step-success" style="display: none; text-align: center;">
+                    <div style="font-size: 6rem; margin: 1rem 0;">
+                        <i class="fas fa-check-circle" style="color: var(--success);"></i>
+                    </div>
+                    <h3 style="font-size: 2.25rem; font-weight: 900; color: var(--success); margin: 1rem 0;">Protection Activated!</h3>
+                    <div style="background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); padding: 2.5rem; border-radius: 16px; margin: 2rem 0; border: 2px solid var(--success);">
+                        <p style="color: #065f46; margin-bottom: 0.75rem; font-weight: 600; font-size: 1.1rem;">Your Scam Shield Number:</p>
+                        <p id="new-phone-number" style="font-size: 2.5rem; font-weight: 900; color: #065f46; letter-spacing: 1px;"></p>
+                        <div style="margin-top: 1.5rem; padding: 1rem; background: white; border-radius: 10px;">
+                            <i class="fas fa-robot" style="color: var(--success); font-size: 1.5rem; margin-bottom: 0.5rem;"></i>
+                            <div style="font-weight: 700; color: #065f46; margin-bottom: 0.25rem;">AI Call Screening Active</div>
+                            <div style="font-size: 0.9rem; color: #666;">Your number is now protected 24/7 from scams and fraud</div>
+                        </div>
+                    </div>
+                    <button onclick="finishProvisioning()" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 1.25rem; font-size: 1.1rem;">
+                        <i class="fas fa-arrow-right"></i> Go to Dashboard
+                    </button>
+                </div>
+
+                <!-- ERROR -->
+                <div id="step-error" style="display: none; text-align: center;">
+                    <div style="font-size: 6rem; margin: 1rem 0;">
+                        <i class="fas fa-exclamation-circle" style="color: var(--danger);"></i>
+                    </div>
+                    <h3 style="font-size: 2.25rem; font-weight: 900; color: var(--danger); margin: 1rem 0;">Oops!</h3>
+                    <p id="error-message" style="margin-bottom: 2rem; font-size: 1.05rem; color: #666;"></p>
+                    <button onclick="resetProvisionModal()" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 1.25rem;">
+                        <i class="fas fa-redo"></i> Try Again
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script>
-        const API = 'http://localhost:8000';
-        const user = JSON.parse(localStorage.getItem('user') || '{"id": 1, "full_name": "Demo User"}');
-        const CLIENT_ID = user.id;
+        const API = 'https://wajw72dmej.us-east-1.awsapprunner.com';
 
-        document.getElementById('user-name').textContent = user.full_name || 'Guest';
+        let USER_DATA = null;
+        let CLIENT_ID = null;
+        let SELECTED_AREA_CODE = null;
+        let SELECTED_STATE = null;
+        let AVAILABLE_NUMBERS = [];
+        let SELECTED_NUMBER = null;
+        const PHONE_REGEX = /^\+[1-9]\d{1,14}$/;
+
+        const STATES_AREA_CODES = {
+            "Alabama": ["205", "251", "256", "334"],
+            "Alaska": ["907"],
+            "Arizona": ["480", "520", "602", "623", "928"],
+            "Arkansas": ["479", "501", "870"],
+            "California": ["209", "213", "310", "323", "408", "415", "510", "530", "559", "562", "619", "626", "650", "661", "707", "714", "760", "805", "818", "831", "858", "909", "916", "925", "949"],
+            "Colorado": ["303", "719", "720", "970"],
+            "Connecticut": ["203", "475", "860"],
+            "Delaware": ["302"],
+            "Florida": ["239", "305", "321", "352", "386", "407", "561", "727", "754", "772", "786", "813", "850", "863", "904", "941", "954"],
+            "Georgia": ["229", "404", "470", "478", "678", "706", "762", "770", "912"],
+            "Hawaii": ["808"],
+            "Idaho": ["208"],
+            "Illinois": ["217", "224", "309", "312", "331", "618", "630", "708", "773", "815", "847"],
+            "Indiana": ["219", "260", "317", "574", "765", "812"],
+            "Iowa": ["319", "515", "563", "712"],
+            "Kansas": ["316", "620", "785", "913"],
+            "Kentucky": ["270", "502", "606", "859"],
+            "Louisiana": ["225", "318", "337", "504", "985"],
+            "Maine": ["207"],
+            "Maryland": ["240", "301", "410", "443"],
+            "Massachusetts": ["339", "351", "413", "508", "617", "774", "781", "857", "978"],
+            "Michigan": ["231", "248", "269", "313", "517", "586", "616", "734", "810", "906", "989"],
+            "Minnesota": ["218", "320", "507", "612", "651", "763", "952"],
+            "Mississippi": ["228", "601", "662"],
+            "Missouri": ["314", "417", "573", "636", "660", "816"],
+            "Montana": ["406"],
+            "Nebraska": ["308", "402", "531"],
+            "Nevada": ["702", "725", "775"],
+            "New Hampshire": ["603"],
+            "New Jersey": ["201", "551", "609", "732", "848", "856", "862", "908", "973"],
+            "New Mexico": ["505", "575"],
+            "New York": ["212", "315", "347", "516", "518", "585", "607", "631", "646", "716", "718", "845", "914", "917"],
+            "North Carolina": ["252", "336", "704", "828", "910", "919", "980", "984"],
+            "North Dakota": ["701"],
+            "Ohio": ["216", "234", "330", "380", "419", "440", "513", "567", "614", "740", "937"],
+            "Oklahoma": ["405", "539", "580", "918"],
+            "Oregon": ["458", "503", "541", "971"],
+            "Pennsylvania": ["215", "267", "272", "412", "484", "570", "610", "717", "724", "814", "878"],
+            "Rhode Island": ["401"],
+            "South Carolina": ["803", "843", "854", "864"],
+            "South Dakota": ["605"],
+            "Tennessee": ["423", "615", "629", "731", "865", "901", "931"],
+            "Texas": ["210", "214", "254", "281", "325", "346", "361", "409", "430", "432", "469", "512", "682", "713", "737", "806", "817", "830", "832", "903", "915", "936", "940", "956", "972", "979"],
+            "Utah": ["385", "435", "801"],
+            "Vermont": ["802"],
+            "Virginia": ["276", "434", "540", "571", "703", "757", "804"],
+            "Washington": ["206", "253", "360", "425", "509", "564"],
+            "Washington DC": ["202"],
+            "West Virginia": ["304", "681"],
+            "Wisconsin": ["262", "414", "534", "608", "715", "920"],
+            "Wyoming": ["307"]
+        };
+
+        function getToken() {
+            return localStorage.getItem('access_token') || localStorage.getItem('token');
+        }
+
+        async function authFetch(url, options = {}) {
+            const token = getToken();
+            const headers = {
+                'Content-Type': 'application/json',
+                ...options.headers
+            };
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+            try {
+                const response = await fetch(url, {
+                    ...options,
+                    headers
+                });
+                if (response.status === 401) {
+                    console.warn('Session expired - logging out');
+                    logout();
+                    throw new Error('Session expired');
+                }
+                return response;
+            } catch (error) {
+                console.error('Fetch error:', error);
+                throw error;
+            }
+        }
+
+        function showLoading(show = true) {
+            const overlay = document.getElementById('loading-overlay');
+            if (overlay) {
+                overlay.classList.toggle('active', show);
+            }
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.style.borderLeftColor = type === 'success' ? 'var(--success)' : 'var(--danger)';
+            toast.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}" 
+                   style="color: ${type === 'success' ? 'var(--success)' : 'var(--danger)'}; font-size: 1.5rem;"></i>
+                <span style="font-weight: 600;">${message}</span>
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function showAlert(message, type) {
+            const container = document.getElementById('alert-container');
+            if (!container) return;
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            container.innerHTML = '';
+            container.appendChild(alert);
+            setTimeout(() => {
+                alert.style.opacity = '0';
+                alert.style.transition = 'opacity 0.3s';
+                setTimeout(() => alert.remove(), 300);
+            }, 5000);
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('open');
+        }
+
+        function showPage(page, evt) {
+            document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById('page-' + page).classList.add('active');
+            if (evt && evt.target) {
+        evt.target.closest('.nav-item').classList.add('active');
+    }
+            if (window.innerWidth <= 1024) {
+                document.getElementById('sidebar').classList.remove('open');
+            }
+        }
+
+        async function init() {
+            const token = getToken();
+            if (!token) {
+                window.location.href = '/login.html';
+                return;
+            }
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                CLIENT_ID = payload.sub;
+                if (!CLIENT_ID) {
+                    console.error('No client ID in token');
+                    logout();
+                    return;
+                }
+                USER_DATA = payload;
+                document.getElementById('user-name').textContent = payload.email?.split('@')[0] || 'User';
+                document.getElementById('user-fullname').value = payload.email || '';
+                document.getElementById('user-email').value = payload.email || '';
+                await loadData();
+            } catch (err) {
+                console.error('Init error:', err);
+                logout();
+            }
+        }
 
         async function loadData() {
             try {
-                // Load stats
-                const stats = await fetch(`${API}/api/rootcall/stats/${CLIENT_ID}`).then(r => r.json());
-                document.getElementById('spam-blocked').textContent = stats.spam_blocked;
-                document.getElementById('calls-screened').textContent = stats.calls_screened;
-                document.getElementById('trusted-connected').textContent = stats.trusted_forwarded;
-                document.getElementById('total-threats').textContent = stats.total_calls;
-
-                // Load config
-                const configRes = await fetch(`${API}/api/rootcall/config/${CLIENT_ID}`);
-                if (configRes.ok) {
-                    const config = await configRes.json();
+                showLoading(true);
+                const statsResponse = await authFetch(`${API}/api/rootcall/stats/${CLIENT_ID}`);
+                if (statsResponse.ok) {
+                    const stats = await statsResponse.json();
+                    document.getElementById('spam-blocked').textContent = stats.spam_blocked || 0;
+                    document.getElementById('calls-screened').textContent = stats.calls_screened || 0;
+                    document.getElementById('trusted-connected').textContent = stats.trusted_forwarded || 0;
+                    document.getElementById('total-calls-summary').textContent = stats.total_calls || 0;
+                }
+                const configResponse = await authFetch(`${API}/api/rootcall/config/${CLIENT_ID}`);
+                if (configResponse.ok) {
+                    const config = await configResponse.json();
                     document.getElementById('client-cell').value = config.client_cell || '';
-                    document.getElementById('sms-alerts').checked = config.sms_alerts_enabled;
-                    document.getElementById('alert-spam').checked = config.alert_on_spam;
-                    document.getElementById('alert-unknown').checked = config.alert_on_unknown;
-
-                    // Load contacts
+                    document.getElementById('sms-alerts').checked = config.sms_alerts_enabled || false;
+                    document.getElementById('alert-spam').checked = config.alert_on_spam || false;
+                    document.getElementById('alert-unknown').checked = config.alert_on_unknown || false;
+                    document.getElementById('auto-block-spam').checked = config.auto_block_spam || false;
                     const list = document.getElementById('contacts-list');
-                    list.innerHTML = '';
                     if (config.trusted_contacts && config.trusted_contacts.length > 0) {
-                        config.trusted_contacts.forEach(c => {
-                            list.innerHTML += `
-                                <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition border border-gray-200">
-                                    <div class="flex-1">
-                                        <div class="font-semibold text-gray-800 text-sm">${c.name || 'Unnamed'}</div>
-                                        <div class="text-xs text-gray-600">${c.phone_number}</div>
+                        list.innerHTML = config.trusted_contacts.map(c => {
+                            const phone = typeof c === 'string' ? c : (c.phone_number || c);
+                            const name = typeof c === 'object' ? (c.name || '') : '';
+                            return `
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.25rem; background: var(--light-green); border-radius: 12px; margin-bottom: 0.75rem; border: 1px solid var(--green);">
+                                    <div>
+                                        ${name ? `<div style="font-weight: 700; font-size: 1.05rem; color: var(--green);">${name}</div>` : ''}
+                                        <div style="font-size: 0.9rem; color: #666; font-weight: 600; ${name ? 'margin-top: 0.25rem;' : ''}">${phone}</div>
                                     </div>
-                                    <button onclick="removeContact('${c.phone_number}')" class="text-red-600 hover:text-red-700 p-2">
-                                        <i class="fas fa-trash text-sm"></i>
+                                    <button onclick="removeContact('${phone}')" class="btn" style="padding: 0.75rem 1rem; background: var(--danger); color: white;">
+                                        <i class="fas fa-trash"></i>
                                     </button>
                                 </div>
                             `;
-                        });
+                        }).join('');
                     } else {
-                        list.innerHTML = '<p class="text-gray-500 text-sm text-center py-4">No trusted contacts yet</p>';
+                        list.innerHTML = '<p style="text-align: center; color: #999; padding: 2rem; font-weight: 600;">No trusted contacts yet. Add your first contact above!</p>';
                     }
                 }
-
-                // Load shield numbers
-                const numbersRes = await fetch(`${API}/api/numbers/my-numbers/${CLIENT_ID}`);
-                if (numbersRes.ok) {
-                    const data = await numbersRes.json();
-                    const container = document.getElementById('shield-numbers');
-                    container.innerHTML = data.numbers.map(num => `
-                        <div class="p-6 border-2 ${num.is_primary ? 'border-purple-500 bg-purple-50' : 'border-gray-200 bg-white'} rounded-xl hover:shadow-lg transition">
-                            <div class="flex justify-between items-center">
-                                <div>
-                                    <div class="text-sm text-purple-600 font-semibold uppercase">${num.nickname}</div>
-                                    <div class="text-2xl font-bold text-gray-900">${num.phone_number}</div>
-                                </div>
-                                <span class="px-4 py-2 bg-green-100 text-green-800 rounded-full text-sm font-bold">
-                                    <i class="fas fa-check-circle mr-1"></i>Active
-                                </span>
-                            </div>
-                        </div>
-                    `).join('');
-                }
-
-                // Load recent calls
-                const callsRes = await fetch(`${API}/api/rootcall/calls/${CLIENT_ID}`);
-                if (callsRes.ok) {
-                    const calls = await callsRes.json();
+                await loadNumbers();
+                const callsResponse = await authFetch(`${API}/api/rootcall/calls/${CLIENT_ID}`);
+                if (callsResponse.ok) {
+                    const calls = await callsResponse.json();
                     const tbody = document.getElementById('call-history');
-                    tbody.innerHTML = calls.map(call => `
-                        <tr class="border-t border-gray-200 hover:bg-gray-50 transition">
-                            <td class="px-6 py-4 text-sm text-gray-600">${new Date(call.timestamp).toLocaleString()}</td>
-                            <td class="px-6 py-4 font-semibold text-gray-900">${call.from_number}</td>
-                            <td class="px-6 py-4 text-gray-700">${call.caller_name}</td>
-                            <td class="px-6 py-4 text-gray-700">${call.action.replace('_', ' ')}</td>
-                            <td class="px-6 py-4">
-                                <span class="px-3 py-1 rounded-full text-xs font-bold ${
-                                    call.status === 'blocked' ? 'bg-red-100 text-red-800' :
-                                    call.status === 'screening' ? 'bg-yellow-100 text-yellow-800' :
-                                    'bg-green-100 text-green-800'
-                                }">${call.status}</span>
-                            </td>
-                        </tr>
-                    `).join('') || '<tr><td colspan="5" class="px-6 py-12 text-center text-gray-500 text-lg">No recent calls - your shield is ready!</td></tr>';
+                    if (calls.length > 0) {
+                        tbody.innerHTML = calls.map(call => `
+                            <tr style="border-top: 1px solid #e5e5e5; transition: all 0.3s ease;" onmouseover="this.style.background='var(--ivory)'" onmouseout="this.style.background='white'">
+                                <td style="padding: 1.25rem; font-weight: 600;">${new Date(call.timestamp).toLocaleString()}</td>
+                                <td style="padding: 1.25rem; font-weight: 700; color: var(--green);">${call.from_number}</td>
+                                <td style="padding: 1.25rem;">${call.caller_name || 'Unknown'}</td>
+                                <td style="padding: 1.25rem; font-weight: 600;">${call.action.replace(/_/g, ' ')}</td>
+                                <td style="padding: 1.25rem;">
+                                    <span style="padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: 700; ${
+                                        call.status === 'blocked' ? 'background: #fee2e2; color: #991b1b;' :
+                                        call.status === 'screening' ? 'background: #fef3c7; color: #92400e;' :
+                                        'background: #d1fae5; color: #065f46;'
+                                    }">${call.status.toUpperCase()}</span>
+                                </td>
+                            </tr>
+                        `).join('');
+                    } else {
+                        tbody.innerHTML = '<tr><td colspan="5" style="padding: 3rem; text-align: center; color: #999; font-weight: 600;">No call history yet. Your AI agent will log all activity here.</td></tr>';
+                    }
                 }
-
-                // Load pricing
-                loadPricing();
             } catch (err) {
-                console.error('Error:', err);
+                console.error('Error loading data:', err);
+                if (err.message !== 'Session expired') {
+                    showToast('Error loading data', 'error');
+                }
+            } finally {
+                showLoading(false);
             }
         }
 
-        async function loadPricing() {
+        async function loadNumbers() {
             try {
-                const response = await fetch(`${API}/api/payments/plans`);
-                const plans = await response.json();
-                
-                const container = document.getElementById('pricing-cards');
-                container.innerHTML = plans.map(plan => `
-                    <div class="pricing-card bg-white rounded-2xl shadow-xl overflow-hidden ${plan.popular ? 'ring-4 ring-purple-500' : ''}">
-                        ${plan.popular ? `
-                            <div class="bg-gradient-to-r from-purple-600 to-blue-600 text-white text-center py-3 font-bold">
-                                ⭐ MOST POPULAR
-                            </div>
-                        ` : ''}
-                        <div class="p-8">
-                            <div class="text-center mb-6">
-                                <div class="text-sm font-semibold text-${plan.color}-600 mb-2">${plan.tier}</div>
-                                <h3 class="text-2xl font-bold text-gray-900 mb-3">${plan.name}</h3>
-                                <div class="text-5xl font-black text-${plan.color}-600 mb-2">
-                                    $${plan.price}<span class="text-xl text-gray-600">/mo</span>
+                const response = await authFetch(`${API}/api/rootcall/my-number`);
+                const data = await response.json();
+                const container = document.getElementById('numbers-list');
+                console.log('My number response:', data);
+                if (data.has_number) {
+                    container.innerHTML = `
+                        <div style="padding: 2rem; background: linear-gradient(135deg, var(--light-green) 0%, #c6f6d5 100%); border: 3px solid var(--green); border-radius: 16px; box-shadow: 0 8px 20px rgba(13, 61, 47, 0.15);">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div style="flex: 1;">
+                                    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                                        <div style="font-size: 0.9rem; color: var(--green); font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">
+                                            <i class="fas fa-shield-check"></i> ${data.friendly_name || 'Your Scam Shield Number'}
+                                        </div>
+                                        <span style="padding: 0.5rem 1rem; background: var(--success); color: white; border-radius: 20px; font-weight: 700; font-size: 0.85rem;">
+                                            <i class="fas fa-robot"></i> AI ACTIVE
+                                        </span>
+                                        <span class="scam-shield-badge">
+                                            <i class="fas fa-ban"></i> SCAM SHIELD
+                                        </span>
+                                    </div>
+                                    <div style="font-size: 2.75rem; font-weight: 900; color: var(--green); margin: 0.75rem 0; letter-spacing: 2px;">${data.number}</div>
+                                    <div style="font-size: 0.95rem; color: #666; font-weight: 600;">
+                                        <i class="fas fa-calendar-check"></i> Activated: ${new Date(data.purchased_at).toLocaleDateString()}
+                                    </div>
                                 </div>
-                                <p class="text-sm text-gray-600 italic">${plan.ideal_for}</p>
+                                <div style="text-align: center; padding: 0 2rem;">
+                                    <div style="width: 100px; height: 100px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                                        <i class="fas fa-shield-alt" style="font-size: 3rem; color: var(--green);"></i>
+                                    </div>
+                                    <div style="font-weight: 700; color: var(--green);">Protected</div>
+                                </div>
                             </div>
-                            <ul class="space-y-3 mb-8">
-                                ${plan.features.map(f => `
-                                    <li class="flex items-start feature-check">
-                                        <i class="fas fa-check-circle text-${plan.color}-600 mr-3 mt-1"></i>
-                                        <span class="text-gray-700">${f}</span>
-                                    </li>
-                                `).join('')}
-                            </ul>
-                            <a href="/static/shield-pricing.html" class="block text-center px-6 py-4 bg-${plan.color}-600 text-white rounded-xl font-bold text-lg hover:shadow-2xl transition">
-                                Upgrade Now
-                            </a>
                         </div>
-                    </div>
-                `).join('');
+                    `;
+                } else {
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 4rem; background: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%); border-radius: 16px; border: 2px dashed #d1d5db;">
+                            <i class="fas fa-shield-alt" style="font-size: 5rem; color: #d1d5db; margin-bottom: 1.5rem;"></i>
+                            <h4 style="font-size: 1.5rem; font-weight: 800; color: #666; margin-bottom: 0.75rem;">No Shield Number Yet</h4>
+                            <p style="color: #999; margin-bottom: 2rem; font-size: 1.05rem;">Protect yourself from scams with an AI-powered Shield number</p>
+                            <button onclick="openProvisionModal()" class="btn btn-primary" style="padding: 1.25rem 2.5rem; font-size: 1.1rem;">
+                                <i class="fas fa-plus"></i> Get Your Shield Number Now
+                            </button>
+                        </div>
+                    `;
+                }
             } catch (err) {
-                console.error('Error loading pricing:', err);
+                console.error('Error loading numbers:', err);
+                if (err.message !== 'Session expired') {
+                    document.getElementById('numbers-list').innerHTML = '<p style="text-align: center; color: var(--danger); padding: 2rem; font-weight: 600;">Error loading numbers. Please refresh the page.</p>';
+                }
             }
         }
 
-        async function updatePhone() {
-            const newNumber = document.getElementById('client-cell').value;
-            if (!newNumber.startsWith('+')) {
-                alert('⚠️ Use format: +1234567890');
+        function openProvisionModal() {
+            document.getElementById('provision-modal').classList.add('active');
+            resetProvisionModal();
+            populateStates();
+        }
+
+        function populateStates() {
+            const select = document.getElementById('state-select');
+            select.innerHTML = '<option value="">-- Choose Your State --</option>';
+            Object.keys(STATES_AREA_CODES).sort().forEach(state => {
+                select.innerHTML += `<option value="${state}">${state}</option>`;
+            });
+        }
+
+        function loadAreaCodes() {
+            const stateSelect = document.getElementById('state-select');
+            const selectedState = stateSelect.value;
+            
+            if (!selectedState) return;
+            
+            SELECTED_STATE = selectedState;
+            const areaCodes = STATES_AREA_CODES[selectedState];
+            
+            document.getElementById('selected-state-name').textContent = selectedState;
+            
+            const areaSelect = document.getElementById('area-code-select');
+            areaSelect.innerHTML = '<option value="">-- Choose Area Code --</option>';
+            
+            areaCodes.forEach(code => {
+                areaSelect.innerHTML += `<option value="${code}">${code}</option>`;
+            });
+            
+            document.getElementById('step-select-state').style.display = 'none';
+            document.getElementById('step-select-area-code').style.display = 'block';
+        }
+
+        function backToStates() {
+            document.getElementById('step-select-area-code').style.display = 'none';
+            document.getElementById('step-select-state').style.display = 'block';
+            SELECTED_AREA_CODE = null;
+            document.getElementById('search-btn').disabled = true;
+        }
+
+        function backToAreaCodes() {
+            document.getElementById('step-select-number').style.display = 'none';
+            document.getElementById('step-select-area-code').style.display = 'block';
+            SELECTED_NUMBER = null;
+        }
+
+        function handleAreaCodeChange() {
+            const select = document.getElementById('area-code-select');
+            SELECTED_AREA_CODE = select.value;
+            
+            console.log('Selected:', { state: SELECTED_STATE, areaCode: SELECTED_AREA_CODE });
+            
+            if (SELECTED_AREA_CODE) {
+                document.getElementById('search-btn').disabled = false;
+                select.style.borderColor = 'var(--green)';
+                select.style.background = 'var(--light-green)';
+            } else {
+                document.getElementById('search-btn').disabled = true;
+                select.style.borderColor = '#e5e5e5';
+                select.style.background = 'white';
+            }
+        }
+
+        function closeProvisionModal() {
+            document.getElementById('provision-modal').classList.remove('active');
+        }
+
+        function resetProvisionModal() {
+            document.getElementById('step-select-state').style.display = 'block';
+            document.getElementById('step-select-area-code').style.display = 'none';
+            document.getElementById('step-searching').style.display = 'none';
+            document.getElementById('step-select-number').style.display = 'none';
+            document.getElementById('step-provisioning').style.display = 'none';
+            document.getElementById('step-success').style.display = 'none';
+            document.getElementById('step-error').style.display = 'none';
+            SELECTED_AREA_CODE = null;
+            SELECTED_STATE = null;
+            AVAILABLE_NUMBERS = [];
+            SELECTED_NUMBER = null;
+        }
+
+        async function searchNumbers() {
+            if (!SELECTED_AREA_CODE) {
+                showToast('Please select an area code', 'error');
                 return;
             }
+            
+            console.log('Searching:', { state: SELECTED_STATE, areaCode: SELECTED_AREA_CODE });
+            
+            document.getElementById('step-select-area-code').style.display = 'none';
+            document.getElementById('step-searching').style.display = 'block';
+            
             try {
-                await fetch(`${API}/api/rootcall/config/${CLIENT_ID}`, {
-                    method: 'PATCH',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({client_cell: newNumber})
-                });
-                alert('✅ Phone number updated!');
-                loadData();
+                const response = await authFetch(`${API}/api/rootcall/available-numbers?area_code=${SELECTED_AREA_CODE}`);
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to search numbers');
+                }
+                const data = await response.json();
+                console.log('Available numbers response:', data);
+                
+                AVAILABLE_NUMBERS = data.numbers || [];
+                if (AVAILABLE_NUMBERS.length === 0) {
+                    throw new Error('No numbers available in this area code. Please try another.');
+                }
+                
+                displayAvailableNumbers();
+                document.getElementById('step-searching').style.display = 'none';
+                document.getElementById('step-select-number').style.display = 'block';
             } catch (err) {
-                alert('❌ Error: ' + err.message);
+                console.error('Search error:', err);
+                document.getElementById('step-searching').style.display = 'none';
+                document.getElementById('step-error').style.display = 'block';
+                document.getElementById('error-message').textContent = err.message || 'Failed to search numbers. Please try again.';
             }
         }
 
-        async function saveSettings() {
+        function displayAvailableNumbers() {
+            const container = document.getElementById('available-numbers');
+            if (AVAILABLE_NUMBERS.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #999; padding: 2rem;">No numbers found</p>';
+                return;
+            }
+            
+            console.log('Displaying numbers:', AVAILABLE_NUMBERS);
+            
+            container.innerHTML = AVAILABLE_NUMBERS.map((num, index) => {
+                const phoneNumber = num.phone_number || num;
+                const locality = num.locality || '';
+                const region = num.region || SELECTED_STATE || '';
+                return `
+                    <div class="number-card" onclick="selectNumber('${phoneNumber}', ${index}, event)" data-number="${phoneNumber}">
+                        <div class="number-info">
+                            <div class="number-text">${formatPhoneNumber(phoneNumber)}</div>
+                            ${locality || region ? `<div class="number-location">${locality}${locality && region ? ', ' : ''}${region}</div>` : ''}
+                        </div>
+                        <div>
+                            <i class="fas fa-shield-alt" style="font-size: 1.5rem; color: var(--green);"></i>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function filterNumbers() {
+            const search = document.getElementById('number-search').value.toLowerCase();
+            const cards = document.querySelectorAll('.number-card');
+            cards.forEach(card => {
+                const number = card.getAttribute('data-number');
+                if (number.includes(search)) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        function selectNumber(phoneNumber, index, evt) {
+            SELECTED_NUMBER = phoneNumber;
+            console.log('Selected number:', phoneNumber);
+            
+            document.querySelectorAll('.number-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            if (evt && evt.target) {
+        evt.target.closest('.number-card').classList.add('selected');
+    }
+            document.getElementById('provision-btn').disabled = false;
+        }
+
+        async function provisionSelectedNumber() {
+            if (!SELECTED_NUMBER) {
+                showToast('Please select a number', 'error');
+                return;
+            }
+            
+            console.log('Provisioning:', { 
+                number: SELECTED_NUMBER, 
+                areaCode: SELECTED_AREA_CODE,
+                state: SELECTED_STATE
+            });
+            
+            document.getElementById('step-select-number').style.display = 'none';
+            document.getElementById('step-provisioning').style.display = 'block';
+            
             try {
-                await fetch(`${API}/api/rootcall/config/${CLIENT_ID}`, {
-                    method: 'PATCH',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        sms_alerts_enabled: document.getElementById('sms-alerts').checked,
-                        alert_on_spam: document.getElementById('alert-spam').checked,
-                        alert_on_unknown: document.getElementById('alert-unknown').checked
+                document.getElementById('provision-status').textContent = 'Purchasing number from Telnyx...';
+                const response = await authFetch(`${API}/api/rootcall/provision`, {
+                    method: 'POST',
+                    body: JSON.stringify({ 
+                        phone_number: SELECTED_NUMBER,
+                        area_code: SELECTED_AREA_CODE
                     })
                 });
-                alert('✅ Settings saved successfully!');
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Provisioning failed');
+                }
+                
+                const data = await response.json();
+                console.log('Provision response:', data);
+                
+                document.getElementById('provision-status').textContent = 'Creating your AI scam screening agent...';
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                document.getElementById('provision-status').textContent = 'Configuring call routing...';
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                document.getElementById('provision-status').textContent = 'Activating scam detection...';
+                await new Promise(resolve => setTimeout(resolve, 800));
+                
+                document.getElementById('step-provisioning').style.display = 'none';
+                document.getElementById('step-success').style.display = 'block';
+                document.getElementById('new-phone-number').textContent = formatPhoneNumber(data.rootcall_number || data.phone_number || SELECTED_NUMBER);
             } catch (err) {
-                alert('❌ Error: ' + err.message);
+                console.error('Provision error:', err);
+                document.getElementById('step-provisioning').style.display = 'none';
+                document.getElementById('step-error').style.display = 'block';
+                document.getElementById('error-message').textContent = err.message || 'Failed to provision number. Please try again.';
             }
+        }
+
+        function finishProvisioning() {
+            closeProvisionModal();
+            loadData();
+            showToast('Scam Shield number activated successfully! AI protection is now active.', 'success');
+            showPage('numbers');
+        }
+
+        function formatPhoneNumber(phone) {
+            if (!phone) return '';
+            const cleaned = phone.replace(/\D/g, '');
+            if (cleaned.length === 11 && cleaned[0] === '1') {
+                return `+1 (${cleaned.slice(1, 4)}) ${cleaned.slice(4, 7)}-${cleaned.slice(7)}`;
+            }
+            if (cleaned.length === 10) {
+                return `+1 (${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
+            }
+            return phone;
         }
 
         async function addContact() {
-            const phone = document.getElementById('new-contact').value;
-            const name = document.getElementById('new-contact-name').value;
+            const phone = document.getElementById('new-contact').value.trim();
+            const name = document.getElementById('new-contact-name').value.trim();
             if (!phone) {
-                alert('⚠️ Please enter a phone number');
+                showToast('Please enter a phone number', 'error');
+                return;
+            }
+            if (!PHONE_REGEX.test(phone)) {
+                showToast('Phone number must be in E.164 format (e.g., +1234567890)', 'error');
                 return;
             }
             try {
-                await fetch(`${API}/api/rootcall/trusted-contacts/${CLIENT_ID}`, {
+                showLoading(true);
+                const response = await authFetch(`${API}/api/rootcall/trusted-contacts/${CLIENT_ID}`, {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({phone_number: phone, name: name})
+                    body: JSON.stringify({ phone_number: phone, name: name })
                 });
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to add contact');
+                }
                 document.getElementById('new-contact').value = '';
                 document.getElementById('new-contact-name').value = '';
-                loadData();
+                showToast('Trusted contact added successfully!', 'success');
+                await loadData();
             } catch (err) {
-                alert('❌ Error: ' + err.message);
+                showToast('Error adding contact: ' + err.message, 'error');
+            } finally {
+                showLoading(false);
             }
         }
 
         async function removeContact(phone) {
             if (!confirm(`Remove ${phone} from trusted contacts?`)) return;
             try {
-                await fetch(`${API}/api/rootcall/trusted-contacts/${CLIENT_ID}/${encodeURIComponent(phone)}`, {
+                showLoading(true);
+                const response = await authFetch(`${API}/api/rootcall/trusted-contacts/${CLIENT_ID}/${encodeURIComponent(phone)}`, {
                     method: 'DELETE'
                 });
-                loadData();
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to remove contact');
+                }
+                showToast('Contact removed', 'success');
+                await loadData();
             } catch (err) {
-                alert('❌ Error: ' + err.message);
+                showToast('Error removing contact: ' + err.message, 'error');
+            } finally {
+                showLoading(false);
             }
         }
 
-        // Smooth scroll for navigation
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        async function updatePhone() {
+            const phone = document.getElementById('client-cell').value.trim();
+            if (!phone) {
+                showToast('Please enter a phone number', 'error');
+                return;
+            }
+            if (!PHONE_REGEX.test(phone)) {
+                showToast('Phone number must be in E.164 format (e.g., +1234567890)', 'error');
+                return;
+            }
+            try {
+                showLoading(true);
+                const response = await authFetch(`${API}/api/rootcall/config/${CLIENT_ID}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({ client_cell: phone })
+                });
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to update phone');
                 }
-            });
-        });
+                showToast('Forwarding number updated!', 'success');
+            } catch (err) {
+                showToast('Error: ' + err.message, 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
 
-        loadData();
-        setInterval(loadData, 30000);
+        async function saveSettings() {
+            try {
+                const response = await authFetch(`${API}/api/rootcall/config/${CLIENT_ID}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({
+                        sms_alerts_enabled: document.getElementById('sms-alerts').checked,
+                        alert_on_spam: document.getElementById('alert-spam').checked,
+                        alert_on_unknown: document.getElementById('alert-unknown').checked,
+                        auto_block_spam: document.getElementById('auto-block-spam').checked
+                    })
+                });
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to save settings');
+                }
+                showToast('Settings saved!', 'success');
+            } catch (err) {
+                showToast('Error: ' + err.message, 'error');
+            }
+        }
+
+        function exportCalls() {
+            window.open(`${API}/api/rootcall/export/${CLIENT_ID}`, '_blank');
+        }
+
+        function logout() {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            localStorage.removeItem('selected_plan');
+            window.location.href = '/static/login.html';
+        }
+
+        let refreshTimer;
+        function scheduleRefresh() {
+            clearTimeout(refreshTimer);
+            refreshTimer = setTimeout(() => {
+                if (document.visibilityState === 'visible') {
+                    loadData();
+                }
+                scheduleRefresh();
+            }, 30000);
+        }
+
+        init();
+        scheduleRefresh();
+
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 1024) {
+                document.getElementById('sidebar').classList.remove('open');
+            }
+        });
     </script>
 </body>
 </html>

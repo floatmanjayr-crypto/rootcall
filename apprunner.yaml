@@ -1,10 +1,18 @@
 version: 1.0
 runtime: python311
+
 build:
   commands:
+    pre-build:
+      - echo "Installing dependencies from backend folder..."
+      - cd backend && pip install -r requirements.txt --target .
     build:
-      - cd backend && python3 -m pip install --upgrade pip && python3 -m pip install -r requirements.txt
+      - echo "Build step completed"
+
 run:
-  command: python3 -m uvicorn backend.app.main:app --host 0.0.0.0 --port 8080
+  runtime-version: 3.11
+  working-directory: /app/backend
+  command: uvicorn main:app --host 0.0.0.0 --port $PORT
   network:
-    port: 8080
+    port: "8000"
+    env: PORT

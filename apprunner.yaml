@@ -1,0 +1,18 @@
+version: 1.0
+runtime: python3
+build:
+  commands:
+    build:
+      - echo "Installing dependencies LOCALLY..."
+      # This --target flag puts the libraries right next to your app.py
+      # It fixes the "No module named uvicorn" error.
+      - cd backend && pip install -r requirements.txt --target .
+      - cd backend && pip install uvicorn fastapi --target .
+run:
+  # Now Python can definitely find uvicorn
+  command: cd backend && python -m uvicorn app:app --host 0.0.0.0 --port 8080
+  network_configuration:
+    port: 8080
+    env:
+      - name: PORT
+        value: "8080"

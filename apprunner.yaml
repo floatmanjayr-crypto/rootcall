@@ -1,17 +1,15 @@
 version: 1.0
-runtime: python3
+runtime: python311
+
 build:
   commands:
-    build:
-      # We install requirements. 
-      # Make sure 'uvicorn' is listed in your requirements.txt file!
-      - cd backend && pip install -r requirements.txt
+    pre-build:
+      - cd backend && pip install -r requirements.txt --target .
+
 run:
-  # Check: Is your file named 'app.py' or 'main.py'? 
-  # If it is main.py, change the line below to: python main.py
-  command: cd backend && python app.py
-  network_configuration:
-    port: 8080
-    env:
-      - name: PORT
-        value: "8080"
+  runtime-version: 3.11
+  working-directory: /app/backend
+  command: uvicorn main:app --host 0.0.0.0 --port $PORT --workers 1 --no-access-log
+  network:
+    port: "8000"
+    env: PORT

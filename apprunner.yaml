@@ -4,12 +4,14 @@ runtime: python311
 build:
   commands:
     pre-build:
-      - cd backend && pip install -r requirements.txt --target .
+      - pip install --upgrade pip
+      - pip install uvicorn[standard] fastapi python-multipart --no-cache-dir
+      - cd backend && pip install -r requirements.txt --no-cache-dir
 
 run:
   runtime-version: 3.11
   working-directory: /app/backend
-  command: uvicorn main:app --host 0.0.0.0 --port $PORT --workers 1 --no-access-log
+  command: uvicorn main:app --host 0.0.0.0 --port $PORT
   network:
     port: "8000"
     env: PORT

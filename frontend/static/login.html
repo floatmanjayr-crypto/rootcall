@@ -368,7 +368,7 @@
   </div>
 
   <script>
-    const API = window.location.origin;
+    const API = 'https://wajw72dmej.us-east-1.awsapprunner.com';
     document.getElementById('year').textContent = new Date().getFullYear();
 
     const form = document.getElementById('login-form');
@@ -427,7 +427,7 @@
         showMessage('Login successful! Redirecting...', 'success');
 
         // Redirect to dashboard the same way as before
-        window.location.href = '/static/client-portal.html';
+        window.location.href = '/client-portal.html';
 
       } catch (err) {
         console.error(err);
@@ -441,7 +441,7 @@
     (function autoRedirectIfLoggedIn() {
       const token = localStorage.getItem('access_token');
       if (token) {
-        window.location.href = '/static/client-portal.html';
+        window.location.href = '/client-portal.html';
       }
     })();
   </script>

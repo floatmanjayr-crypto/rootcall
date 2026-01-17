@@ -21,6 +21,8 @@
             font-family: 'Inter', sans-serif;
             background: var(--ivory);
             color: #1a1a1a;
+            margin: 0;
+            padding: 0;
         }
 
         .sidebar {
@@ -39,9 +41,39 @@
         }
 
         .sidebar-header {
-            padding: 2rem 1.5rem;
+            padding: 1rem 1rem;
             border-bottom: 1px solid #e5e5e5;
-            background: white;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fffe 100%);
+        }
+
+        .logo-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logo-img {
+            width: 150px;
+            height: auto;
+            filter: drop-shadow(0 2px 4px rgba(13, 61, 47, 0.1));
+            transition: transform 0.3s ease;
+        }
+
+        .logo-img:hover {
+            transform: scale(1.02);
+        }
+
+        .tagline {
+            font-size: 0.65rem;
+            color: var(--green);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            padding: 0.3rem 0.65rem;
+            background: linear-gradient(135deg, var(--light-green) 0%, #d4f4dd 100%);
+            border-radius: 12px;
+            border: 1px solid rgba(13, 61, 47, 0.15);
         }
 
         .sidebar-nav {
@@ -241,27 +273,34 @@
             height: 100%;
         }
 
-        .area-code-btn {
-            padding: 1.75rem;
+        select {
+            width: 100%;
+            padding: 1.25rem;
             border: 3px solid #e5e5e5;
-            border-radius: 16px;
+            border-radius: 12px;
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: var(--green);
             cursor: pointer;
-            transition: all 0.3s ease;
-            text-align: center;
             background: white;
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
         }
 
-        .area-code-btn:hover {
-            border-color: var(--green);
-            transform: scale(1.05);
-            box-shadow: 0 8px 20px rgba(13, 61, 47, 0.15);
+        select:hover {
+            border-color: var(--accent);
         }
 
-        .area-code-btn.selected {
-            background: linear-gradient(135deg, var(--green) 0%, var(--accent) 100%);
-            color: white;
+        select:focus {
+            outline: none;
             border-color: var(--green);
-            box-shadow: 0 8px 20px rgba(13, 61, 47, 0.3);
+            box-shadow: 0 0 0 4px rgba(13, 61, 47, 0.1);
+            background: var(--light-green);
+        }
+
+        select option {
+            padding: 1rem;
+            font-weight: 600;
         }
 
         .number-card {
@@ -559,12 +598,10 @@
     </style>
 </head>
 <body>
-    <!-- Mobile Menu Button -->
     <button class="mobile-menu-btn" onclick="toggleSidebar()">
         <i class="fas fa-bars" style="font-size: 1.5rem; color: var(--green);"></i>
     </button>
 
-    <!-- Loading Overlay -->
     <div id="loading-overlay" class="loading-overlay">
         <div style="text-align: center;">
             <div class="spinner"></div>
@@ -572,33 +609,32 @@
         </div>
     </div>
 
-    <!-- Sidebar -->
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem;">
-                <img src="rootcall-logo.png" alt="RootCall Logo" style="width: 140px; height: auto;">
-                <div style="font-size: 0.75rem; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">AI Scam Call Shield</div>
+            <div class="logo-container">
+                <img src="rootcall-logo.png" alt="RootCall Logo" class="logo-img">
+                <span class="tagline">AI Scam Call Shield</span>
             </div>
         </div>
 
         <div class="sidebar-nav">
-            <div class="nav-item active" onclick="showPage('dashboard')">
+            <div class="nav-item active" onclick=\"showPage('dashboard', event)\">
                 <i class="fas fa-home"></i>
                 <span>Dashboard</span>
             </div>
-            <div class="nav-item" onclick="showPage('numbers')">
+            <div class="nav-item" onclick=\"showPage('numbers', event)\">
                 <i class="fas fa-phone-alt"></i>
                 <span>Shield Numbers</span>
             </div>
-            <div class="nav-item" onclick="showPage('contacts')">
+            <div class="nav-item" onclick=\"showPage('contacts', event)\">
                 <i class="fas fa-user-shield"></i>
                 <span>Trusted Contacts</span>
             </div>
-            <div class="nav-item" onclick="showPage('activity')">
+            <div class="nav-item" onclick=\"showPage('activity', event)\">
                 <i class="fas fa-history"></i>
                 <span>Call Activity</span>
             </div>
-            <div class="nav-item" onclick="showPage('settings')">
+            <div class="nav-item" onclick=\"showPage('settings', event)\">
                 <i class="fas fa-cog"></i>
                 <span>Settings</span>
             </div>
@@ -612,7 +648,6 @@
         </div>
     </div>
 
-    <!-- Main Content -->
     <div class="main-content">
         <div class="top-bar">
             <div>
@@ -631,10 +666,8 @@
             </div>
         </div>
 
-        <!-- Dashboard Page -->
         <div id="page-dashboard" class="page-content active">
             <div class="content-area">
-                <!-- Stats Grid -->
                 <div class="grid-4" style="margin-bottom: 2rem;">
                     <div class="stat-card">
                         <i class="fas fa-ban" style="color: var(--danger); font-size: 1.75rem;"></i>
@@ -658,9 +691,7 @@
                     </div>
                 </div>
 
-                <!-- Main Content Grid -->
                 <div class="grid-3" style="grid-template-columns: 2fr 1fr;">
-                    <!-- Protection Summary -->
                     <div>
                         <div class="card" style="margin-bottom: 1.5rem;">
                             <h3 style="font-size: 1.4rem; font-weight: 800; color: var(--green); margin-bottom: 1.5rem;">
@@ -686,17 +717,16 @@
                             </div>
                         </div>
 
-                        <!-- Quick Actions -->
                         <div class="card">
                             <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--green); margin-bottom: 1.5rem;">
                                 <i class="fas fa-bolt"></i> Quick Actions
                             </h3>
                             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
-                                <button onclick="showPage('numbers')" class="btn btn-primary" style="justify-content: center; padding: 1rem;">
+                                <button onclick=\"showPage('numbers', event)\" class="btn btn-primary" style="justify-content: center; padding: 1rem;">
                                     <i class="fas fa-plus-circle"></i>
                                     Add Shield Number
                                 </button>
-                                <button onclick="showPage('contacts')" class="btn" style="background: white; border: 2px solid var(--green); color: var(--green); justify-content: center; padding: 1rem;">
+                                <button onclick=\"showPage('contacts', event)\" class="btn" style="background: white; border: 2px solid var(--green); color: var(--green); justify-content: center; padding: 1rem;">
                                     <i class="fas fa-user-plus"></i>
                                     Add Contact
                                 </button>
@@ -704,7 +734,6 @@
                         </div>
                     </div>
 
-                    <!-- Fraud Alerts -->
                     <div class="card" style="background: linear-gradient(180deg, #ffffff 0%, #fff5f5 100%);">
                         <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--danger); margin-bottom: 1.5rem;">
                             <i class="fas fa-exclamation-triangle"></i> Trending Scam Alerts
@@ -763,7 +792,6 @@
             </div>
         </div>
 
-        <!-- Shield Numbers Page -->
         <div id="page-numbers" class="page-content">
             <div class="content-area">
                 <div style="margin-bottom: 2rem;">
@@ -793,7 +821,6 @@
             </div>
         </div>
 
-        <!-- Trusted Contacts Page -->
         <div id="page-contacts" class="page-content">
             <div class="content-area">
                 <div style="margin-bottom: 2rem;">
@@ -830,7 +857,6 @@
             </div>
         </div>
 
-        <!-- Activity Page -->
         <div id="page-activity" class="page-content">
             <div class="content-area">
                 <div style="margin-bottom: 2rem;">
@@ -863,7 +889,6 @@
             </div>
         </div>
 
-        <!-- Settings Page -->
         <div id="page-settings" class="page-content">
             <div class="content-area">
                 <div style="margin-bottom: 2rem;">
@@ -950,7 +975,6 @@
         </div>
     </div>
 
-    <!-- Provision Modal -->
     <div id="provision-modal" class="modal">
         <div class="modal-backdrop" onclick="closeProvisionModal()"></div>
         <div class="modal-content" style="position: relative; z-index: 1;">
@@ -967,70 +991,69 @@
                     </button>
                 </div>
 
-                <!-- Step 1: Choose Area Code -->
-                <div id="step-area-code">
+                <!-- STEP 1: SELECT STATE -->
+                <div id="step-select-state">
                     <div class="step-indicator">
                         <div class="step-dot active"></div>
+                        <div class="step-dot"></div>
                         <div class="step-dot"></div>
                         <div class="step-dot"></div>
                         <div class="step-dot"></div>
                     </div>
 
                     <p style="margin-bottom: 1.5rem; font-weight: 700; color: var(--green); font-size: 1.2rem;">
-                        <i class="fas fa-map-marker-alt"></i> Step 1: Choose Your Area Code
+                        <i class="fas fa-map-marker-alt"></i> Step 1: Select Your State
                     </p>
-                    
-                    <div class="grid-4" style="margin-bottom: 2rem;">
-                        <div class="area-code-btn" onclick="selectAreaCode('813', event)" data-code="813">
-                            <div style="font-size: 2.25rem; font-weight: 900;">813</div>
-                            <div style="font-size: 0.9rem; color: #666; margin-top: 0.5rem;">Tampa, FL</div>
-                        </div>
-                        <div class="area-code-btn" onclick="selectAreaCode('727', event)" data-code="727">
-                            <div style="font-size: 2.25rem; font-weight: 900;">727</div>
-                            <div style="font-size: 0.9rem; color: #666; margin-top: 0.5rem;">St. Petersburg, FL</div>
-                        </div>
-                        <div class="area-code-btn" onclick="selectAreaCode('407', event)" data-code="407">
-                            <div style="font-size: 2.25rem; font-weight: 900;">407</div>
-                            <div style="font-size: 0.9rem; color: #666; margin-top: 0.5rem;">Orlando, FL</div>
-                        </div>
-                        <div class="area-code-btn" onclick="selectAreaCode('305', event)" data-code="305">
-                            <div style="font-size: 2.25rem; font-weight: 900;">305</div>
-                            <div style="font-size: 0.9rem; color: #666; margin-top: 0.5rem;">Miami, FL</div>
-                        </div>
-                        <div class="area-code-btn" onclick="selectAreaCode('212', event)" data-code="212">
-                            <div style="font-size: 2.25rem; font-weight: 900;">212</div>
-                            <div style="font-size: 0.9rem; color: #666; margin-top: 0.5rem;">New York, NY</div>
-                        </div>
-                        <div class="area-code-btn" onclick="selectAreaCode('310', event)" data-code="310">
-                            <div style="font-size: 2.25rem; font-weight: 900;">310</div>
-                            <div style="font-size: 0.9rem; color: #666; margin-top: 0.5rem;">Los Angeles, CA</div>
-                        </div>
-                        <div class="area-code-btn" onclick="selectAreaCode('312', event)" data-code="312">
-                            <div style="font-size: 2.25rem; font-weight: 900;">312</div>
-                            <div style="font-size: 0.9rem; color: #666; margin-top: 0.5rem;">Chicago, IL</div>
-                        </div>
-                        <div class="area-code-btn" onclick="selectAreaCode('415', event)" data-code="415">
-                            <div style="font-size: 2.25rem; font-weight: 900;">415</div>
-                            <div style="font-size: 0.9rem; color: #666; margin-top: 0.5rem;">San Francisco, CA</div>
-                        </div>
+
+                    <select id="state-select" onchange="loadAreaCodes()">
+                        <option value="">-- Choose Your State --</option>
+                    </select>
+
+                    <div class="info-badge">
+                        <i class="fas fa-info-circle" style="font-size: 1.25rem;"></i>
+                        <span>Select your state to see available area codes</span>
+                    </div>
+                </div>
+
+                <!-- STEP 2: SELECT AREA CODE -->
+                <div id="step-select-area-code" style="display: none;">
+                    <div class="step-indicator">
+                        <div class="step-dot completed"></div>
+                        <div class="step-dot active"></div>
+                        <div class="step-dot"></div>
+                        <div class="step-dot"></div>
+                        <div class="step-dot"></div>
                     </div>
 
-                    <div class="info-badge" style="margin-bottom: 1.5rem;">
+                    <button onclick="backToStates()" class="btn" style="background: white; border: 2px solid var(--green); color: var(--green); margin-bottom: 1rem;">
+                        <i class="fas fa-arrow-left"></i> Back to States
+                    </button>
+
+                    <p style="margin-bottom: 1.5rem; font-weight: 700; color: var(--green); font-size: 1.2rem;">
+                        <i class="fas fa-phone"></i> Step 2: Select Area Code in <span id="selected-state-name"></span>
+                    </p>
+
+                    <select id="area-code-select" onchange="handleAreaCodeChange()">
+                        <option value="">-- Choose Area Code --</option>
+                    </select>
+
+                    <div class="info-badge">
                         <i class="fas fa-robot" style="font-size: 1.5rem;"></i>
                         <div>
                             <div style="font-weight: 700; margin-bottom: 0.25rem;">AI Call Screening Included</div>
-                            <div style="font-size: 0.9rem;">Every number comes with 24/7 AI protection that automatically screens calls, blocks scams, and protects you from fraud.</div>
+                            <div style="font-size: 0.9rem;">Every number comes with 24/7 AI protection</div>
                         </div>
                     </div>
 
-                    <button onclick="searchNumbers()" id="search-btn" disabled class="btn btn-primary" style="width: 100%; justify-content: center; padding: 1.25rem; font-size: 1.1rem;">
+                    <button onclick="searchNumbers()" id="search-btn" disabled class="btn btn-primary" style="width: 100%; justify-content: center; padding: 1.25rem; margin-top: 1.5rem;">
                         <i class="fas fa-search"></i> Search Available Numbers
                     </button>
                 </div>
 
-                <!-- Step 2: Searching -->
+                <!-- STEP 3: SEARCHING -->
                 <div id="step-searching" style="display: none; text-align: center;">
                     <div class="step-indicator">
+                        <div class="step-dot completed"></div>
                         <div class="step-dot completed"></div>
                         <div class="step-dot active"></div>
                         <div class="step-dot"></div>
@@ -1041,33 +1064,37 @@
                     <p style="color: #666; font-size: 1.05rem;">Finding available numbers in your area</p>
                 </div>
 
-                <!-- Step 3: Select Number -->
+                <!-- STEP 4: SELECT NUMBER -->
                 <div id="step-select-number" style="display: none;">
                     <div class="step-indicator">
+                        <div class="step-dot completed"></div>
                         <div class="step-dot completed"></div>
                         <div class="step-dot completed"></div>
                         <div class="step-dot active"></div>
                         <div class="step-dot"></div>
                     </div>
 
+                    <button onclick="backToAreaCodes()" class="btn" style="background: white; border: 2px solid var(--green); color: var(--green); margin-bottom: 1rem;">
+                        <i class="fas fa-arrow-left"></i> Back to Area Codes
+                    </button>
+
                     <p style="margin-bottom: 1.5rem; font-weight: 700; color: var(--green); font-size: 1.2rem;">
-                        <i class="fas fa-list"></i> Step 2: Choose Your Number
+                        <i class="fas fa-list"></i> Step 3: Choose Your Number
                     </p>
 
                     <input type="text" id="number-search" class="search-input" placeholder="🔍 Search by digits (e.g., 555, 1234)" oninput="filterNumbers()" />
 
-                    <div id="available-numbers" class="numbers-grid">
-                        <!-- Numbers will be populated here -->
-                    </div>
+                    <div id="available-numbers" class="numbers-grid"></div>
 
                     <button onclick="provisionSelectedNumber()" id="provision-btn" disabled class="btn btn-primary" style="width: 100%; justify-content: center; padding: 1.25rem; font-size: 1.1rem; margin-top: 1.5rem;">
                         <i class="fas fa-shield-alt"></i> Activate This Number
                     </button>
                 </div>
 
-                <!-- Step 4: Provisioning -->
+                <!-- STEP 5: PROVISIONING -->
                 <div id="step-provisioning" style="display: none; text-align: center;">
                     <div class="step-indicator">
+                        <div class="step-dot completed"></div>
                         <div class="step-dot completed"></div>
                         <div class="step-dot completed"></div>
                         <div class="step-dot completed"></div>
@@ -1078,7 +1105,7 @@
                     <p id="provision-status" style="color: #666; font-size: 1.05rem;"></p>
                 </div>
 
-                <!-- Step 5: Success -->
+                <!-- SUCCESS -->
                 <div id="step-success" style="display: none; text-align: center;">
                     <div style="font-size: 6rem; margin: 1rem 0;">
                         <i class="fas fa-check-circle" style="color: var(--success);"></i>
@@ -1098,7 +1125,7 @@
                     </button>
                 </div>
 
-                <!-- Step Error -->
+                <!-- ERROR -->
                 <div id="step-error" style="display: none; text-align: center;">
                     <div style="font-size: 6rem; margin: 1rem 0;">
                         <i class="fas fa-exclamation-circle" style="color: var(--danger);"></i>
@@ -1114,50 +1141,93 @@
     </div>
 
     <script>
-        // ============================================
-        // CONFIGURATION
-        // ============================================
-        const API = 'https://rootcall.onrender.com';
+        const API = 'https://wajw72dmej.us-east-1.awsapprunner.com';
+
         let USER_DATA = null;
         let CLIENT_ID = null;
         let SELECTED_AREA_CODE = null;
+        let SELECTED_STATE = null;
         let AVAILABLE_NUMBERS = [];
         let SELECTED_NUMBER = null;
-
-        // Phone validation regex (E.164 format)
         const PHONE_REGEX = /^\+[1-9]\d{1,14}$/;
 
-        // ============================================
-        // AUTHENTICATED FETCH WRAPPER
-        // ============================================
+        const STATES_AREA_CODES = {
+            "Alabama": ["205", "251", "256", "334"],
+            "Alaska": ["907"],
+            "Arizona": ["480", "520", "602", "623", "928"],
+            "Arkansas": ["479", "501", "870"],
+            "California": ["209", "213", "310", "323", "408", "415", "510", "530", "559", "562", "619", "626", "650", "661", "707", "714", "760", "805", "818", "831", "858", "909", "916", "925", "949"],
+            "Colorado": ["303", "719", "720", "970"],
+            "Connecticut": ["203", "475", "860"],
+            "Delaware": ["302"],
+            "Florida": ["239", "305", "321", "352", "386", "407", "561", "727", "754", "772", "786", "813", "850", "863", "904", "941", "954"],
+            "Georgia": ["229", "404", "470", "478", "678", "706", "762", "770", "912"],
+            "Hawaii": ["808"],
+            "Idaho": ["208"],
+            "Illinois": ["217", "224", "309", "312", "331", "618", "630", "708", "773", "815", "847"],
+            "Indiana": ["219", "260", "317", "574", "765", "812"],
+            "Iowa": ["319", "515", "563", "712"],
+            "Kansas": ["316", "620", "785", "913"],
+            "Kentucky": ["270", "502", "606", "859"],
+            "Louisiana": ["225", "318", "337", "504", "985"],
+            "Maine": ["207"],
+            "Maryland": ["240", "301", "410", "443"],
+            "Massachusetts": ["339", "351", "413", "508", "617", "774", "781", "857", "978"],
+            "Michigan": ["231", "248", "269", "313", "517", "586", "616", "734", "810", "906", "989"],
+            "Minnesota": ["218", "320", "507", "612", "651", "763", "952"],
+            "Mississippi": ["228", "601", "662"],
+            "Missouri": ["314", "417", "573", "636", "660", "816"],
+            "Montana": ["406"],
+            "Nebraska": ["308", "402", "531"],
+            "Nevada": ["702", "725", "775"],
+            "New Hampshire": ["603"],
+            "New Jersey": ["201", "551", "609", "732", "848", "856", "862", "908", "973"],
+            "New Mexico": ["505", "575"],
+            "New York": ["212", "315", "347", "516", "518", "585", "607", "631", "646", "716", "718", "845", "914", "917"],
+            "North Carolina": ["252", "336", "704", "828", "910", "919", "980", "984"],
+            "North Dakota": ["701"],
+            "Ohio": ["216", "234", "330", "380", "419", "440", "513", "567", "614", "740", "937"],
+            "Oklahoma": ["405", "539", "580", "918"],
+            "Oregon": ["458", "503", "541", "971"],
+            "Pennsylvania": ["215", "267", "272", "412", "484", "570", "610", "717", "724", "814", "878"],
+            "Rhode Island": ["401"],
+            "South Carolina": ["803", "843", "854", "864"],
+            "South Dakota": ["605"],
+            "Tennessee": ["423", "615", "629", "731", "865", "901", "931"],
+            "Texas": ["210", "214", "254", "281", "325", "346", "361", "409", "430", "432", "469", "512", "682", "713", "737", "806", "817", "830", "832", "903", "915", "936", "940", "956", "972", "979"],
+            "Utah": ["385", "435", "801"],
+            "Vermont": ["802"],
+            "Virginia": ["276", "434", "540", "571", "703", "757", "804"],
+            "Washington": ["206", "253", "360", "425", "509", "564"],
+            "Washington DC": ["202"],
+            "West Virginia": ["304", "681"],
+            "Wisconsin": ["262", "414", "534", "608", "715", "920"],
+            "Wyoming": ["307"]
+        };
+
         function getToken() {
             return localStorage.getItem('access_token') || localStorage.getItem('token');
         }
 
         async function authFetch(url, options = {}) {
             const token = getToken();
-            
             const headers = {
                 'Content-Type': 'application/json',
                 ...options.headers
             };
-
             if (token) {
                 headers['Authorization'] = `Bearer ${token}`;
             }
-
             try {
                 const response = await fetch(url, {
                     ...options,
                     headers
                 });
-
                 if (response.status === 401) {
                     console.warn('Session expired - logging out');
                     logout();
                     throw new Error('Session expired');
                 }
-
                 return response;
             } catch (error) {
                 console.error('Fetch error:', error);
@@ -1165,9 +1235,6 @@
             }
         }
 
-        // ============================================
-        // UI HELPERS
-        // ============================================
         function showLoading(show = true) {
             const overlay = document.getElementById('loading-overlay');
             if (overlay) {
@@ -1185,7 +1252,6 @@
                 <span style="font-weight: 600;">${message}</span>
             `;
             document.body.appendChild(toast);
-
             setTimeout(() => {
                 toast.style.opacity = '0';
                 setTimeout(() => toast.remove(), 300);
@@ -1195,7 +1261,6 @@
         function showAlert(message, type) {
             const container = document.getElementById('alert-container');
             if (!container) return;
-
             const alert = document.createElement('div');
             alert.className = `alert alert-${type}`;
             alert.innerHTML = `
@@ -1204,10 +1269,8 @@
                     <span>${message}</span>
                 </div>
             `;
-            
             container.innerHTML = '';
             container.appendChild(alert);
-
             setTimeout(() => {
                 alert.style.opacity = '0';
                 alert.style.transition = 'opacity 0.3s';
@@ -1220,44 +1283,36 @@
             sidebar.classList.toggle('open');
         }
 
-        function showPage(page) {
+        function showPage(page, evt) {
             document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            
             document.getElementById('page-' + page).classList.add('active');
-            event.target.closest('.nav-item').classList.add('active');
-
+            if (evt && evt.target) {
+        evt.target.closest('.nav-item').classList.add('active');
+    }
             if (window.innerWidth <= 1024) {
                 document.getElementById('sidebar').classList.remove('open');
             }
         }
 
-        // ============================================
-        // INITIALIZATION
-        // ============================================
         async function init() {
             const token = getToken();
             if (!token) {
-                window.location.href = '/static/login.html';
+                window.location.href = '/login.html';
                 return;
             }
-
             try {
                 const payload = JSON.parse(atob(token.split('.')[1]));
                 CLIENT_ID = payload.sub;
-                
                 if (!CLIENT_ID) {
                     console.error('No client ID in token');
                     logout();
                     return;
                 }
-                
                 USER_DATA = payload;
-                
                 document.getElementById('user-name').textContent = payload.email?.split('@')[0] || 'User';
                 document.getElementById('user-fullname').value = payload.email || '';
                 document.getElementById('user-email').value = payload.email || '';
-
                 await loadData();
             } catch (err) {
                 console.error('Init error:', err);
@@ -1265,14 +1320,9 @@
             }
         }
 
-        // ============================================
-        // DATA LOADING
-        // ============================================
         async function loadData() {
             try {
                 showLoading(true);
-
-                // Load stats
                 const statsResponse = await authFetch(`${API}/api/rootcall/stats/${CLIENT_ID}`);
                 if (statsResponse.ok) {
                     const stats = await statsResponse.json();
@@ -1281,19 +1331,14 @@
                     document.getElementById('trusted-connected').textContent = stats.trusted_forwarded || 0;
                     document.getElementById('total-calls-summary').textContent = stats.total_calls || 0;
                 }
-
-                // Load config
                 const configResponse = await authFetch(`${API}/api/rootcall/config/${CLIENT_ID}`);
                 if (configResponse.ok) {
                     const config = await configResponse.json();
-                    
                     document.getElementById('client-cell').value = config.client_cell || '';
                     document.getElementById('sms-alerts').checked = config.sms_alerts_enabled || false;
                     document.getElementById('alert-spam').checked = config.alert_on_spam || false;
                     document.getElementById('alert-unknown').checked = config.alert_on_unknown || false;
                     document.getElementById('auto-block-spam').checked = config.auto_block_spam || false;
-
-                    // Load contacts
                     const list = document.getElementById('contacts-list');
                     if (config.trusted_contacts && config.trusted_contacts.length > 0) {
                         list.innerHTML = config.trusted_contacts.map(c => {
@@ -1315,15 +1360,11 @@
                         list.innerHTML = '<p style="text-align: center; color: #999; padding: 2rem; font-weight: 600;">No trusted contacts yet. Add your first contact above!</p>';
                     }
                 }
-
                 await loadNumbers();
-
-                // Load calls
                 const callsResponse = await authFetch(`${API}/api/rootcall/calls/${CLIENT_ID}`);
                 if (callsResponse.ok) {
                     const calls = await callsResponse.json();
                     const tbody = document.getElementById('call-history');
-                    
                     if (calls.length > 0) {
                         tbody.innerHTML = calls.map(call => `
                             <tr style="border-top: 1px solid #e5e5e5; transition: all 0.3s ease;" onmouseover="this.style.background='var(--ivory)'" onmouseout="this.style.background='white'">
@@ -1344,7 +1385,6 @@
                         tbody.innerHTML = '<tr><td colspan="5" style="padding: 3rem; text-align: center; color: #999; font-weight: 600;">No call history yet. Your AI agent will log all activity here.</td></tr>';
                     }
                 }
-
             } catch (err) {
                 console.error('Error loading data:', err);
                 if (err.message !== 'Session expired') {
@@ -1360,9 +1400,7 @@
                 const response = await authFetch(`${API}/api/rootcall/my-number`);
                 const data = await response.json();
                 const container = document.getElementById('numbers-list');
-
                 console.log('My number response:', data);
-
                 if (data.has_number) {
                     container.innerHTML = `
                         <div style="padding: 2rem; background: linear-gradient(135deg, var(--light-green) 0%, #c6f6d5 100%); border: 3px solid var(--green); border-radius: 16px; box-shadow: 0 8px 20px rgba(13, 61, 47, 0.15);">
@@ -1413,12 +1451,70 @@
             }
         }
 
-        // ============================================
-        // PROVISION NUMBER FLOW
-        // ============================================
         function openProvisionModal() {
             document.getElementById('provision-modal').classList.add('active');
             resetProvisionModal();
+            populateStates();
+        }
+
+        function populateStates() {
+            const select = document.getElementById('state-select');
+            select.innerHTML = '<option value="">-- Choose Your State --</option>';
+            Object.keys(STATES_AREA_CODES).sort().forEach(state => {
+                select.innerHTML += `<option value="${state}">${state}</option>`;
+            });
+        }
+
+        function loadAreaCodes() {
+            const stateSelect = document.getElementById('state-select');
+            const selectedState = stateSelect.value;
+            
+            if (!selectedState) return;
+            
+            SELECTED_STATE = selectedState;
+            const areaCodes = STATES_AREA_CODES[selectedState];
+            
+            document.getElementById('selected-state-name').textContent = selectedState;
+            
+            const areaSelect = document.getElementById('area-code-select');
+            areaSelect.innerHTML = '<option value="">-- Choose Area Code --</option>';
+            
+            areaCodes.forEach(code => {
+                areaSelect.innerHTML += `<option value="${code}">${code}</option>`;
+            });
+            
+            document.getElementById('step-select-state').style.display = 'none';
+            document.getElementById('step-select-area-code').style.display = 'block';
+        }
+
+        function backToStates() {
+            document.getElementById('step-select-area-code').style.display = 'none';
+            document.getElementById('step-select-state').style.display = 'block';
+            SELECTED_AREA_CODE = null;
+            document.getElementById('search-btn').disabled = true;
+        }
+
+        function backToAreaCodes() {
+            document.getElementById('step-select-number').style.display = 'none';
+            document.getElementById('step-select-area-code').style.display = 'block';
+            SELECTED_NUMBER = null;
+        }
+
+        function handleAreaCodeChange() {
+            const select = document.getElementById('area-code-select');
+            SELECTED_AREA_CODE = select.value;
+            
+            console.log('Selected:', { state: SELECTED_STATE, areaCode: SELECTED_AREA_CODE });
+            
+            if (SELECTED_AREA_CODE) {
+                document.getElementById('search-btn').disabled = false;
+                select.style.borderColor = 'var(--green)';
+                select.style.background = 'var(--light-green)';
+            } else {
+                document.getElementById('search-btn').disabled = true;
+                select.style.borderColor = '#e5e5e5';
+                select.style.background = 'white';
+            }
         }
 
         function closeProvisionModal() {
@@ -1426,28 +1522,17 @@
         }
 
         function resetProvisionModal() {
-            document.getElementById('step-area-code').style.display = 'block';
+            document.getElementById('step-select-state').style.display = 'block';
+            document.getElementById('step-select-area-code').style.display = 'none';
             document.getElementById('step-searching').style.display = 'none';
             document.getElementById('step-select-number').style.display = 'none';
             document.getElementById('step-provisioning').style.display = 'none';
             document.getElementById('step-success').style.display = 'none';
             document.getElementById('step-error').style.display = 'none';
-            
             SELECTED_AREA_CODE = null;
+            SELECTED_STATE = null;
             AVAILABLE_NUMBERS = [];
             SELECTED_NUMBER = null;
-            
-            document.getElementById('search-btn').disabled = true;
-            document.querySelectorAll('.area-code-btn').forEach(btn => btn.classList.remove('selected'));
-        }
-
-        function selectAreaCode(code, event) {
-            SELECTED_AREA_CODE = code;
-            document.querySelectorAll('.area-code-btn').forEach(btn => {
-                btn.classList.remove('selected');
-            });
-            event.target.closest('.area-code-btn').classList.add('selected');
-            document.getElementById('search-btn').disabled = false;
         }
 
         async function searchNumbers() {
@@ -1455,35 +1540,29 @@
                 showToast('Please select an area code', 'error');
                 return;
             }
-
-            // Show searching step
-            document.getElementById('step-area-code').style.display = 'none';
+            
+            console.log('Searching:', { state: SELECTED_STATE, areaCode: SELECTED_AREA_CODE });
+            
+            document.getElementById('step-select-area-code').style.display = 'none';
             document.getElementById('step-searching').style.display = 'block';
-
+            
             try {
-                // Call backend to get available numbers from Telnyx
                 const response = await authFetch(`${API}/api/rootcall/available-numbers?area_code=${SELECTED_AREA_CODE}`);
-
                 if (!response.ok) {
                     const error = await response.json();
                     throw new Error(error.detail || 'Failed to search numbers');
                 }
-
                 const data = await response.json();
-                console.log('Available numbers:', data);
-
+                console.log('Available numbers response:', data);
+                
                 AVAILABLE_NUMBERS = data.numbers || [];
-
                 if (AVAILABLE_NUMBERS.length === 0) {
                     throw new Error('No numbers available in this area code. Please try another.');
                 }
-
-                // Display numbers
+                
                 displayAvailableNumbers();
-
                 document.getElementById('step-searching').style.display = 'none';
                 document.getElementById('step-select-number').style.display = 'block';
-
             } catch (err) {
                 console.error('Search error:', err);
                 document.getElementById('step-searching').style.display = 'none';
@@ -1494,19 +1573,19 @@
 
         function displayAvailableNumbers() {
             const container = document.getElementById('available-numbers');
-            
             if (AVAILABLE_NUMBERS.length === 0) {
                 container.innerHTML = '<p style="text-align: center; color: #999; padding: 2rem;">No numbers found</p>';
                 return;
             }
-
+            
+            console.log('Displaying numbers:', AVAILABLE_NUMBERS);
+            
             container.innerHTML = AVAILABLE_NUMBERS.map((num, index) => {
                 const phoneNumber = num.phone_number || num;
                 const locality = num.locality || '';
-                const region = num.region || '';
-                
+                const region = num.region || SELECTED_STATE || '';
                 return `
-                    <div class="number-card" onclick="selectNumber('${phoneNumber}', ${index})" data-number="${phoneNumber}">
+                    <div class="number-card" onclick="selectNumber('${phoneNumber}', ${index}, event)" data-number="${phoneNumber}">
                         <div class="number-info">
                             <div class="number-text">${formatPhoneNumber(phoneNumber)}</div>
                             ${locality || region ? `<div class="number-location">${locality}${locality && region ? ', ' : ''}${region}</div>` : ''}
@@ -1522,7 +1601,6 @@
         function filterNumbers() {
             const search = document.getElementById('number-search').value.toLowerCase();
             const cards = document.querySelectorAll('.number-card');
-            
             cards.forEach(card => {
                 const number = card.getAttribute('data-number');
                 if (number.includes(search)) {
@@ -1533,14 +1611,16 @@
             });
         }
 
-        function selectNumber(phoneNumber, index) {
+        function selectNumber(phoneNumber, index, evt) {
             SELECTED_NUMBER = phoneNumber;
+            console.log('Selected number:', phoneNumber);
             
             document.querySelectorAll('.number-card').forEach(card => {
                 card.classList.remove('selected');
             });
-            
-            event.target.closest('.number-card').classList.add('selected');
+            if (evt && evt.target) {
+        evt.target.closest('.number-card').classList.add('selected');
+    }
             document.getElementById('provision-btn').disabled = false;
         }
 
@@ -1549,13 +1629,18 @@
                 showToast('Please select a number', 'error');
                 return;
             }
-
+            
+            console.log('Provisioning:', { 
+                number: SELECTED_NUMBER, 
+                areaCode: SELECTED_AREA_CODE,
+                state: SELECTED_STATE
+            });
+            
             document.getElementById('step-select-number').style.display = 'none';
             document.getElementById('step-provisioning').style.display = 'block';
             
             try {
                 document.getElementById('provision-status').textContent = 'Purchasing number from Telnyx...';
-
                 const response = await authFetch(`${API}/api/rootcall/provision`, {
                     method: 'POST',
                     body: JSON.stringify({ 
@@ -1563,28 +1648,27 @@
                         area_code: SELECTED_AREA_CODE
                     })
                 });
-
+                
                 if (!response.ok) {
                     const error = await response.json();
                     throw new Error(error.detail || 'Provisioning failed');
                 }
-
+                
                 const data = await response.json();
                 console.log('Provision response:', data);
-
+                
                 document.getElementById('provision-status').textContent = 'Creating your AI scam screening agent...';
                 await new Promise(resolve => setTimeout(resolve, 1000));
-
+                
                 document.getElementById('provision-status').textContent = 'Configuring call routing...';
                 await new Promise(resolve => setTimeout(resolve, 1000));
-
+                
                 document.getElementById('provision-status').textContent = 'Activating scam detection...';
                 await new Promise(resolve => setTimeout(resolve, 800));
-
+                
                 document.getElementById('step-provisioning').style.display = 'none';
                 document.getElementById('step-success').style.display = 'block';
                 document.getElementById('new-phone-number').textContent = formatPhoneNumber(data.rootcall_number || data.phone_number || SELECTED_NUMBER);
-
             } catch (err) {
                 console.error('Provision error:', err);
                 document.getElementById('step-provisioning').style.display = 'none';
@@ -1601,44 +1685,38 @@
         }
 
         function formatPhoneNumber(phone) {
-            // Format +18135551234 to +1 (813) 555-1234
             if (!phone) return '';
             const cleaned = phone.replace(/\D/g, '');
             if (cleaned.length === 11 && cleaned[0] === '1') {
                 return `+1 (${cleaned.slice(1, 4)}) ${cleaned.slice(4, 7)}-${cleaned.slice(7)}`;
             }
+            if (cleaned.length === 10) {
+                return `+1 (${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
+            }
             return phone;
         }
 
-        // ============================================
-        // CONTACTS
-        // ============================================
         async function addContact() {
             const phone = document.getElementById('new-contact').value.trim();
             const name = document.getElementById('new-contact-name').value.trim();
-
             if (!phone) {
                 showToast('Please enter a phone number', 'error');
                 return;
             }
-
             if (!PHONE_REGEX.test(phone)) {
                 showToast('Phone number must be in E.164 format (e.g., +1234567890)', 'error');
                 return;
             }
-
             try {
                 showLoading(true);
                 const response = await authFetch(`${API}/api/rootcall/trusted-contacts/${CLIENT_ID}`, {
                     method: 'POST',
                     body: JSON.stringify({ phone_number: phone, name: name })
                 });
-
                 if (!response.ok) {
                     const error = await response.json();
                     throw new Error(error.detail || 'Failed to add contact');
                 }
-
                 document.getElementById('new-contact').value = '';
                 document.getElementById('new-contact-name').value = '';
                 showToast('Trusted contact added successfully!', 'success');
@@ -1652,18 +1730,15 @@
 
         async function removeContact(phone) {
             if (!confirm(`Remove ${phone} from trusted contacts?`)) return;
-
             try {
                 showLoading(true);
                 const response = await authFetch(`${API}/api/rootcall/trusted-contacts/${CLIENT_ID}/${encodeURIComponent(phone)}`, {
                     method: 'DELETE'
                 });
-
                 if (!response.ok) {
                     const error = await response.json();
                     throw new Error(error.detail || 'Failed to remove contact');
                 }
-
                 showToast('Contact removed', 'success');
                 await loadData();
             } catch (err) {
@@ -1673,34 +1748,26 @@
             }
         }
 
-        // ============================================
-        // SETTINGS
-        // ============================================
         async function updatePhone() {
             const phone = document.getElementById('client-cell').value.trim();
-
             if (!phone) {
                 showToast('Please enter a phone number', 'error');
                 return;
             }
-
             if (!PHONE_REGEX.test(phone)) {
                 showToast('Phone number must be in E.164 format (e.g., +1234567890)', 'error');
                 return;
             }
-
             try {
                 showLoading(true);
                 const response = await authFetch(`${API}/api/rootcall/config/${CLIENT_ID}`, {
                     method: 'PATCH',
                     body: JSON.stringify({ client_cell: phone })
                 });
-
                 if (!response.ok) {
                     const error = await response.json();
                     throw new Error(error.detail || 'Failed to update phone');
                 }
-
                 showToast('Forwarding number updated!', 'success');
             } catch (err) {
                 showToast('Error: ' + err.message, 'error');
@@ -1720,28 +1787,20 @@
                         auto_block_spam: document.getElementById('auto-block-spam').checked
                     })
                 });
-
                 if (!response.ok) {
                     const error = await response.json();
                     throw new Error(error.detail || 'Failed to save settings');
                 }
-
                 showToast('Settings saved!', 'success');
             } catch (err) {
                 showToast('Error: ' + err.message, 'error');
             }
         }
 
-        // ============================================
-        // EXPORT
-        // ============================================
         function exportCalls() {
             window.open(`${API}/api/rootcall/export/${CLIENT_ID}`, '_blank');
         }
 
-        // ============================================
-        // LOGOUT
-        // ============================================
         function logout() {
             localStorage.removeItem('access_token');
             localStorage.removeItem('token');
@@ -1750,9 +1809,6 @@
             window.location.href = '/static/login.html';
         }
 
-        // ============================================
-        // AUTO-REFRESH
-        // ============================================
         let refreshTimer;
         function scheduleRefresh() {
             clearTimeout(refreshTimer);
@@ -1764,9 +1820,6 @@
             }, 30000);
         }
 
-        // ============================================
-        // START
-        // ============================================
         init();
         scheduleRefresh();
 

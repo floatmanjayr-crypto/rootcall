@@ -257,7 +257,7 @@
     <div class="container nav">
       <div class="logo" aria-label="RootCall logo">
         <!-- Your PNG logo -->
-        <img src="rootcall-logo.png" alt="RootCall Logo" style="height:50px;">
+        <img src="rootcall-logo.png" alt="RootCall Logo" style="height:clamp(36px, 5vw, 48px);">
       </div>
       <!-- Moved nav a bit to the right to give logo space -->
       <nav class="hide-sm" aria-label="Main navigation" style="margin-left:40px">
@@ -265,7 +265,8 @@
         <a href="#pricing" class="hide-sm" style="margin-right:18px">Pricing</a>
         <a href="#faq" class="hide-sm" style="margin-right:18px">FAQ</a>
       </nav>
-      <a href="/static/login.html" class="btn btn-primary cta">Sign In</a>
+      <!-- CHANGED: send sign-in to App Runner static login -->
+      <a href="/login.html" class="btn btn-primary cta">Sign In</a>
     </div>
   </header>
 
@@ -346,7 +347,7 @@
     <div class="grid grid-3 price-wrap">
       <div class="price" aria-label="Essential plan">
         <h4>Essential</h4>
-        <div class="amt">$39<span style="font-size:.9rem">/mo</span></div>
+        <div class="amt">$14.99<span style="font-size:.9rem">/mo</span></div>
         <p class="muted">Solo protection for one line</p>
         <ul class="list">
           <li><span class="tick">•</span> AI answers & screens</li>
@@ -363,7 +364,7 @@
       <div class="price" style="border-color:#1c6b53" aria-label="Family plan">
         <span class="ribbon">Most Popular</span>
         <h4>Family</h4>
-        <div class="amt">$79<span style="font-size:.9rem">/mo</span></div>
+        <div class="amt">$24.99<span style="font-size:.9rem">/mo</span></div>
         <p class="muted">Protect up to 3 lines</p>
         <ul class="list">
           <li><span class="tick">•</span> Everything in Essential</li>
@@ -379,7 +380,7 @@
 
       <div class="price" style="border-color:#0b3629" aria-label="Guardian plan">
         <h4>Guardian</h4>
-        <div class="amt">$129<span style="font-size:.9rem">/mo</span></div>
+        <div class="amt">$34.99<span style="font-size:.9rem">/mo</span></div>
         <p class="muted">Maximum protection + white-glove setup</p>
         <ul class="list">
           <li><span class="tick">•</span> Dedicated onboarding</li>
@@ -446,9 +447,9 @@
           <label>Select Plan</label>
           <select id="signup-plan" required>
             <option value="">Choose your plan...</option>
-            <option value="essential">Essential - $39/mo</option>
-            <option value="family">Family - $79/mo (Most Popular)</option>
-            <option value="guardian">Guardian - $129/mo</option>
+            <option value="essential">Essential - $14.99/mo</option>
+            <option value="family">Family - $24.99/mo (Most Popular)</option>
+            <option value="guardian">Guardian - $34.99/mo</option>
           </select>
         </div>
         <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">
@@ -457,7 +458,8 @@
       </form>
       <p style="text-align:center;margin-top:15px;color:var(--muted);font-size:14px">
         Already have an account?
-        <a href="/static/login.html" style="color:var(--green);font-weight:700">Sign in</a>
+        <!-- CHANGED -->
+        <a href="/login.html" style="color:var(--green);font-weight:700">Sign in</a>
       </p>
     </div>
   </div>
@@ -465,7 +467,7 @@
   <footer>
     <div class="container foot">
       <div class="logo" style="opacity:.9">
-        <img src="rootcall-logo.png" alt="RootCall Logo" style="height:40px;">
+        <img src="rootcall-logo.png" alt="RootCall Logo" style="height:clamp(36px, 5vw, 48px);">
         <span>ROOTCALL</span>
       </div>
       <div>
@@ -477,7 +479,7 @@
   </footer>
 
   <script>
-    const API = 'https://rootcall.onrender.com';
+    const API = 'https://wajw72dmej.us-east-1.awsapprunner.com';
     document.getElementById('y').textContent = new Date().getFullYear();
 
     function openSignup(e) {

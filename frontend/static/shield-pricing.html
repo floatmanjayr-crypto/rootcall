@@ -116,7 +116,7 @@
         async function selectPlan(tier) {
             if (!user) {
                 localStorage.setItem('selected_plan', tier);
-                window.location.href = '/static/login.html';
+                window.location.href = '/login.html';
                 return;
             }
 
@@ -146,7 +146,7 @@
         const params = new URLSearchParams(window.location.search);
         if (params.get('success') === 'true') {
             alert('Payment successful! Your protection is now active.');
-            setTimeout(() => window.location.href = '/static/client-portal.html', 2000);
+            setTimeout(() => window.location.href = '/client-portal.html', 2000);
         } else if (params.get('canceled') === 'true') {
             alert('Payment was canceled.');
         }

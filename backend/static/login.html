@@ -102,6 +102,7 @@
       box-shadow:none;
     }
 
+    /* Main layout */
     .main{
       flex:1;
       display:flex;
@@ -163,6 +164,7 @@
       margin-top:1px;
     }
 
+    /* Card */
     .card{
       background:#fff;
       border-radius:var(--radius);
@@ -180,7 +182,9 @@
       font-size:.95rem;
       color:var(--muted);
     }
-    .field{ margin-bottom:16px; }
+    .field{
+      margin-bottom:16px;
+    }
     .field label{
       display:block;
       font-size:.82rem;
@@ -265,13 +269,22 @@
     }
 
     @media (max-width:900px){
-      .shell{ grid-template-columns:1fr; max-width:480px; }
-      .promo{ order:-1; text-align:left; }
+      .shell{
+        grid-template-columns:1fr;
+        max-width:480px;
+      }
+      .promo{
+        order:-1;
+        text-align:left;
+      }
     }
     @media (max-width:640px){
       .nav{padding:10px 16px}
       .main{padding:24px 12px 32px}
-      .foot{flex-direction:column;align-items:flex-start}
+      .foot{
+        flex-direction:column;
+        align-items:flex-start;
+      }
     }
   </style>
 </head>
@@ -287,7 +300,7 @@
           <span>ROOTCALL</span>
         </div>
         <div class="nav-actions">
-          <a href="/" class="nav-link">Back to Home</a>
+          <a href="/static/index.html" class="nav-link">Back to Home</a>
         </div>
       </div>
     </header>
@@ -325,10 +338,12 @@
 
             <div class="helper-row">
               <span></span>
-              <a href="/" id="plan-link">Need a plan? Go to homepage</a>
+              <a href="/">Need a plan? Go to homepage</a>
             </div>
 
-            <button type="button" id="login-btn" class="btn btn-primary">Sign In</button>
+            <button type="button" id="login-btn" class="btn btn-primary">
+              Sign In
+            </button>
           </form>
 
           <div class="small-note">
@@ -350,19 +365,15 @@
   </div>
 
   <script>
-    /**
-     * ✅ IMPORTANT:
-     * Hostinger may serve this login page, but the API + dashboard are on App Runner.
-     * So we call App Runner and redirect to App Runner static portal.
-     */
-    const APP_RUNNER_BASE = 'https://wajw72dmej.us-east-1.awsapprunner.com';
-    const API_BASE_URL = APP_RUNNER_BASE; // backend is same origin as App Runner
+    // ============================================
+    // ✅ API Configuration - Points to App Runner Backend
+    // ============================================
+    const API_BASE_URL = 'https://wajw72dmej.us-east-1.awsapprunner.com';
+
+    // ✅ Dashboard page is served by App Runner static files
+    const DASHBOARD_URL = `${API_BASE_URL}/static/client-portal.html`;
 
     document.getElementById('year').textContent = new Date().getFullYear();
-
-    // Make "Need a plan?" point to App Runner homepage (optional)
-    const planLink = document.getElementById('plan-link');
-    if (planLink) planLink.href = APP_RUNNER_BASE + '/';
 
     const messageBox = document.getElementById('login-message');
     const loginBtn = document.getElementById('login-btn');
@@ -415,16 +426,18 @@
           return;
         }
 
-        // store token + user
-        if (data.access_token) localStorage.setItem('access_token', data.access_token);
-        if (data.user) localStorage.setItem('user', JSON.stringify(data.user));
+        if (data.access_token) {
+          localStorage.setItem('access_token', data.access_token);
+        }
+        if (data.user) {
+          localStorage.setItem('user', JSON.stringify(data.user));
+        }
 
         showMessage('Login successful! Redirecting...', 'success');
 
-        // ✅ redirect to App Runner portal (not Hostinger)
         setTimeout(() => {
-          window.location.href = `${APP_RUNNER_BASE}/static/client-portal.html`;
-        }, 600);
+          window.location.href = DASHBOARD_URL;
+        }, 500);
 
       } catch (err) {
         showMessage(err.message || 'Network error. Please try again.', 'error');
@@ -435,13 +448,18 @@
     }
 
     loginBtn.addEventListener('click', handleLogin);
-    emailInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLogin(); });
-    passwordInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLogin(); });
 
-    // If already logged in, go straight to App Runner portal
+    emailInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') handleLogin();
+    });
+    passwordInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') handleLogin();
+    });
+
+    // If already logged in, go straight to dashboard (App Runner)
     const existingToken = localStorage.getItem('access_token');
     if (existingToken) {
-      window.location.href = `${APP_RUNNER_BASE}/static/client-portal.html`;
+      window.location.href = DASHBOARD_URL;
     }
   </script>
 </body>

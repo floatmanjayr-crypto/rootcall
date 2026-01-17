@@ -87,5 +87,5 @@ def portal_redirect():
 
 if __name__ == "__main__":
     import uvicorn
-    # FIXED: Host is 0.0.0.0 and Port is 8080
-    uvicorn.run(app, host="0.0.0.0", port=8080)
+    # FIXED: Host is 0.0.0.0 and Port is 8000
+    uvicorn.run(app, host="0.0.0.0", port=8000)

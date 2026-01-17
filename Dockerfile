@@ -2,11 +2,15 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-COPY requirements.txt .
+# Copy only backend (your actual code)
+COPY backend ./backend
+COPY apprunner.yaml ./   # optional, not needed anymore
+
+WORKDIR /app/backend
+
+RUN pip install --no-cache-dir uvicorn[standard] fastapi python-multipart
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+EXPOSE 8000
 
-EXPOSE 8080
-
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

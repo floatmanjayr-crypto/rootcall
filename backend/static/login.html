@@ -366,11 +366,11 @@
 
   <script>
     // ============================================
-    // ✅ API Configuration - Points to App Runner Backend
+    // Keep API calls and dashboard navigation on the host serving this page.
     // ============================================
-    const API_BASE_URL = 'https://wajw72dmej.us-east-1.awsapprunner.com';
+    const API_BASE_URL = '';
 
-    // ✅ Dashboard page is served by App Runner static files
+    // Dashboard page is served by this backend's static files.
     const DASHBOARD_URL = `${API_BASE_URL}/static/client-portal.html`;
 
     document.getElementById('year').textContent = new Date().getFullYear();

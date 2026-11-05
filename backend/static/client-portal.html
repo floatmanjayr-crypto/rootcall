@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RootCall - AI Scam Screening Dashboard</title>
+    <link rel="stylesheet" href="/static/live-calls.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
@@ -668,6 +669,25 @@
 
         <div id="page-dashboard" class="page-content active">
             <div class="content-area">
+                <section class="live-calls" aria-labelledby="live-calls-heading">
+                    <div class="live-heading">
+                        <h2 id="live-calls-heading"><i class="fas fa-wave-square" aria-hidden="true"></i> Live Calls</h2>
+                        <button id="live-refresh" class="btn btn-primary" type="button" title="Refresh live calls" aria-label="Refresh live calls"><i class="fas fa-sync-alt" aria-hidden="true"></i></button>
+                    </div>
+                    <p id="live-call-status" role="status">Loading live calls...</p>
+                    <div id="live-call-list"></div>
+                    <div id="live-conversation" hidden>
+                        <h3 id="live-caller"></h3>
+                        <div id="live-transcript" role="log" aria-label="Live conversation" aria-live="polite"></div>
+                        <div class="live-actions">
+                            <button id="live-listen" class="btn btn-primary" type="button"><i class="fas fa-headphones" aria-hidden="true"></i> Listen</button>
+                            <button id="live-takeover" class="btn btn-primary" type="button" disabled><i class="fas fa-microphone" aria-hidden="true"></i> Take Over</button>
+                            <button id="live-mute" class="btn" type="button" hidden aria-pressed="false"><i class="fas fa-microphone-slash" aria-hidden="true"></i> Mute</button>
+                            <button id="live-leave" class="btn" type="button"><i class="fas fa-sign-out-alt" aria-hidden="true"></i> Disconnect</button>
+                            <button id="live-end" class="btn live-danger" type="button"><i class="fas fa-phone-slash" aria-hidden="true"></i> End Call</button>
+                        </div>
+                    </div>
+                </section>
                 <div class="grid-4" style="margin-bottom: 2rem;">
                     <div class="stat-card">
                         <i class="fas fa-ban" style="color: var(--danger); font-size: 1.75rem;"></i>
@@ -1829,5 +1849,6 @@
             }
         });
     </script>
+    <script type="module" src="/static/live-calls.js"></script>
 </body>
 </html>

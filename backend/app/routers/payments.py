@@ -66,7 +66,7 @@ async def create_checkout_session(
                 }
             ],
             mode="subscription",
-            success_url=f"{origin}/success.html?session_id={{CHECKOUT_SESSION_ID}}",
+            success_url=f"{origin}/static/success.html?session_id={{CHECKOUT_SESSION_ID}}",
             cancel_url=f"{origin}/",
             metadata={
                 "user_id": str(data.user_id),

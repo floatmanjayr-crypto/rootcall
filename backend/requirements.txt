@@ -21,7 +21,7 @@ retell-sdk
 sendgrid
 langchain
 langchain-openai
-websockets
+websockets>=14,<16
 pytz
 bcrypt==4.0.1
 uvicorn

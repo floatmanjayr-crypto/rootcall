@@ -1,5 +1,5 @@
 """VoIP Platform Main Application"""
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -7,6 +7,7 @@ from app.config import settings
 from app.database import engine, Base
 from app.routers import rootcall_portal
 from app.routers import payments, number_management, auth, admin
+from app.routers import live_calls
 
 # Import routers
 from app.routers import (
@@ -65,6 +66,7 @@ app.include_router(payments.router)
 app.include_router(number_management.router)
 app.include_router(auth.router)
 app.include_router(admin.router)
+app.include_router(live_calls.router)
 
 @app.get("/")
 async def root():
@@ -85,6 +87,19 @@ def login_redirect():
 @app.get("/client-portal.html", include_in_schema=False)
 def portal_redirect():
     return RedirectResponse(url="/static/client-portal.html")
+
+@app.get("/success.html", include_in_schema=False)
+def success_redirect(request: Request):
+    query = f"?{request.url.query}" if request.url.query else ""
+    return RedirectResponse(url=f"/static/success.html{query}")
+
+@app.get("/privacy.html", include_in_schema=False)
+def privacy_redirect():
+    return RedirectResponse(url="/static/privacy.html")
+
+@app.get("/terms.html", include_in_schema=False)
+def terms_redirect():
+    return RedirectResponse(url="/static/terms.html")
 
 if __name__ == "__main__":
     import uvicorn

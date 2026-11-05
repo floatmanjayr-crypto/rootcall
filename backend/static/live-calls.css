@@ -1,0 +1,23 @@
+.live-calls { margin-bottom: 2rem; padding: 1.25rem 0; border-top: 2px solid var(--accent); border-bottom: 1px solid #d5ded8; }
+.live-heading, .live-call-row, .live-actions { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
+.live-heading { justify-content: space-between; }
+.live-heading h2 { margin: 0; font-size: 1.4rem; color: var(--green); }
+#live-call-status { color: #555; overflow-wrap: anywhere; }
+.live-call-row { padding: .75rem 0; border-top: 1px solid #ddd; justify-content: space-between; }
+.live-call-row span { min-width: 0; overflow-wrap: anywhere; }
+.live-call-row button { min-height: 44px; }
+#live-caller { font-size: 1.1rem; overflow-wrap: anywhere; }
+#live-transcript { height: 260px; overflow-y: auto; padding: .75rem; background: #fff; border: 1px solid #ddd; border-radius: 6px; }
+.live-turn { padding: .6rem 0; border-bottom: 1px solid #eee; white-space: pre-wrap; overflow-wrap: anywhere; }
+.live-turn strong { display: block; color: var(--green); margin-bottom: .25rem; }
+.live-turn[data-role="user"] strong { color: #94511c; }
+.live-actions { margin-top: 1rem; }
+.live-actions .btn { min-height: 44px; border-radius: 6px; justify-content: center; }
+.live-actions [hidden], [hidden]#live-conversation { display: none; }
+.live-actions .live-danger { background: #a51d2d; color: #fff; }
+.live-actions button:disabled { opacity: .5; cursor: not-allowed; }
+.live-calls button:focus-visible { outline: 3px solid #c0661a; outline-offset: 3px; }
+@media (max-width: 600px) {
+    .live-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .live-actions .btn { padding: .6rem; font-size: .85rem; min-width: 0; white-space: normal; }
+}

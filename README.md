@@ -4,12 +4,12 @@ Professional VoIP platform with AI-powered call screening and protection.
 
 ## Features
 
-- í´– AI Voice Agents (Retell AI integration)
-- í³ Phone Number Management (Telnyx)
-- í»¡ï¸ Call Screening & Spam Protection
-- í²³ Subscription Management (Stripe)
-- í³Š Real-time Dashboard
-- í´ Secure Authentication
+- ï¿½ï¿½ï¿½ AI Voice Agents (Retell AI integration)
+- ï¿½ï¿½ï¿½ Phone Number Management (Telnyx)
+- ï¿½ï¿½ï¿½ï¸ Call Screening & Spam Protection
+- ï¿½ï¿½ï¿½ Subscription Management (Stripe)
+- ï¿½ï¿½ï¿½ Real-time Dashboard
+- ï¿½ï¿½ï¿½ Secure Authentication
 
 ## Tech Stack
 
@@ -57,6 +57,13 @@ uvicorn app.main:app --reload
 7. Visit: http://localhost:8000
 
 ## Deployment
+
+### Live Call Upgrades
+
+The client portal includes live AI/caller captions, silent listening, and confirmed
+browser call takeover. See [setup, verification, and upgrade recommendations](backend/docs/ROOTCALL_UPGRADES.md)
+for provider configuration and production rollout requirements. Real-call staging
+verification is required before customer rollout.
 
 Deploy to Render with one click using `render.yaml`
 

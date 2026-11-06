@@ -42,6 +42,15 @@ class Settings:
     JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", os.getenv("SECRET_KEY", "your-secret-key-change-in-production"))
     JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
+
+    # Email (SendGrid) — transactional mail such as password resets.
+    # If SENDGRID_API_KEY is unset, reset links are logged instead of emailed.
+    SENDGRID_API_KEY: str = os.getenv("SENDGRID_API_KEY", "")
+    SENDER_EMAIL: str = os.getenv("SENDER_EMAIL", "no-reply@rootcall.ai")
+
+    # Public base URL used to build links in emails (e.g. https://app.rootcall.ai)
+    APP_BASE_URL: str = os.getenv("APP_BASE_URL", "")
+
     
     # ✅ Backward compatibility alias
     @property

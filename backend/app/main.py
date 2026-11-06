@@ -93,6 +93,15 @@ def success_redirect(request: Request):
     query = f"?{request.url.query}" if request.url.query else ""
     return RedirectResponse(url=f"/static/success.html{query}")
 
+@app.get("/forgot-password.html", include_in_schema=False)
+def forgot_password_redirect():
+    return RedirectResponse(url="/static/forgot-password.html")
+
+@app.get("/reset-password.html", include_in_schema=False)
+def reset_password_redirect(request: Request):
+    query = f"?{request.url.query}" if request.url.query else ""
+    return RedirectResponse(url=f"/static/reset-password.html{query}")
+
 @app.get("/privacy.html", include_in_schema=False)
 def privacy_redirect():
     return RedirectResponse(url="/static/privacy.html")

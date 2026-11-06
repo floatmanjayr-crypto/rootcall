@@ -55,6 +55,5 @@ class Call(Base):
     
     # RootCall AI interaction (if went to Retell)
     retell_call_id = Column(String, nullable=True)  # Retell's call ID
-    rootcall_transcript = Column(Text, nullable=True)  # What RootCall said/heard
     scam_detected = Column(Boolean, default=False)  # Did RootCall detect scam?
     scam_type = Column(String, nullable=True)  # irs, bank, tech_support, etc.

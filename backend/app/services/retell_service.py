@@ -127,12 +127,21 @@ class RetellService:
         log.info("✅ Created Agent: %s", agent_id)
 
         if publish:
-            self.publish_agent(agent_id)
+            self.publish_agent(agent_id, version=data.get("version"))
         return agent_id
 
-    def publish_agent(self, agent_id: str) -> Dict[str, Any]:
+    def publish_agent(self, agent_id: str, version: Optional[int] = None) -> Dict[str, Any]:
         log.info("Publishing Retell Agent: %s", agent_id)
-        return self._post(f"/publish-agent/{agent_id}", {}, expected=200)
+        if version is None:
+            agent = self._get(f"/get-agent/{agent_id}")
+            version = agent.get("version")
+        if isinstance(version, bool) or not isinstance(version, int) or version < 0:
+            raise RuntimeError("No valid agent version returned by Retell")
+        return self._post(
+            f"/publish-agent-version/{agent_id}",
+            {"version": version},
+            expected=(200, 201, 204),
+        )
 
     def list_agents(self) -> List[Dict[str, Any]]:
         data = self._get("/list-agents", expected=200)

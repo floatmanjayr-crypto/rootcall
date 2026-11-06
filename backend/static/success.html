@@ -3,176 +3,407 @@
 <head>
   <meta charset="utf-8" />
   <title>Welcome to RootCall!</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
-    :root{--green:#0d3d2f;--ivory:#f9f6f3}
+    :root{
+      --green:#0d3d2f;
+      --green-600:#124b39;
+      --green-500:#1a5c46;
+      --accent:#2d7a5f;
+      --mint:#4ade80;
+      --ivory:#f9f6f3;
+      --ink:#0e1111;
+      --muted:#5b6b64;
+      --line:#e7e2db;
+      --success:#10b981;
+    }
     *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:Inter,sans-serif;background:linear-gradient(135deg,var(--green) 0%,#124b39 100%);min-height:100vh;display:flex;align-items:center;justify-content:center;color:white;text-align:center;padding:20px}
-    .container{max-width:600px}
-    h1{font-size:3rem;margin-bottom:20px;font-weight:800}
-    .tagline{
-      font-size:0.9rem;
-      color:rgba(255,255,255,0.9);
-      text-transform:uppercase;
-      letter-spacing:3px;
-      font-weight:700;
-      margin-bottom:30px;
-      background:rgba(255,255,255,0.15);
-      padding:10px 20px;
-      border-radius:25px;
-      display:inline-block;
-      border:1px solid rgba(255,255,255,0.3);
+    body{
+      font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+      color:var(--ink);
+      -webkit-font-smoothing:antialiased;
+      background:
+        radial-gradient(1000px 500px at -10% -10%, rgba(74,222,128,.14), transparent 55%),
+        radial-gradient(800px 600px at 110% 110%, rgba(45,122,95,.35), transparent 60%),
+        linear-gradient(160deg, var(--green) 0%, var(--green-600) 60%, var(--green-500) 100%);
+      background-attachment:fixed;
     }
-    p{font-size:1.2rem;margin-bottom:30px;opacity:0.9;line-height:1.6}
-    .spinner{border:4px solid rgba(255,255,255,0.3);border-top:4px solid white;border-radius:50%;width:50px;height:50px;animation:spin 1s linear infinite;margin:30px auto}
-    @keyframes spin{to{transform:rotate(360deg)}}
-    .btn{
-      background:white;
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      background-image:
+        linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px);
+      background-size:44px 44px;
+      mask-image:radial-gradient(ellipse 90% 80% at 50% 40%, #000 30%, transparent 75%);
+      pointer-events:none;
+    }
+
+    .card{
+      position:relative;
+      width:100%;
+      max-width:560px;
+      background:#fff;
+      border-radius:22px;
+      box-shadow:0 30px 80px -20px rgba(0,0,0,.45);
+      overflow:hidden;
+      animation:rise .5s ease both;
+    }
+    @keyframes rise{
+      from{opacity:0;transform:translateY(16px)}
+      to{opacity:1;transform:translateY(0)}
+    }
+
+    .card-head{
+      padding:36px 40px 28px;
+      text-align:center;
+      border-bottom:1px solid var(--line);
+      background:linear-gradient(180deg,#fff 0%,var(--ivory) 100%);
+    }
+    .brand-mark{
+      width:62px;height:62px;
+      margin:0 auto 16px;
+      display:grid;place-items:center;
+      border-radius:18px;
+      background:linear-gradient(135deg, var(--green) 0%, var(--accent) 100%);
+      box-shadow:0 12px 28px -8px rgba(13,61,47,.5);
+    }
+    .brand-mark svg{width:34px;height:34px}
+    .card-head h1{
+      font-size:1.65rem;
+      font-weight:800;
+      letter-spacing:-.02em;
       color:var(--green);
-      padding:16px 45px;
-      border-radius:50px;
+    }
+    .tagline{
+      display:inline-flex;
+      align-items:center;
+      gap:7px;
+      margin-top:10px;
+      font-size:.7rem;
       font-weight:700;
-      text-decoration:none;
-      display:inline-block;
-      margin:10px;
-      transition:all 0.3s;
-      box-shadow:0 4px 15px rgba(0,0,0,0.2);
-      font-size:1.05rem;
+      letter-spacing:.16em;
+      text-transform:uppercase;
+      color:var(--accent);
+      background:rgba(45,122,95,.1);
+      border:1px solid rgba(45,122,95,.22);
+      padding:6px 14px;
+      border-radius:999px;
     }
-    .btn:hover{
-      transform:translateY(-3px);
-      box-shadow:0 8px 25px rgba(0,0,0,0.3);
-      background:#f9f6f3;
+    .tagline::before{
+      content:"";
+      width:6px;height:6px;border-radius:50%;
+      background:var(--success);
+      box-shadow:0 0 0 3px rgba(16,185,129,.2);
+      animation:pulse 2.4s ease-in-out infinite;
     }
-    .btn-primary{
-      background:linear-gradient(135deg,#4ade80,#22c55e);
-      color:white;
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
+
+    .card-body{padding:30px 40px 36px}
+
+    #status{
+      text-align:center;
+      font-size:.95rem;
+      font-weight:600;
+      color:var(--muted);
+      margin-bottom:22px;
     }
-    .btn-primary:hover{
-      background:linear-gradient(135deg,#22c55e,#16a34a);
+
+    .progress-track{
+      height:6px;
+      background:#eef0ee;
+      border-radius:999px;
+      overflow:hidden;
+      margin-bottom:26px;
     }
-    .details{
-      background:rgba(255,255,255,0.1);
-      padding:25px;
-      border-radius:16px;
-      margin:30px 0;
-      font-size:1rem;
-      backdrop-filter:blur(10px);
-      border:1px solid rgba(255,255,255,0.2);
+    .progress-bar{
+      height:100%;
+      width:0%;
+      border-radius:999px;
+      background:linear-gradient(90deg, var(--accent), var(--mint));
+      transition:width .6s ease;
     }
+
+    .details{display:flex;flex-direction:column;gap:10px}
     .status-box{
-      background:rgba(255,255,255,0.15);
-      padding:16px 20px;
-      border-radius:10px;
-      margin:12px 0;
-      text-align:left;
-      transition:all 0.3s;
-      border-left:4px solid rgba(255,255,255,0.3);
-      font-size:1rem;
+      display:flex;
+      align-items:center;
+      gap:14px;
+      padding:14px 16px;
+      border-radius:14px;
+      border:1px solid var(--line);
+      background:var(--ivory);
+      font-size:.92rem;
+      font-weight:600;
+      color:var(--muted);
+      transition:all .35s ease;
+    }
+    .status-box::before{
+      content:"";
+      flex:none;
+      width:26px;height:26px;
+      border-radius:50%;
+      border:2px solid #d4d9d5;
+      background:#fff;
+      transition:all .35s ease;
     }
     .status-box.complete{
-      border-left-color:#4ade80;
-      background:rgba(74,222,128,0.2);
+      border-color:rgba(16,185,129,.35);
+      background:#ecfdf5;
+      color:#065f46;
     }
-    .status-box.complete:before{
-      content:"✓ ";
-      color:#4ade80;
-      font-weight:bold;
-      font-size:1.3rem;
-      margin-right:10px;
+    .status-box.complete::before{
+      content:"✓";
+      display:grid;
+      place-items:center;
+      font-size:.85rem;
+      font-weight:800;
+      color:#fff;
+      border-color:var(--success);
+      background:var(--success);
     }
+
+    .spinner{
+      width:38px;height:38px;
+      margin:26px auto 4px;
+      border-radius:50%;
+      border:3px solid #e5e9e6;
+      border-top-color:var(--accent);
+      animation:spin .9s linear infinite;
+    }
+    @keyframes spin{to{transform:rotate(360deg)}}
+
     .success-message{
-      background:rgba(74,222,128,0.2);
-      border:2px solid #4ade80;
-      padding:20px;
-      border-radius:12px;
-      margin:20px 0;
+      text-align:center;
+      padding:22px 20px;
+      border-radius:16px;
+      background:linear-gradient(135deg,#ecfdf5 0%,#d1fae5 100%);
+      border:1px solid rgba(16,185,129,.35);
+      margin:24px 0 20px;
+      animation:rise .45s ease both;
     }
+    .success-message .check{
+      width:52px;height:52px;
+      margin:0 auto 12px;
+      border-radius:50%;
+      display:grid;place-items:center;
+      background:var(--success);
+      color:#fff;
+      font-size:1.5rem;
+      font-weight:800;
+      box-shadow:0 10px 24px -6px rgba(16,185,129,.55);
+    }
+    .success-message strong{
+      display:block;
+      font-size:1.15rem;
+      color:#065f46;
+      margin-bottom:4px;
+    }
+    .success-message span{font-size:.9rem;color:#047857}
+
     .next-steps{
-      text-align:left;
-      line-height:1.8;
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:20px 22px;
+      background:var(--ivory);
     }
-    .next-steps strong{
-      color:#4ade80;
-      font-size:1.1rem;
+    .next-steps h3{
+      font-size:.78rem;
+      font-weight:800;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+      color:var(--accent);
+      margin-bottom:14px;
+    }
+    .next-steps ol{
+      list-style:none;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      counter-reset:step;
+    }
+    .next-steps li{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      font-size:.9rem;
+      font-weight:500;
+      color:#374740;
+      counter-increment:step;
+    }
+    .next-steps li::before{
+      content:counter(step);
+      flex:none;
+      width:24px;height:24px;
+      border-radius:50%;
+      display:grid;place-items:center;
+      font-size:.75rem;
+      font-weight:800;
+      color:var(--green);
+      background:rgba(45,122,95,.12);
+      border:1px solid rgba(45,122,95,.25);
+    }
+
+    #actions{
+      display:flex;
+      gap:12px;
+      margin-top:24px;
+    }
+    .btn{
+      flex:1;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      padding:14px 18px;
+      border-radius:12px;
+      font-size:.93rem;
+      font-weight:700;
+      text-decoration:none;
+      transition:transform .15s ease, box-shadow .15s ease, filter .15s ease;
+    }
+    .btn-primary{
+      color:#fff;
+      background:linear-gradient(135deg, var(--green) 0%, var(--accent) 100%);
+      box-shadow:0 10px 24px -8px rgba(13,61,47,.45);
+    }
+    .btn-primary:hover{
+      transform:translateY(-1px);
+      filter:brightness(1.06);
+      box-shadow:0 16px 32px -10px rgba(13,61,47,.5);
+    }
+    .btn-secondary{
+      color:var(--green);
+      background:#fff;
+      border:1.5px solid var(--line);
+    }
+    .btn-secondary:hover{
+      border-color:var(--accent);
+      box-shadow:0 4px 14px rgba(13,61,47,.1);
+    }
+
+    .card-foot{
+      padding:16px 40px;
+      border-top:1px solid var(--line);
+      text-align:center;
+      font-size:.78rem;
+      color:#9aa8a1;
+      background:var(--ivory);
+    }
+
+    @media (max-width:520px){
+      .card-head{padding:28px 22px 22px}
+      .card-body{padding:24px 20px 28px}
+      .card-foot{padding:14px 20px}
+      #actions{flex-direction:column}
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Welcome to RootCall!</h1>
-    <div class="tagline">AI Scam Call Shield</div>
-    
-    <p id="status">Setting up your AI-powered scam protection...</p>
-    
-    <div class="details">
-      <div id="step1" class="status-box">Verifying payment...</div>
-      <div id="step2" class="status-box">Creating your account...</div>
-      <div id="step3" class="status-box">Configuring AI screening engine...</div>
-      <div id="step4" class="status-box">Finalizing setup...</div>
-    </div>
-    
-    <div class="spinner" id="spinner"></div>
-    
-    <div id="success-details" style="display:none">
-      <div class="success-message">
-        <p style="font-size:1.3rem;margin:0">
-          <strong>🎉 Success!</strong><br>
-          Your RootCall protection is now active!
-        </p>
+  <div class="card" role="main">
+    <div class="card-head">
+      <div class="brand-mark">
+        <svg viewBox="0 0 64 64" aria-hidden="true">
+          <path fill="#4ade80" d="M32 6c7 4 15 6 23 7-1 20-10 34-23 39C19 47 10 33 9 13c8-1 16-3 23-7z"/>
+          <path fill="#0d3d2f" d="M37.9 42.1c-4.6-1.9-8.6-5.9-10.5-10.5-.5-1.3 0-2.8 1.2-3.5l2.7-1.6c.9-.5 1.2-1.6.8-2.5l-2-4.2c-.5-1.1-1.8-1.6-2.9-1.1l-2.9 1.3c-2.1.9-3.3 3.1-3 5.4.9 6.8 6.9 12.8 13.7 13.7 2.3.3 4.5-.9 5.4-3l1.3-2.9c.5-1.1 0-2.4-1.1-2.9l-4.2-2c-.9-.4-2 .0-2.5.8l-1.6 2.7c-.7 1.2-2.2 1.7-3.5 1.2z"/>
+        </svg>
       </div>
-      
-      <div class="details next-steps">
-        <strong>📋 Next Steps:</strong><br><br>
-        1️⃣ Sign in to your dashboard<br>
-        2️⃣ Get your AI-protected phone number<br>
-        3️⃣ Add trusted contacts who can reach you<br>
-        4️⃣ Start blocking scams automatically!
+      <h1>Welcome to RootCall</h1>
+      <div class="tagline">AI Scam Call Shield</div>
+    </div>
+
+    <div class="card-body">
+      <p id="status">Setting up your AI-powered scam protection...</p>
+
+      <div class="progress-track" id="progress-track">
+        <div class="progress-bar" id="progress-bar"></div>
+      </div>
+
+      <div class="details" id="provision-steps">
+        <div id="step1" class="status-box">Verifying payment</div>
+        <div id="step2" class="status-box">Creating your account</div>
+        <div id="step3" class="status-box">Configuring AI screening engine</div>
+        <div id="step4" class="status-box">Finalizing setup</div>
+      </div>
+
+      <div class="spinner" id="spinner"></div>
+
+      <div id="success-details" style="display:none">
+        <div class="success-message">
+          <div class="check">✓</div>
+          <strong>Your protection is active!</strong>
+          <span>RootCall is now screening your calls 24/7.</span>
+        </div>
+
+        <div class="next-steps">
+          <h3>Next steps</h3>
+          <ol>
+            <li>Sign in to your dashboard</li>
+            <li>Get your AI-protected phone number</li>
+            <li>Add trusted contacts who can reach you</li>
+            <li>Start blocking scams automatically</li>
+          </ol>
+        </div>
+      </div>
+
+      <div id="actions" style="display:none">
+        <a href="/client-portal.html" class="btn btn-primary">
+          Go to Dashboard
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </a>
+        <a href="/login.html" class="btn btn-secondary">Sign In</a>
       </div>
     </div>
-    
-    <div id="actions" style="display:none">
-  <a href="/client-portal.html" class="btn btn-primary">
-    <strong>🚀 Go to Dashboard</strong>
-  </a>
 
-  <a href="/login.html" class="btn">
-    <strong>🔐 Sign In</strong>
-  </a>
-</div>
+    <div class="card-foot">
+      Secured with 256-bit encryption · Peace-of-Mind Guarantee
+    </div>
+  </div>
 
-  
   <script>
     const API = window.location.origin;
-    
+    const progressBar = document.getElementById('progress-bar');
+
     async function simulateProvisioning() {
       const steps = ['step1', 'step2', 'step3', 'step4'];
-      
+
       for (let i = 0; i < steps.length; i++) {
         await new Promise(resolve => setTimeout(resolve, 1800));
         document.getElementById(steps[i]).classList.add('complete');
+        progressBar.style.width = `${((i + 1) / steps.length) * 100}%`;
       }
-      
+
       await new Promise(resolve => setTimeout(resolve, 500));
-      
-      document.getElementById('status').textContent = '✅ Your RootCall account is ready!';
+
+      document.getElementById('status').textContent = 'Your RootCall account is ready!';
       document.getElementById('spinner').style.display = 'none';
       document.getElementById('success-details').style.display = 'block';
-      
+
       await new Promise(resolve => setTimeout(resolve, 500));
-      document.getElementById('actions').style.display = 'block';
+      document.getElementById('actions').style.display = 'flex';
     }
-    
+
     // Check if user is logged in
     const user = localStorage.getItem('user');
     const token = localStorage.getItem('access_token') || localStorage.getItem('token');
-    
+
     if (user || token) {
       simulateProvisioning();
     } else {
       document.getElementById('status').textContent = 'Please sign in to continue';
       document.getElementById('spinner').style.display = 'none';
-      document.getElementById('actions').style.display = 'block';
+      document.getElementById('progress-track').style.display = 'none';
+      document.getElementById('provision-steps').style.display = 'none';
+      document.getElementById('actions').style.display = 'flex';
     }
   </script>
 </body>

@@ -60,6 +60,7 @@ class TrustedContactAdd(BaseModel):
 class ProvisionRequest(BaseModel):
     phone_number: Optional[str] = None  # NEW: specific number to provision
     area_code: Optional[str] = "813"    # Or search by area code
+    recover_existing: bool = False
 
 # ============================================
 # STATS & DASHBOARD
@@ -454,6 +455,11 @@ async def provision_rootcall(
         
         # If no specific number provided, search for one
         if not phone_number:
+            if request.recover_existing:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="A phone number is required to recover an existing purchase"
+                )
             if not area_code:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
@@ -480,17 +486,32 @@ async def provision_rootcall(
         
         log.info(f"[PROVISION] Starting for {phone_number} - user {current_user.id}")
         
-        # STEP 1: Purchase from Telnyx
-        log.info("STEP 1: Purchasing from Telnyx...")
-        provision_step = "ordering the number from Telnyx"
-        order_result = telnyx.order_number(phone_number)
-        
-        if not order_result:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to purchase number from Telnyx"
-            )
-        order_accepted = True
+        provision_step = "checking Telnyx for an existing number"
+        existing_telnyx_numbers = telnyx.list_phone_numbers(phone_number=phone_number)
+        existing_telnyx_number = next(
+            (number for number in existing_telnyx_numbers if number.get("phone_number") == phone_number),
+            None,
+        )
+        if existing_telnyx_number:
+            order_result = {"data": existing_telnyx_number}
+            order_accepted = True
+            log.info("Found existing Telnyx number for provisioning retry: %s", phone_number)
+        else:
+            if request.recover_existing:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="That number was not found in your Telnyx account. No purchase was made."
+                )
+            log.info("STEP 1: Purchasing from Telnyx...")
+            provision_step = "ordering the number from Telnyx"
+            order_result = telnyx.order_number(phone_number)
+
+            if not order_result:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Failed to purchase number from Telnyx"
+                )
+            order_accepted = True
         
         log.info(f"SUCCESS - Purchased: {phone_number}")
         
@@ -512,12 +533,21 @@ async def provision_rootcall(
         
         connection_id = connection.get("id")
         log.info(f"SUCCESS - SIP Connection: {connection_id}")
+
+        if existing_telnyx_number and existing_telnyx_number.get("connection_id") != connection_id:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="This Telnyx number is not assigned to your RootCall SIP connection. Contact support before retrying.",
+            )
         
         # STEP 3: Assign number to connection
-        log.info("STEP 3: Assigning number to SIP trunk...")
-        provision_step = "connecting the number to the Telnyx SIP trunk"
-        telnyx.assign_number_to_connection(phone_number, connection_id)
-        log.info(f"SUCCESS - Number assigned to connection")
+        if not existing_telnyx_number:
+            log.info("STEP 3: Assigning number to SIP trunk...")
+            provision_step = "connecting the number to the Telnyx SIP trunk"
+            telnyx.assign_number_to_connection(phone_number, connection_id)
+            log.info("SUCCESS - Number assigned to connection")
+        else:
+            log.info("Number is already assigned to the user's SIP trunk; skipping assignment")
         
         # STEP 4: Create Retell agent
         log.info("STEP 4: Creating Retell AI agent...")

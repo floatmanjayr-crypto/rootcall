@@ -56,6 +56,31 @@ class RetellPublishingTest(unittest.TestCase):
                     result = self.service.publish_agent("agent-test", version=0)
                 self.assertEqual(result, {})
 
+    def test_import_uses_weighted_agent_bindings(self):
+        with patch.object(self.service, "_post", return_value={}) as post:
+            self.service.import_phone_number(
+                "+14075550100", "sip.telnyx.com", "sip-user", "sip-password",
+                inbound_agent_id="agent-in", outbound_agent_id="agent-out",
+            )
+        post.assert_called_once_with("/import-phone-number", {
+            "phone_number": "+14075550100",
+            "termination_uri": "sip.telnyx.com",
+            "sip_trunk_auth_username": "sip-user",
+            "sip_trunk_auth_password": "sip-password",
+            "inbound_agents": [{"agent_id": "agent-in", "weight": 1.0}],
+            "outbound_agents": [{"agent_id": "agent-out", "weight": 1.0}],
+        }, expected=(200, 201))
+
+    def test_update_uses_weighted_agent_bindings(self):
+        with patch.object(self.service, "_patch", return_value={}) as patch_request:
+            self.service.update_phone_number(
+                "+14075550100", inbound_agent_id="agent-in", outbound_agent_id="agent-out"
+            )
+        patch_request.assert_called_once_with("/update-phone-number/+14075550100", {
+            "inbound_agents": [{"agent_id": "agent-in", "weight": 1.0}],
+            "outbound_agents": [{"agent_id": "agent-out", "weight": 1.0}],
+        }, expected=200)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -206,9 +206,11 @@ class RetellService:
             "termination_uri": termination_uri,
             "sip_trunk_auth_username": sip_username,
             "sip_trunk_auth_password": sip_password,
-            "inbound_agent_id": inbound_agent_id,
-            "outbound_agent_id": outbound_agent_id,
         }
+        if inbound_agent_id is not None:
+            payload["inbound_agents"] = [{"agent_id": inbound_agent_id, "weight": 1.0}]
+        if outbound_agent_id is not None:
+            payload["outbound_agents"] = [{"agent_id": outbound_agent_id, "weight": 1.0}]
         log.info("Importing phone number to Retell: %s", phone_number)
         return self._post("/import-phone-number", payload, expected=(200, 201))
 
@@ -220,9 +222,9 @@ class RetellService:
     ) -> Dict[str, Any]:
         patch: Dict[str, Any] = {}
         if inbound_agent_id is not None:
-            patch["inbound_agent_id"] = inbound_agent_id
+            patch["inbound_agents"] = [{"agent_id": inbound_agent_id, "weight": 1.0}]
         if outbound_agent_id is not None:
-            patch["outbound_agent_id"] = outbound_agent_id
+            patch["outbound_agents"] = [{"agent_id": outbound_agent_id, "weight": 1.0}]
         log.info("Updating Retell phone number bindings: %s", phone_number)
         return self._patch(f"/update-phone-number/{phone_number}", patch, expected=200)
 

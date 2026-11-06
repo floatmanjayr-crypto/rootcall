@@ -429,6 +429,9 @@ async def provision_rootcall(
     - Import to Retell
     - Configure for scam screening
     """
+    provision_step = "checking your account"
+    order_accepted = False
+    phone_number = request.phone_number
     try:
         # Check if user already has active number
         existing = db.query(PhoneNumber).filter(
@@ -445,6 +448,9 @@ async def provision_rootcall(
         # Get the selected phone number from request
         phone_number = request.phone_number
         area_code = request.area_code
+        provision_step = "initializing phone providers"
+        telnyx = TelnyxService()
+        retell = RetellService()
         
         # If no specific number provided, search for one
         if not phone_number:
@@ -455,6 +461,7 @@ async def provision_rootcall(
                 )
             
             log.info(f"Searching for available number in area code {area_code}")
+            provision_step = "searching for an available number"
             
             # Search for available number
             available = telnyx.search_available_numbers(
@@ -473,12 +480,9 @@ async def provision_rootcall(
         
         log.info(f"[PROVISION] Starting for {phone_number} - user {current_user.id}")
         
-        # Initialize services
-        telnyx = TelnyxService()
-        retell = RetellService()
-        
         # STEP 1: Purchase from Telnyx
         log.info("STEP 1: Purchasing from Telnyx...")
+        provision_step = "ordering the number from Telnyx"
         order_result = telnyx.order_number(phone_number)
         
         if not order_result:
@@ -486,6 +490,7 @@ async def provision_rootcall(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to purchase number from Telnyx"
             )
+        order_accepted = True
         
         log.info(f"SUCCESS - Purchased: {phone_number}")
         
@@ -498,6 +503,7 @@ async def provision_rootcall(
         
         # Create Elastic SIP Trunk pointing to Retell (sip.retellai.com)
         log.info("STEP 2: Creating Elastic SIP Trunk for Retell...")
+        provision_step = "creating the Telnyx SIP connection"
         connection, username, password = telnyx.get_or_create_retell_trunk(
             connection_name=connection_name,
             sip_username=sip_username,
@@ -509,11 +515,13 @@ async def provision_rootcall(
         
         # STEP 3: Assign number to connection
         log.info("STEP 3: Assigning number to SIP trunk...")
+        provision_step = "connecting the number to the Telnyx SIP trunk"
         telnyx.assign_number_to_connection(phone_number, connection_id)
         log.info(f"SUCCESS - Number assigned to connection")
         
         # STEP 4: Create Retell agent
         log.info("STEP 4: Creating Retell AI agent...")
+        provision_step = "creating the Retell screening agent"
         
         agent_name = f"ScamShield-{current_user.email.split('@')[0]}"
         
@@ -559,6 +567,7 @@ Be polite but firm with scammers. Protect the user at all costs."""
         
         # STEP 5: Import number to Retell
         log.info("STEP 5: Importing number to Retell...")
+        provision_step = "connecting the number to Retell"
         
         retell_import = retell.import_phone_number(
             phone_number=phone_number,
@@ -573,6 +582,7 @@ Be polite but firm with scammers. Protect the user at all costs."""
         
         # STEP 6: Save to database
         log.info("STEP 6: Saving to database...")
+        provision_step = "saving the number to your dashboard"
         
         phone_record = PhoneNumber(
             user_id=current_user.id,
@@ -623,11 +633,17 @@ Be polite but firm with scammers. Protect the user at all costs."""
         raise
     except Exception as e:
         db.rollback()
-        log.error(f"[ERROR] Provision failed: {e}")
+        log.exception("Provision failed while %s for user %s", provision_step, current_user.id)
+        detail = f"Number setup failed while {provision_step}."
+        if order_accepted:
+            detail += (
+                f" Telnyx already accepted the order for {phone_number}."
+                " Do not purchase another number; contact support to finish connecting this one."
+            )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e)
-        )
+            detail=detail
+        ) from e
 
 
 # ============================================

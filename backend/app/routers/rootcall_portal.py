@@ -540,14 +540,22 @@ async def provision_rootcall(
                 detail="This Telnyx number is not assigned to your RootCall SIP connection. Contact support before retrying.",
             )
         
-        # STEP 3: Assign number to connection
+        # STEP 3: Assign number to connection and retain Telnyx's verified number record.
         if not existing_telnyx_number:
             log.info("STEP 3: Assigning number to SIP trunk...")
             provision_step = "connecting the number to the Telnyx SIP trunk"
-            telnyx.assign_number_to_connection(phone_number, connection_id)
-            log.info("SUCCESS - Number assigned to connection")
+            assignment_result = telnyx.assign_number_to_connection(phone_number, connection_id)
+            assigned_number = (assignment_result or {}).get("data", {})
+            log.info("SUCCESS - Number assigned and verified on connection")
         else:
+            assigned_number = existing_telnyx_number
             log.info("Number is already assigned to the user's SIP trunk; skipping assignment")
+
+        telnyx_phone_number_id = assigned_number.get("id")
+        if not telnyx_phone_number_id:
+            raise RuntimeError(
+                f"Telnyx did not return a phone-number resource ID for {phone_number}"
+            )
         
         # STEP 4: Create Retell agent
         log.info("STEP 4: Creating Retell AI agent...")
@@ -619,7 +627,7 @@ Be polite but firm with scammers. Protect the user at all costs."""
             phone_number=phone_number,
             friendly_name=f"RootCall Shield - {area_code or phone_number[-10:-7]}",
             country_code="US",
-            telnyx_phone_number_id=order_result.get("data", {}).get("id", ""),
+            telnyx_phone_number_id=telnyx_phone_number_id,
             telnyx_connection_id=connection_id,
             is_active=True,
             monthly_cost=1.0

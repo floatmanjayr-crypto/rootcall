@@ -69,27 +69,57 @@ class TelnyxService:
         log.info("Ordered number: %s", phone_number)
         return data
 
+    def ensure_fqdn_connection_active(self, connection_id: str) -> Dict[str, Any]:
+        """Ensure a Telnyx FQDN SIP connection is enabled and verify the state."""
+        current = self._get(f"/fqdn_connections/{connection_id}")
+        current_data = current.get("data", current)
+
+        if current_data.get("active") is not True:
+            log.warning("SIP connection %s is inactive; enabling it", connection_id)
+            self._patch(
+                f"/fqdn_connections/{connection_id}",
+                json={"active": True},
+            )
+
+        verified = self._get(f"/fqdn_connections/{connection_id}")
+        verified_data = verified.get("data", verified)
+        if verified_data.get("active") is not True:
+            raise RuntimeError(
+                f"Telnyx SIP connection {connection_id} is still inactive after activation"
+            )
+
+        return verified_data
+
     def get_or_create_retell_trunk(
         self,
         connection_name: str,
         sip_username: str,
         sip_password: str,
     ) -> Tuple[Dict[str, Any], str, str]:
-        """Get or create Elastic SIP Trunk for Retell"""
+        """Get or create an active Elastic SIP Trunk for Retell."""
         try:
             existing = self._get("/fqdn_connections", params={"filter[connection_name]": connection_name})
             connections = existing.get("data", [])
             if connections:
                 conn = connections[0]
-                log.info(f"Using existing trunk: {conn.get('id')}")
+                conn_id = conn.get("id")
+                if not conn_id:
+                    raise RuntimeError("Telnyx returned an existing SIP connection without an ID")
+                conn = self.ensure_fqdn_connection_active(conn_id)
+                log.info("Using active SIP trunk: %s", conn_id)
                 return conn, sip_username, sip_password
         except Exception as e:
-            log.warning(f"Error checking trunks: {e}")
+            log.warning("Error checking or activating existing SIP trunk: %s", e)
+            # Do not silently create a duplicate trunk when an existing connection
+            # was found but could not be activated or verified.
+            if "connections" in locals() and connections:
+                raise
         
         log.info(f"Creating Elastic SIP Trunk: {connection_name}")
         
         payload = {
             "connection_name": connection_name,
+            "active": True,
             "transport_protocol": "TCP",
             "default_on_hold_comfort_noise_enabled": True,
             "dtmf_type": "RFC 2833",
@@ -110,7 +140,10 @@ class TelnyxService:
         trunk_response = self._post("/fqdn_connections", json=payload)
         trunk_data = trunk_response.get("data", {})
         trunk_id = trunk_data.get("id")
-        log.info(f"Created trunk: {trunk_id}")
+        if not trunk_id:
+            raise RuntimeError("Telnyx created a SIP trunk but did not return its connection ID")
+        trunk_data = self.ensure_fqdn_connection_active(trunk_id)
+        log.info(f"Created and verified active trunk: {trunk_id}")
         
         fqdn_payload = {
             "connection_id": trunk_id,
@@ -142,7 +175,20 @@ class TelnyxService:
         number_id = items[0]["id"]
         payload = {"connection_id": connection_id}
         patched = self._patch(f"/phone_numbers/{number_id}", json=payload)
-        log.info(f"Assigned {phone_number} to {connection_id}")
+
+        # Verify the assignment with Telnyx before reporting provisioning success.
+        updated = (patched or {}).get("data", {})
+        actual_connection_id = updated.get("connection_id")
+        if actual_connection_id != connection_id:
+            refreshed = self.list_phone_numbers(phone_number=phone_number)
+            actual_connection_id = refreshed[0].get("connection_id") if refreshed else None
+
+        if actual_connection_id != connection_id:
+            raise RuntimeError(
+                f"Telnyx did not confirm SIP connection assignment for {phone_number}"
+            )
+
+        log.info("Assigned and verified %s on SIP connection %s", phone_number, connection_id)
         return patched
 
     @staticmethod

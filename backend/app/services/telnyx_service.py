@@ -174,18 +174,19 @@ class TelnyxService:
         sip_password: str,
     ) -> Tuple[Dict[str, Any], str, str]:
         """Get or create Elastic SIP Trunk for Retell"""
-        try:
-            existing = self._get("/fqdn_connections", params={"filter[connection_name]": connection_name})
-            connections = existing.get("data", [])
-            if connections:
-                conn = connections[0]
-                log.info(f"Using existing trunk: {conn.get('id')}")
-                self.ensure_outbound_voice_profile(conn.get("id"))
-                return conn, sip_username, sip_password
-        except Exception as e:
-            log.warning(f"Error checking trunks: {e}")
-        
-        log.info(f"Creating Elastic SIP Trunk: {connection_name}")
+        existing = self._get(
+            "/fqdn_connections",
+            params={"filter[connection_name]": connection_name},
+        )
+        connections = existing.get("data", [])
+        if connections:
+            conn = connections[0]
+            log.info("Using existing trunk: %s", conn.get("id"))
+            # Do not swallow profile-assignment errors and create a duplicate trunk.
+            self.ensure_outbound_voice_profile(conn.get("id"))
+            return conn, sip_username, sip_password
+
+        log.info("Creating Elastic SIP Trunk: %s", connection_name)
         
         payload = {
             "connection_name": connection_name,

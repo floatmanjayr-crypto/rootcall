@@ -90,6 +90,7 @@ class TelnyxService:
                 json={
                     "name": profile_name,
                     "traffic_type": "conversational",
+                    "enabled": True,
                     "whitelisted_destinations": ["US"],
                 },
             )
@@ -101,14 +102,18 @@ class TelnyxService:
 
         # Keep existing allowed destinations and ensure US is permitted.
         destinations = list(profile.get("whitelisted_destinations") or [])
+        profile_updates: Dict[str, Any] = {
+            "name": profile.get("name") or profile_name,
+        }
         if "US" not in destinations:
             destinations.append("US")
+            profile_updates["whitelisted_destinations"] = destinations
+        if profile.get("enabled") is False:
+            profile_updates["enabled"] = True
+        if len(profile_updates) > 1:
             self._patch(
                 f"/outbound_voice_profiles/{profile_id}",
-                json={
-                    "name": profile.get("name") or profile_name,
-                    "whitelisted_destinations": destinations,
-                },
+                json=profile_updates,
             )
 
         if attached_profile_id != profile_id:

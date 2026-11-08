@@ -14,6 +14,7 @@ import csv
 import os
 import secrets
 import logging
+import re
 import requests
 
 # Database
@@ -45,6 +46,31 @@ router = APIRouter(tags=["RootCall Portal"])
 # ============================================
 # PYDANTIC MODELS
 # ============================================
+
+
+
+def normalize_transfer_number(value: str) -> str:
+    """Normalize a US phone number or validate an E.164 destination."""
+    raw = value.strip()
+    digits = re.sub(r"\D", "", raw)
+    if len(digits) == 10:
+        normalized = f"+1{digits}"
+    elif len(digits) == 11 and digits.startswith("1"):
+        normalized = f"+{digits}"
+    elif raw.startswith("+") and 8 <= len(digits) <= 15 and not digits.startswith("0"):
+        normalized = f"+{digits}"
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Enter a valid phone number, including the country code (example: +14155550123)."
+        )
+    if not re.fullmatch(r"\+[1-9]\d{7,14}", normalized):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Enter a valid phone number in international format."
+        )
+    return normalized
+
 
 class ConfigUpdate(BaseModel):
     client_cell: Optional[str] = None
@@ -218,19 +244,38 @@ async def update_config(
         raise HTTPException(status_code=404, detail="No config")
     
     if updates.client_cell is not None:
-        config.client_cell = updates.client_cell
-        
-        # Configure Retell agent to transfer calls to client_cell
+        transfer_number = (
+            normalize_transfer_number(updates.client_cell)
+            if updates.client_cell.strip()
+            else None
+        )
+
         if config.retell_agent_id:
-            retell = RetellService()
             try:
+                retell = RetellService()
                 retell.configure_transfer_tool(
                     agent_id=config.retell_agent_id,
-                    transfer_number=updates.client_cell if updates.client_cell else None
+                    transfer_number=transfer_number
                 )
-                log.info(f"✅ Updated Retell transfer to {updates.client_cell or 'NONE'}")
-            except Exception as e:
-                log.error(f"Failed to update Retell transfer: {e}")
+            except Exception as exc:
+                db.rollback()
+                log.exception("Failed to update Retell transfer for client %s", client_id)
+                raise HTTPException(
+                    status_code=status.HTTP_502_BAD_GATEWAY,
+                    detail="Your transfer number was not saved because Retell could not be updated. Please try again."
+                ) from exc
+        elif transfer_number:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="This RootCall number is not connected to a Retell screening agent yet."
+            )
+
+        config.client_cell = transfer_number or ""
+        log.info(
+            "Updated customer transfer destination for client %s: %s",
+            client_id,
+            "configured" if transfer_number else "cleared"
+        )
     if updates.sms_alerts_enabled is not None:
         config.sms_alerts_enabled = updates.sms_alerts_enabled
     if updates.alert_on_spam is not None:

@@ -84,6 +84,7 @@ class RetellService:
         general_prompt: Optional[str] = None,
         begin_message: Optional[str] = None,
         start_speaker: Optional[str] = None,
+        general_tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Dict[str, Any]:
         patch: Dict[str, Any] = {}
         if general_prompt is not None:
@@ -92,6 +93,8 @@ class RetellService:
             patch["begin_message"] = begin_message
         if start_speaker is not None:
             patch["start_speaker"] = start_speaker
+        if general_tools is not None:
+            patch["general_tools"] = general_tools
         return self._patch(f"/update-retell-llm/{llm_id}", patch, expected=200)
 
     # ---------- Agent ----------
@@ -162,25 +165,40 @@ class RetellService:
         return self._patch(f"/update-agent/{agent_id}", patch, expected=200)
 
     def configure_transfer_tool(self, agent_id: str, transfer_number: Optional[str] = None) -> Dict[str, Any]:
-        """Configure agent with transfer_call tool for forwarding legitimate calls"""
-        general_tools = [
+        """Configure the customer's Retell LLM with its own transfer destination."""
+        agent = self._get(f"/get-agent/{agent_id}")
+        response_engine = agent.get("response_engine") or {}
+        llm_id = response_engine.get("llm_id")
+        if response_engine.get("type") != "retell-llm" or not llm_id:
+            raise RuntimeError(f"Agent {agent_id} is not connected to a Retell LLM")
+
+        general_tools: List[Dict[str, Any]] = [
             {
                 "type": "end_call",
                 "name": "end_call",
-                "description": "End call for spam/scam callers"
+                "description": "End calls that are identified as spam, scams, or unsafe."
             }
         ]
         if transfer_number:
             general_tools.append({
                 "type": "transfer_call",
                 "name": "transfer_call",
-                "description": "Transfer legitimate calls to the client's phone",
-                "number": transfer_number
+                "description": "Transfer a screened legitimate caller to this RootCall customer's personal phone.",
+                "transfer_destination": {
+                    "type": "predefined",
+                    "number": transfer_number
+                },
+                "transfer_option": {
+                    "type": "cold_transfer",
+                    "cold_transfer_mode": "sip_invite"
+                }
             })
-            log.info(f"✅ Configured transfer to {transfer_number} for agent {agent_id}")
+            log.info("Configured customer-specific transfer destination for agent %s", agent_id)
         else:
-            log.info(f"⚠️  Removed transfer tool from agent {agent_id}")
-        return self.update_agent(agent_id, general_tools=general_tools)
+            log.info("Removed transfer tool from agent %s because no customer number is configured", agent_id)
+
+        # general_tools is an LLM response-engine setting, not an agent setting.
+        return self.update_llm(llm_id=llm_id, general_tools=general_tools)
         # Sometimes API returns a list already
         if isinstance(data, list):
             return data

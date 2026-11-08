@@ -61,6 +61,7 @@ class RetellService:
         model: str = "gpt-4.1",
         kb_top_k: int = 3,
         kb_filter_score: float = 0.6,
+        general_tools: Optional[List[Dict[str, Any]]] = None,
     ) -> str:
         """Create a Retell LLM and return llm_id."""
         payload = {
@@ -70,6 +71,8 @@ class RetellService:
             "begin_message": begin_message,
             "kb_config": {"top_k": kb_top_k, "filter_score": kb_filter_score},
         }
+        if general_tools is not None:
+            payload["general_tools"] = general_tools
         log.info("Creating Retell LLM")
         data = self._post("/create-retell-llm", payload, expected=(201,))
         llm_id = data.get("llm_id")
@@ -84,6 +87,7 @@ class RetellService:
         general_prompt: Optional[str] = None,
         begin_message: Optional[str] = None,
         start_speaker: Optional[str] = None,
+        general_tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Dict[str, Any]:
         patch: Dict[str, Any] = {}
         if general_prompt is not None:
@@ -92,6 +96,8 @@ class RetellService:
             patch["begin_message"] = begin_message
         if start_speaker is not None:
             patch["start_speaker"] = start_speaker
+        if general_tools is not None:
+            patch["general_tools"] = general_tools
         return self._patch(f"/update-retell-llm/{llm_id}", patch, expected=200)
 
     # ---------- Agent ----------
@@ -161,30 +167,50 @@ class RetellService:
         log.info(f"Updating Retell Agent: {agent_id}")
         return self._patch(f"/update-agent/{agent_id}", patch, expected=200)
 
-    def configure_transfer_tool(self, agent_id: str, transfer_number: Optional[str] = None) -> Dict[str, Any]:
-        """Configure agent with transfer_call tool for forwarding legitimate calls"""
-        general_tools = [
+    def get_agent(self, agent_id: str) -> Dict[str, Any]:
+        """Fetch a Retell agent, including its response-engine LLM reference."""
+        return self._get(f"/get-agent/{agent_id}", expected=200)
+
+    @staticmethod
+    def screening_tools(transfer_number: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Build Retell's native screening tools; transfer is available only with a destination."""
+        tools: List[Dict[str, Any]] = [
             {
                 "type": "end_call",
                 "name": "end_call",
-                "description": "End call for spam/scam callers"
+                "description": "End calls that are suspicious, fraudulent, impersonating an organization, or cannot be safely screened."
             }
         ]
         if transfer_number:
-            general_tools.append({
+            tools.append({
                 "type": "transfer_call",
                 "name": "transfer_call",
-                "description": "Transfer legitimate calls to the client's phone",
-                "number": transfer_number
+                "description": "Transfer a caller only after screening determines the call is reasonably safe. Never use for callers claiming to represent banks or financial institutions.",
+                "transfer_destination": {
+                    "type": "predefined",
+                    "number": transfer_number
+                },
+                "transfer_option": {
+                    "type": "cold_transfer"
+                }
             })
-            log.info(f"✅ Configured transfer to {transfer_number} for agent {agent_id}")
-        else:
-            log.info(f"⚠️  Removed transfer tool from agent {agent_id}")
-        return self.update_agent(agent_id, general_tools=general_tools)
-        # Sometimes API returns a list already
-        if isinstance(data, list):
-            return data
-        return data.get("agents", [])
+        return tools
+
+    def configure_transfer_tool(self, agent_id: str, transfer_number: Optional[str] = None) -> Dict[str, Any]:
+        """Configure native tools on the agent's Retell LLM, not the Agent resource."""
+        agent = self.get_agent(agent_id)
+        response_engine = agent.get("response_engine") or {}
+        llm_id = response_engine.get("llm_id")
+        if not llm_id:
+            raise RuntimeError(f"Agent {agent_id} has no Retell LLM response_engine.llm_id")
+        tools = self.screening_tools(transfer_number)
+        result = self.update_llm(llm_id=llm_id, general_tools=tools)
+        log.info(
+            "Configured Retell screening tools for agent %s (transfer=%s)",
+            agent_id,
+            "enabled" if transfer_number else "disabled",
+        )
+        return result
 
     # ---------- Phone numbers / inbound & outbound binding ----------
 

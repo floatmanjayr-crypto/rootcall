@@ -250,12 +250,6 @@ async def update_config(
             else None
         )
 
-        if not phone.telnyx_connection_id:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="This RootCall number is missing its Telnyx SIP connection link. Contact support before enabling transfers."
-            )
-
         if transfer_number:
             if not phone.telnyx_connection_id:
                 raise HTTPException(

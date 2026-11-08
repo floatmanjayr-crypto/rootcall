@@ -52,7 +52,7 @@ router = APIRouter(tags=["RootCall Portal"])
 def normalize_transfer_number(value: str) -> str:
     """Normalize a US phone number or validate an E.164 destination."""
     raw = value.strip()
-    digits = re.sub(r"\\D", "", raw)
+    digits = re.sub(r"\D", "", raw)
     if len(digits) == 10:
         normalized = f"+1{digits}"
     elif len(digits) == 11 and digits.startswith("1"):
@@ -64,7 +64,7 @@ def normalize_transfer_number(value: str) -> str:
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="Enter a valid phone number, including the country code (example: +14155550123)."
         )
-    if not re.fullmatch(r"\\+[1-9]\\d{7,14}", normalized):
+    if not re.fullmatch(r"\+[1-9]\d{7,14}", normalized):
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="Enter a valid phone number in international format."

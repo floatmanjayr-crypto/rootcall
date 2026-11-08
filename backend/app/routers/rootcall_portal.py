@@ -250,6 +250,23 @@ async def update_config(
             else None
         )
 
+        if not phone.telnyx_connection_id:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="This RootCall number is missing its Telnyx SIP connection link. Contact support before enabling transfers."
+            )
+
+        try:
+            telnyx = TelnyxService()
+            telnyx.ensure_outbound_voice_profile(phone.telnyx_connection_id)
+        except Exception as exc:
+            db.rollback()
+            log.exception("Failed to ensure Telnyx outbound profile for client %s", client_id)
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="Your transfer number was not saved because Telnyx outbound calling is not configured. Please try again or contact support."
+            ) from exc
+
         if config.retell_agent_id:
             try:
                 retell = RetellService()

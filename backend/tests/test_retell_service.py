@@ -33,6 +33,14 @@ class RetellPublishingTest(unittest.TestCase):
         self.assertIn("do not transfer", prompt.lower())
         self.assertIn("bank, credit union, card issuer", prompt)
 
+
+    def test_prompt_accepts_first_or_last_name_as_recipient_variants(self):
+        prompt = self.module.build_scam_screening_prompt("Jordan Example")
+        self.assertIn("first name alone", prompt)
+        self.assertIn("last name alone", prompt)
+        self.assertIn("case-insensitive", prompt)
+        self.assertIn("full name, first name alone, or last name alone", prompt)
+
     def test_screening_prompt_fails_closed_without_owner_identity(self):
         prompt = self.module.build_scam_screening_prompt(None)
         self.assertIn("OWNER IDENTITY IS NOT CONFIGURED", prompt)

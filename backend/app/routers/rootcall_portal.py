@@ -246,7 +246,7 @@ async def sync_agent_identity(
     if not config or not config.retell_agent_id:
         raise HTTPException(status_code=409, detail="No Retell screening agent is configured")
 
-    owner_name = (current_user.full_name or current_user.email or "").strip()
+    owner_name = (current_user.full_name or "").strip()
     if not owner_name:
         raise HTTPException(status_code=409, detail="Protected account holder name is not configured")
 
@@ -664,7 +664,7 @@ async def provision_rootcall(
         agent_name = f"ScamShield-{current_user.email.split('@')[0]}"
         
         # Bind the agent to the protected account holder from the authenticated account.
-        owner_name = (current_user.full_name or current_user.email or "").strip()
+        owner_name = (current_user.full_name or "").strip()
         scam_prompt = build_scam_screening_prompt(owner_name)
 
         llm_id = retell.create_llm(

@@ -245,8 +245,10 @@ class RetellService:
             },
             expected=200,
         )
-        version = result.get("version")
-        if isinstance(version, bool) or not isinstance(version, int):
+        # Read back the draft version; update-agent responses may omit it.
+        updated_agent = self._get(f"/get-agent/{agent_id}")
+        version = updated_agent.get("version")
+        if isinstance(version, bool) or not isinstance(version, int) or version < 0:
             raise RuntimeError("Retell updated the voice but did not return a publishable version.")
         self.publish_agent(agent_id, version=version)
         return result

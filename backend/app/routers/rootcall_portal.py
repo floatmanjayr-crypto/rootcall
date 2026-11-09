@@ -418,9 +418,16 @@ async def update_config(
         except Exception as exc:
             db.rollback()
             log.exception("Failed to update Retell voice for client %s", client_id)
+            # Include Retell's sanitized API error so the dashboard can show
+            # the actual rejection instead of masking every failure as publish-related.
+            retell_error = str(exc).replace("\\n", " ").strip()[:600]
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
-                detail="Retell could not publish the selected voice. Your saved voice was not changed."
+                detail=(
+                    "Retell voice update failed: "
+                    + (retell_error or "Retell returned an empty error.")
+                    + " Your saved voice was not changed."
+                )
             ) from exc
         config.voice_id = updates.voice_id
     

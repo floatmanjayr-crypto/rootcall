@@ -5,6 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.database import engine, Base
+from sqlalchemy import inspect, text
 from app.routers import rootcall_portal
 from app.routers import payments, number_management, auth, admin
 from app.routers import live_calls
@@ -34,6 +35,24 @@ app = FastAPI(
     description="Complete VoIP platform with conversational AI",
     version="1.0.0"
 )
+
+@app.on_event("startup")
+def ensure_rootcall_voice_column():
+    """Add the voice preference column to existing customer configurations."""
+    try:
+        inspector = inspect(engine)
+        if inspector.has_table("rootcall_configs"):
+            columns = {column["name"] for column in inspector.get_columns("rootcall_configs")}
+            if "voice_id" not in columns:
+                with engine.begin() as connection:
+                    connection.execute(text(
+                        "ALTER TABLE rootcall_configs ADD COLUMN voice_id VARCHAR "
+                        "NOT NULL DEFAULT '11labs-Adrian'"
+                    ))
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception("RootCall voice preference migration failed")
+        raise
 
 # CORS middleware
 app.add_middleware(

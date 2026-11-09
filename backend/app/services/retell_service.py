@@ -211,6 +211,7 @@ class RetellService:
         agent_id: str,
         general_tools: Optional[List[Dict[str, Any]]] = None,
         agent_name: Optional[str] = None,
+        voice_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Update agent configuration including tools"""
         patch: Dict[str, Any] = {}
@@ -218,8 +219,25 @@ class RetellService:
             patch["general_tools"] = general_tools
         if agent_name is not None:
             patch["agent_name"] = agent_name
+        if voice_id is not None:
+            patch["voice_id"] = voice_id
         log.info(f"Updating Retell Agent: {agent_id}")
         return self._patch(f"/update-agent/{agent_id}", patch, expected=200)
+
+    def update_voice(self, agent_id: str, voice_id: str) -> Dict[str, Any]:
+        """Update and publish the selected, allow-listed RootCall voice."""
+        if voice_id not in {"11labs-Adrian", "11labs-Anna"}:
+            raise ValueError("Unsupported RootCall voice selection")
+        result = self.update_agent(agent_id=agent_id, voice_id=voice_id)
+        self.publish_agent(agent_id)
+        return result
+
+    def list_voices(self) -> List[Dict[str, Any]]:
+        """Return the available Retell voice catalog."""
+        data = self._get("/list-voices", expected=200)
+        if isinstance(data, list):
+            return data
+        return data.get("voices", []) if isinstance(data, dict) else []
 
     def update_screening_identity(self, agent_id: str, owner_name: Optional[str]) -> Dict[str, Any]:
         """Update an existing agent with the protected owner's identity rules."""

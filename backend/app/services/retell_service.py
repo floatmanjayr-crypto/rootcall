@@ -52,7 +52,7 @@ This is a recipient-routing rule, NOT caller identity verification. It does not 
 """ + identity_rule + """
 
 IDENTITY GATE — MUST HAPPEN BEFORE DISCUSSING THE CALL:
-- Your FIRST spoken message must be: "Hello, you've reached Root Call. Who would you like to speak with?"
+- Your FIRST spoken message must be: "Hello, you've reached RootCall AI Assistant. Who would you like to speak with?"
 - Do not begin by asking who is calling or why they are calling.
 - As soon as the caller names the requested recipient, compare that name privately to the protected owner identity. This check is mandatory and must happen before asking what the call is about.
 - A match is ONLY the exact full stored name, exact stored first name alone, or exact stored last name alone, ignoring capitalization and surrounding spaces. Do not accept nicknames, middle names, similar-sounding names, partial fragments, or any other name.
@@ -319,7 +319,7 @@ class RetellService:
         return self.update_llm(
             llm_id=llm_id,
             general_prompt=build_scam_screening_prompt(owner_name, existing_prompt),
-            begin_message="Hello, you've reached Root Call. Who would you like to speak with?",
+            begin_message="Hello, you've reached RootCall AI Assistant. Who would you like to speak with?",
         )
 
     def configure_transfer_tool(self, agent_id: str, transfer_number: Optional[str] = None) -> Dict[str, Any]:

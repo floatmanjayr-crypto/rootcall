@@ -1495,21 +1495,13 @@
                         <span class="info-badge" style="margin:0;">Two launch voices</span>
                     </div>
                     <p class="field-hint" style="margin-bottom:1rem;">Choose how your AI screening assistant sounds. Both voices use the same scam-detection and transfer-safety rules.</p>
-                    <div class="grid-2" style="gap:1rem;">
-                        <label class="card" style="cursor:pointer; border:1px solid var(--border);">
-                            <div style="display:flex;align-items:center;gap:.75rem;">
-                                <input type="radio" name="agent-voice" id="voice-male" value="11labs-Adrian" onchange="saveAgentVoice(this.value)" />
-                                <div><strong>Male voice</strong><div class="field-hint">Calm, confident, professional</div></div>
-                            </div>
-                            <audio id="voice-male-preview" controls preload="none" style="width:100%;margin-top:.8rem;display:none;">Your browser does not support audio.</audio>
-                        </label>
-                        <label class="card" style="cursor:pointer; border:1px solid var(--border);">
-                            <div style="display:flex;align-items:center;gap:.75rem;">
-                                <input type="radio" name="agent-voice" id="voice-female" value="11labs-Anna" onchange="saveAgentVoice(this.value)" />
-                                <div><strong>Female voice</strong><div class="field-hint">Warm, clear, professional</div></div>
-                            </div>
-                            <audio id="voice-female-preview" controls preload="none" style="width:100%;margin-top:.8rem;display:none;">Your browser does not support audio.</audio>
-                        </label>
+                    <div style="display:grid;gap:.75rem;">
+                        <label for="retell-voice-select"><strong>Choose an available Retell voice</strong></label>
+                        <select id="retell-voice-select" class="form-control" onchange="saveAgentVoice(this.value)" style="width:100%;min-height:48px;">
+                            <option value="">Loading voices from Retell...</option>
+                        </select>
+                        <div id="retell-voice-details" class="field-hint">Voice choices are loaded from your connected Retell workspace.</div>
+                        <audio id="retell-voice-preview" controls preload="none" style="width:100%;display:none;">Your browser does not support audio.</audio>
                     </div>
                     <div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-top:1.25rem;">
                         <button onclick="syncAgentIdentity()" class="btn btn-primary" id="sync-agent-identity-btn"><i class="fas fa-sync-alt"></i> Sync Agent Identity</button>
@@ -2340,37 +2332,60 @@
         let CURRENT_VOICE_ID = null;
 
         async function loadVoicePreviews() {
+            const select = document.getElementById('retell-voice-select');
+            const details = document.getElementById('retell-voice-details');
+            const preview = document.getElementById('retell-voice-preview');
+            if (!select) return;
+            select.innerHTML = '<option value="">Loading voices from Retell...</option>';
             try {
                 const response = await authFetch(`${API}/api/rootcall/voice-options`);
-                if (!response.ok) return;
                 const data = await response.json();
+                if (!response.ok) throw new Error(data.detail || 'Could not load Retell voices');
                 const voices = data.voices || [];
-                const mapping = { male: 'voice-male', female: 'voice-female' };
-                const previewMapping = { male: 'voice-male-preview', female: 'voice-female-preview' };
+                select.innerHTML = '';
+                if (!voices.length) {
+                    select.innerHTML = '<option value="">No voices returned by Retell</option>';
+                    details.textContent = 'No voices were returned by the connected Retell workspace.';
+                    return;
+                }
                 voices.forEach(voice => {
-                    const radio = document.getElementById(mapping[String(voice.label || '').toLowerCase()]);
-                    const audio = document.getElementById(previewMapping[String(voice.label || '').toLowerCase()]);
-                    if (radio) {
-                        radio.value = voice.voice_id;
-                        radio.disabled = false;
-                        radio.checked = voice.voice_id === CURRENT_VOICE_ID;
-                    }
-                    if (audio && voice.preview_audio_url) {
-                        audio.src = voice.preview_audio_url;
-                        audio.style.display = 'block';
-                    }
+                    const option = document.createElement('option');
+                    option.value = voice.voice_id;
+                    const meta = [voice.provider, voice.gender, voice.accent].filter(Boolean).join(' · ');
+                    option.textContent = meta ? `${voice.voice_name} — ${meta}` : voice.voice_name;
+                    option.dataset.preview = voice.preview_audio_url || '';
+                    option.dataset.details = meta;
+                    select.appendChild(option);
                 });
-                ['male', 'female'].forEach(gender => {
-                    const radio = document.getElementById(mapping[gender]);
-                    if (radio && !voices.some(v => String(v.label || '').toLowerCase() === gender)) {
-                        radio.disabled = true;
-                        const card = radio.closest('label');
-                        if (card) card.style.opacity = '.5';
+                if (CURRENT_VOICE_ID && voices.some(v => v.voice_id === CURRENT_VOICE_ID)) {
+                    select.value = CURRENT_VOICE_ID;
+                } else {
+                    select.selectedIndex = 0;
+                }
+                const selected = select.options[select.selectedIndex];
+                details.textContent = selected.dataset.details || 'Available in your Retell workspace';
+                if (selected.dataset.preview) {
+                    preview.src = selected.dataset.preview;
+                    preview.style.display = 'block';
+                } else {
+                    preview.removeAttribute('src');
+                    preview.style.display = 'none';
+                }
+                select.onchange = function () {
+                    const option = this.options[this.selectedIndex];
+                    details.textContent = option.dataset.details || 'Available in your Retell workspace';
+                    if (option.dataset.preview) {
+                        preview.src = option.dataset.preview;
+                        preview.style.display = 'block';
+                    } else {
+                        preview.removeAttribute('src');
+                        preview.style.display = 'none';
                     }
-                });
-                if (!voices.length) showToast('Retell has not returned available male/female voices. Contact support.', 'error');
+                };
             } catch (error) {
-                console.warn('Voice previews are temporarily unavailable:', error);
+                select.innerHTML = '<option value="">Unable to load Retell voices</option>';
+                details.textContent = error.message;
+                console.error('Retell voice catalog error:', error);
             }
         }
 
@@ -2387,11 +2402,11 @@
                 }
                 CURRENT_VOICE_ID = voiceId;
                 showToast('Your agent voice has been updated!', 'success');
+                await loadVoicePreviews();
             } catch (error) {
                 showToast('Voice update failed: ' + error.message, 'error');
-                document.querySelectorAll('input[name="agent-voice"]').forEach(radio => {
-                    radio.checked = radio.value === CURRENT_VOICE_ID;
-                });
+                const select = document.getElementById('retell-voice-select');
+                if (select) select.value = CURRENT_VOICE_ID || '';
             } finally {
                 showLoading(false);
             }

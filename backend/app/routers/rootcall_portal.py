@@ -79,6 +79,7 @@ class ConfigUpdate(BaseModel):
     alert_on_unknown: Optional[bool] = None
     auto_block_spam: Optional[bool] = None
     voice_id: Optional[str] = None
+    full_name: Optional[str] = None
 
 class TrustedContactAdd(BaseModel):
     phone_number: str
@@ -234,22 +235,24 @@ async def get_voice_options(
         log.exception("Could not retrieve Retell voice previews")
         by_id = {}
 
-    return {
-        "voices": [
-            {
-                "voice_id": "11labs-Adrian",
-                "label": "Male",
-                "description": "Calm, confident, professional",
-                "preview_audio_url": (by_id.get("11labs-Adrian") or {}).get("preview_audio_url")
-            },
-            {
-                "voice_id": "11labs-Anna",
-                "label": "Female",
-                "description": "Warm, clear, professional",
-                "preview_audio_url": (by_id.get("11labs-Anna") or {}).get("preview_audio_url")
-            }
-        ]
-    }
+    selected = []
+    for gender, label, description in (
+        ("male", "Male", "Calm, confident, professional"),
+        ("female", "Female", "Warm, clear, professional"),
+    ):
+        match = next((
+            item for item in catalog
+            if isinstance(item, dict)
+            and str(item.get("gender") or "").lower() == gender
+        ), None)
+        if match and match.get("voice_id"):
+            selected.append({
+                "voice_id": match["voice_id"],
+                "label": label,
+                "description": description,
+                "preview_audio_url": match.get("preview_audio_url"),
+            })
+    return {"voices": selected}
 
 
 @router.post("/api/rootcall/sync-agent-identity/{client_id}")
@@ -321,6 +324,16 @@ async def update_config(
     if not config:
         raise HTTPException(status_code=404, detail="No config")
     
+    if updates.full_name is not None:
+        owner_name = updates.full_name.strip()
+        if len(owner_name) < 2 or len(owner_name) > 120 or len(owner_name.split()) < 2:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Enter the account holder's first and last name."
+            )
+        current_user.full_name = owner_name
+        config.client_name = owner_name
+
     if updates.client_cell is not None:
         transfer_number = (
             normalize_transfer_number(updates.client_cell)
@@ -403,7 +416,7 @@ async def update_config(
         config.voice_id = updates.voice_id
     
     db.commit()
-    return {"success": True, "voice_id": config.voice_id or "11labs-Adrian"}
+    return {"success": True, "voice_id": config.voice_id or "11labs-Adrian", "full_name": current_user.full_name}
 
 
 # ============================================

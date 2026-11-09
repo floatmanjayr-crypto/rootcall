@@ -78,6 +78,7 @@ class ConfigUpdate(BaseModel):
     alert_on_spam: Optional[bool] = None
     alert_on_unknown: Optional[bool] = None
     auto_block_spam: Optional[bool] = None
+    voice_id: Optional[str] = None
 
 class TrustedContactAdd(BaseModel):
     phone_number: str
@@ -208,6 +209,7 @@ async def get_config(
     
     return {
         "client_name": config.client_name,
+        "voice_id": config.voice_id or "11labs-Adrian",
         "client_cell": config.client_cell,
         "sms_alerts_enabled": config.sms_alerts_enabled,
         "alert_on_spam": config.alert_on_spam,
@@ -216,6 +218,36 @@ async def get_config(
         "trusted_contacts": [
             {"phone_number": p, "name": ""} 
             for p in (config.trusted_contacts or [])
+        ]
+    }
+
+
+@router.get("/api/rootcall/voice-options")
+async def get_voice_options(
+    current_user: User = Depends(get_current_user)
+):
+    """Return the two launch voices and their Retell preview audio, when available."""
+    try:
+        catalog = RetellService().list_voices()
+        by_id = {item.get("voice_id"): item for item in catalog if isinstance(item, dict)}
+    except Exception:
+        log.exception("Could not retrieve Retell voice previews")
+        by_id = {}
+
+    return {
+        "voices": [
+            {
+                "voice_id": "11labs-Adrian",
+                "label": "Male",
+                "description": "Calm, confident, professional",
+                "preview_audio_url": (by_id.get("11labs-Adrian") or {}).get("preview_audio_url")
+            },
+            {
+                "voice_id": "11labs-Anna",
+                "label": "Female",
+                "description": "Warm, clear, professional",
+                "preview_audio_url": (by_id.get("11labs-Anna") or {}).get("preview_audio_url")
+            }
         ]
     }
 
@@ -347,9 +379,31 @@ async def update_config(
         config.alert_on_unknown = updates.alert_on_unknown
     if updates.auto_block_spam is not None:
         config.auto_block_spam = updates.auto_block_spam
+    if updates.voice_id is not None:
+        allowed_voices = {"11labs-Adrian", "11labs-Anna"}
+        if updates.voice_id not in allowed_voices:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Choose one of the two available RootCall voices."
+            )
+        if not config.retell_agent_id:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="This RootCall number is not connected to a screening agent yet."
+            )
+        try:
+            RetellService().update_voice(config.retell_agent_id, updates.voice_id)
+        except Exception as exc:
+            db.rollback()
+            log.exception("Failed to update Retell voice for client %s", client_id)
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="Retell could not publish the selected voice. Your saved voice was not changed."
+            ) from exc
+        config.voice_id = updates.voice_id
     
     db.commit()
-    return {"success": True}
+    return {"success": True, "voice_id": config.voice_id or "11labs-Adrian"}
 
 
 # ============================================

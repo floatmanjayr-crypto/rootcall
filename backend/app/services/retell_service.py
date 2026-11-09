@@ -225,11 +225,30 @@ class RetellService:
         return self._patch(f"/update-agent/{agent_id}", patch, expected=200)
 
     def update_voice(self, agent_id: str, voice_id: str) -> Dict[str, Any]:
-        """Update and publish the selected, allow-listed RootCall voice."""
-        if voice_id not in {"11labs-Adrian", "11labs-Anna"}:
-            raise ValueError("Unsupported RootCall voice selection")
-        result = self.update_agent(agent_id=agent_id, voice_id=voice_id)
-        self.publish_agent(agent_id)
+        """Update and publish a voice while preserving required agent fields."""
+        voices = self.list_voices()
+        if not any(isinstance(item, dict) and item.get("voice_id") == voice_id for item in voices):
+            raise ValueError("That voice is not available in the connected Retell account.")
+        # Retell's update-agent request requires response_engine and agent_name,
+        # even when the only intended change is voice_id.
+        current = self._get(f"/get-agent/{agent_id}")
+        response_engine = current.get("response_engine")
+        agent_name = current.get("agent_name")
+        if not isinstance(response_engine, dict) or not agent_name:
+            raise RuntimeError("Retell did not return the agent's required configuration.")
+        result = self._patch(
+            f"/update-agent/{agent_id}",
+            {
+                "response_engine": response_engine,
+                "agent_name": agent_name,
+                "voice_id": voice_id,
+            },
+            expected=200,
+        )
+        version = result.get("version")
+        if isinstance(version, bool) or not isinstance(version, int):
+            raise RuntimeError("Retell updated the voice but did not return a publishable version.")
+        self.publish_agent(agent_id, version=version)
         return result
 
     def list_voices(self) -> List[Dict[str, Any]]:

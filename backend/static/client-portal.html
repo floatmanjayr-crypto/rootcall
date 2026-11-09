@@ -1497,7 +1497,7 @@
                     <p class="field-hint" style="margin-bottom:1rem;">Choose how your AI screening assistant sounds. Both voices use the same scam-detection and transfer-safety rules.</p>
                     <div style="display:grid;gap:.75rem;">
                         <label for="retell-voice-select"><strong>Choose an available Retell voice</strong></label>
-                        <select id="retell-voice-select" class="form-control" onchange="saveAgentVoice(this.value)" style="width:100%;min-height:48px;">
+                        <select id="retell-voice-select" class="form-control" style="width:100%;min-height:48px;">
                             <option value="">Loading voices from Retell...</option>
                         </select>
                         <div id="retell-voice-details" class="field-hint">Voice choices are loaded from your connected Retell workspace.</div>
@@ -2380,6 +2380,9 @@
                     } else {
                         preview.removeAttribute('src');
                         preview.style.display = 'none';
+                    }
+                    if (this.value && this.value !== CURRENT_VOICE_ID) {
+                        saveAgentVoice(this.value);
                     }
                 };
             } catch (error) {

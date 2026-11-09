@@ -348,7 +348,7 @@ class RetellService:
                 },
                 "transfer_option": {
                     "type": "cold_transfer",
-                    "cold_transfer_mode": "sip_invite"
+                    "cold_transfer_mode": "sip_refer"
                 }
             })
             log.info("Configured customer-specific transfer destination for agent %s", agent_id)

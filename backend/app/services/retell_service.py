@@ -255,7 +255,7 @@ class RetellService:
 
         result = self._patch(
             f"/update-agent/{agent_id}",
-            {"voice_id": voice_id},
+            {"version": draft_version, "voice_id": voice_id},
             expected=200,
         )
 

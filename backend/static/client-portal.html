@@ -2385,11 +2385,13 @@
                     const error = await response.json();
                     throw new Error(error.detail || 'Could not update agent voice');
                 }
+                CURRENT_VOICE_ID = voiceId;
                 showToast('Your agent voice has been updated!', 'success');
             } catch (error) {
                 showToast('Voice update failed: ' + error.message, 'error');
-                const fallback = voiceId === '11labs-Anna' ? 'voice-male' : 'voice-female';
-                document.getElementById(fallback).checked = true;
+                document.querySelectorAll('input[name="agent-voice"]').forEach(radio => {
+                    radio.checked = radio.value === CURRENT_VOICE_ID;
+                });
             } finally {
                 showLoading(false);
             }

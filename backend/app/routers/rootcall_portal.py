@@ -28,7 +28,7 @@ from app.models.rootcall_call_log import RootCallCallLog
 
 # Services
 from app.services.telnyx_service import TelnyxService
-from app.services.retell_service import RetellService
+from app.services.retell_service import RetellService, build_scam_screening_prompt
 
 # Auth
 try:
@@ -218,6 +218,52 @@ async def get_config(
             for p in (config.trusted_contacts or [])
         ]
     }
+
+
+@router.post("/api/rootcall/sync-agent-identity/{client_id}")
+async def sync_agent_identity(
+    client_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Synchronize the existing Retell agent with the authenticated account holder identity."""
+    if current_user.id != client_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cannot modify another user's screening agent"
+        )
+
+    phone = db.query(PhoneNumber).filter(
+        PhoneNumber.user_id == client_id,
+        PhoneNumber.is_active == True
+    ).first()
+    if not phone:
+        raise HTTPException(status_code=404, detail="No active RootCall phone number")
+
+    config = db.query(RootCallConfig).filter(
+        RootCallConfig.phone_number_id == phone.id
+    ).first()
+    if not config or not config.retell_agent_id:
+        raise HTTPException(status_code=409, detail="No Retell screening agent is configured")
+
+    owner_name = (current_user.full_name or current_user.email or "").strip()
+    if not owner_name:
+        raise HTTPException(status_code=409, detail="Protected account holder name is not configured")
+
+    try:
+        retell = RetellService()
+        retell.update_screening_identity(config.retell_agent_id, owner_name)
+        config.client_name = owner_name
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        log.exception("Failed to synchronize protected identity for client %s", client_id)
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Retell could not be updated. The existing screening prompt was not confirmed as changed."
+        ) from exc
+
+    return {"success": True, "message": "Protected account identity rules synchronized."}
 
 
 @router.patch("/api/rootcall/config/{client_id}")
@@ -617,29 +663,9 @@ async def provision_rootcall(
         
         agent_name = f"ScamShield-{current_user.email.split('@')[0]}"
         
-        # Create LLM with scam screening prompt
-        scam_prompt = """You are an AI scam screening assistant protecting the user from fraud and scams.
-
-Your job is to:
-1. Greet callers professionally
-2. Ask for their name and reason for calling
-3. Detect scam indicators and block suspicious calls
-4. Use the transfer_call tool to connect legitimate callers to the user
-
-SCAM INDICATORS TO BLOCK:
-- Requests for money, gift cards, wire transfers, cryptocurrency
-- Claims to be IRS, Social Security, government agencies demanding payment
-- Threats, urgency, or pressure tactics
-- Requests for personal info (SSN, bank details, passwords)
-- Tech support scams (fake Microsoft, Apple, antivirus)
-- Prize/lottery winnings requiring payment
-- Robocalls or clearly automated voices
-
-If SCAM detected: Say "This call appears to be fraudulent and will not be connected. Goodbye." Then use the end_call tool.
-
-For LEGITIMATE calls (doctors, family, friends, appointments): Say "Thank you, let me connect you now." Then use the transfer_call tool.
-
-Be polite but firm with scammers. Protect the user at all costs."""
+        # Bind the agent to the protected account holder from the authenticated account.
+        owner_name = (current_user.full_name or current_user.email or "").strip()
+        scam_prompt = build_scam_screening_prompt(owner_name)
 
         llm_id = retell.create_llm(
             general_prompt=scam_prompt,

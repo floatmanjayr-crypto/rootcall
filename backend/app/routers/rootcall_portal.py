@@ -227,31 +227,31 @@ async def get_config(
 async def get_voice_options(
     current_user: User = Depends(get_current_user)
 ):
-    """Return the two launch voices and their Retell preview audio, when available."""
+    """Return every voice available in the connected Retell workspace."""
     try:
         catalog = RetellService().list_voices()
-    except Exception:
+    except Exception as exc:
         log.exception("Could not retrieve Retell voice catalog")
-        catalog = []
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Could not load voices from Retell. Check the Retell API connection."
+        ) from exc
 
-    selected = []
-    for gender, label, description in (
-        ("male", "Male", "Calm, confident, professional"),
-        ("female", "Female", "Warm, clear, professional"),
-    ):
-        match = next((
-            item for item in catalog
-            if isinstance(item, dict)
-            and str(item.get("gender") or "").lower() == gender
-        ), None)
-        if match and match.get("voice_id"):
-            selected.append({
-                "voice_id": match["voice_id"],
-                "label": label,
-                "description": description,
-                "preview_audio_url": match.get("preview_audio_url"),
-            })
-    return {"voices": selected}
+    voices = []
+    for item in catalog:
+        if not isinstance(item, dict) or not item.get("voice_id"):
+            continue
+        voices.append({
+            "voice_id": item.get("voice_id"),
+            "voice_name": item.get("voice_name") or item.get("name") or item.get("voice_id"),
+            "provider": item.get("provider") or "Unknown provider",
+            "gender": item.get("gender") or "",
+            "accent": item.get("accent") or "",
+            "age": item.get("age") or "",
+            "preview_audio_url": item.get("preview_audio_url"),
+        })
+    voices.sort(key=lambda voice: (str(voice["provider"]).lower(), str(voice["voice_name"]).lower()))
+    return {"voices": voices}
 
 
 @router.post("/api/rootcall/sync-agent-identity/{client_id}")
@@ -406,7 +406,7 @@ async def update_config(
         ):
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail="Choose one of the two available RootCall voices."
+                detail="Choose a voice returned by your connected Retell workspace."
             )
         if not config.retell_agent_id:
             raise HTTPException(

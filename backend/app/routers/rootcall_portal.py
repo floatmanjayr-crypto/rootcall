@@ -230,10 +230,9 @@ async def get_voice_options(
     """Return the two launch voices and their Retell preview audio, when available."""
     try:
         catalog = RetellService().list_voices()
-        by_id = {item.get("voice_id"): item for item in catalog if isinstance(item, dict)}
     except Exception:
-        log.exception("Could not retrieve Retell voice previews")
-        by_id = {}
+        log.exception("Could not retrieve Retell voice catalog")
+        catalog = []
 
     selected = []
     for gender, label, description in (
@@ -393,8 +392,18 @@ async def update_config(
     if updates.auto_block_spam is not None:
         config.auto_block_spam = updates.auto_block_spam
     if updates.voice_id is not None:
-        allowed_voices = {"11labs-Adrian", "11labs-Anna"}
-        if updates.voice_id not in allowed_voices:
+        try:
+            available_voices = RetellService().list_voices()
+        except Exception as exc:
+            log.exception("Could not validate Retell voice for client %s", client_id)
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="Could not load available voices from Retell. Please try again."
+            ) from exc
+        if not any(
+            isinstance(item, dict) and item.get("voice_id") == updates.voice_id
+            for item in available_voices
+        ):
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail="Choose one of the two available RootCall voices."

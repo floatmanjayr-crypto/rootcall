@@ -225,32 +225,50 @@ class RetellService:
         return self._patch(f"/update-agent/{agent_id}", patch, expected=200)
 
     def update_voice(self, agent_id: str, voice_id: str) -> Dict[str, Any]:
-        """Update and publish a voice while preserving required agent fields."""
+        """Create a new Retell draft when needed, update its voice, then publish it."""
         voices = self.list_voices()
-        if not any(isinstance(item, dict) and item.get("voice_id") == voice_id for item in voices):
+        if not any(
+            isinstance(item, dict) and item.get("voice_id") == voice_id
+            for item in voices
+        ):
             raise ValueError("That voice is not available in the connected Retell account.")
-        # Retell's update-agent request requires response_engine and agent_name,
-        # even when the only intended change is voice_id.
+
         current = self._get(f"/get-agent/{agent_id}")
-        response_engine = current.get("response_engine")
-        agent_name = current.get("agent_name")
-        if not isinstance(response_engine, dict) or not agent_name:
-            raise RuntimeError("Retell did not return the agent's required configuration.")
+        current_version = current.get("version")
+        if isinstance(current_version, bool) or not isinstance(current_version, int):
+            raise RuntimeError("Retell did not return a valid agent version.")
+
+        # Published versions are immutable. Create a draft based on the
+        # currently published version before attempting update-agent.
+        if current.get("is_published") is True:
+            draft = self._post(
+                f"/create-agent-version/{agent_id}",
+                {"base_version": current_version},
+                expected=(200, 201),
+            )
+            draft_version = draft.get("version")
+            if isinstance(draft_version, bool) or not isinstance(draft_version, int):
+                raise RuntimeError("Retell did not return the new draft version.")
+        else:
+            # An existing unpublished draft can be edited directly.
+            draft_version = current_version
+
         result = self._patch(
             f"/update-agent/{agent_id}",
-            {
-                "response_engine": response_engine,
-                "agent_name": agent_name,
-                "voice_id": voice_id,
-            },
+            {"voice_id": voice_id},
             expected=200,
         )
-        # Read back the draft version; update-agent responses may omit it.
+
         updated_agent = self._get(f"/get-agent/{agent_id}")
-        version = updated_agent.get("version")
-        if isinstance(version, bool) or not isinstance(version, int) or version < 0:
-            raise RuntimeError("Retell updated the voice but did not return a publishable version.")
-        self.publish_agent(agent_id, version=version)
+        updated_version = updated_agent.get("version")
+        if isinstance(updated_version, bool) or not isinstance(updated_version, int):
+            updated_version = draft_version
+        if updated_version != draft_version:
+            raise RuntimeError(
+                "Retell's draft version changed unexpectedly; refusing to publish the wrong version."
+            )
+
+        self.publish_agent(agent_id, version=draft_version)
         return result
 
     def list_voices(self) -> List[Dict[str, Any]]:

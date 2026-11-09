@@ -1487,6 +1487,34 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="card" style="margin-top: 1.5rem;">
+                    <div class="card-header-row">
+                        <h3 class="card-title"><i class="fas fa-microphone-alt"></i> Your RootCall Agent</h3>
+                        <span class="info-badge" style="margin:0;">Two launch voices</span>
+                    </div>
+                    <p class="field-hint" style="margin-bottom:1rem;">Choose how your AI screening assistant sounds. Both voices use the same scam-detection and transfer-safety rules.</p>
+                    <div class="grid-2" style="gap:1rem;">
+                        <label class="card" style="cursor:pointer; border:1px solid var(--border);">
+                            <div style="display:flex;align-items:center;gap:.75rem;">
+                                <input type="radio" name="agent-voice" id="voice-male" value="11labs-Adrian" onchange="saveAgentVoice(this.value)" />
+                                <div><strong>Male voice</strong><div class="field-hint">Calm, confident, professional</div></div>
+                            </div>
+                            <audio id="voice-male-preview" controls preload="none" style="width:100%;margin-top:.8rem;display:none;">Your browser does not support audio.</audio>
+                        </label>
+                        <label class="card" style="cursor:pointer; border:1px solid var(--border);">
+                            <div style="display:flex;align-items:center;gap:.75rem;">
+                                <input type="radio" name="agent-voice" id="voice-female" value="11labs-Anna" onchange="saveAgentVoice(this.value)" />
+                                <div><strong>Female voice</strong><div class="field-hint">Warm, clear, professional</div></div>
+                            </div>
+                            <audio id="voice-female-preview" controls preload="none" style="width:100%;margin-top:.8rem;display:none;">Your browser does not support audio.</audio>
+                        </label>
+                    </div>
+                    <div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-top:1.25rem;">
+                        <button onclick="syncAgentIdentity()" class="btn btn-primary" id="sync-agent-identity-btn"><i class="fas fa-sync-alt"></i> Sync Agent Identity</button>
+                    </div>
+                    <p class="field-hint" style="margin-top:.75rem;">Identity sync uses the name on your account and keeps it private from callers. Voice changes are published to your existing Retell agent.</p>
+                </div>
             </div>
         </div>
     </div>
@@ -1859,6 +1887,8 @@
                     document.getElementById('alert-spam').checked = config.alert_on_spam || false;
                     document.getElementById('alert-unknown').checked = config.alert_on_unknown || false;
                     document.getElementById('auto-block-spam').checked = config.auto_block_spam || false;
+                    const selectedVoice = config.voice_id || '11labs-Adrian';
+                    document.getElementById(selectedVoice === '11labs-Anna' ? 'voice-female' : 'voice-male').checked = true;
                     const list = document.getElementById('contacts-list');
                     if (config.trusted_contacts && config.trusted_contacts.length > 0) {
                         list.innerHTML = config.trusted_contacts.map(c => {
@@ -1880,6 +1910,7 @@
                         list.innerHTML = '<p style="text-align: center; color: #999; padding: 2rem; font-weight: 600;">No trusted contacts yet. Add your first contact above!</p>';
                     }
                 }
+                await loadVoicePreviews();
                 await loadNumbers();
                 const callsResponse = await authFetch(`${API}/api/rootcall/calls/${CLIENT_ID}`);
                 if (callsResponse.ok) {
@@ -2298,6 +2329,67 @@
                 showToast('Error removing contact: ' + err.message, 'error');
             } finally {
                 showLoading(false);
+            }
+        }
+
+        async function loadVoicePreviews() {
+            try {
+                const response = await authFetch(`${API}/api/rootcall/voice-options`);
+                if (!response.ok) return;
+                const data = await response.json();
+                const mapping = {
+                    '11labs-Adrian': 'voice-male-preview',
+                    '11labs-Anna': 'voice-female-preview'
+                };
+                (data.voices || []).forEach(voice => {
+                    const audio = document.getElementById(mapping[voice.voice_id]);
+                    if (audio && voice.preview_audio_url) {
+                        audio.src = voice.preview_audio_url;
+                        audio.style.display = 'block';
+                    }
+                });
+            } catch (error) {
+                console.warn('Voice previews are temporarily unavailable:', error);
+            }
+        }
+
+        async function saveAgentVoice(voiceId) {
+            try {
+                showLoading(true);
+                const response = await authFetch(`${API}/api/rootcall/config/${CLIENT_ID}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({ voice_id: voiceId })
+                });
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Could not update agent voice');
+                }
+                showToast('Your agent voice has been updated!', 'success');
+            } catch (error) {
+                showToast('Voice update failed: ' + error.message, 'error');
+                const fallback = voiceId === '11labs-Anna' ? 'voice-male' : 'voice-female';
+                document.getElementById(fallback).checked = true;
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function syncAgentIdentity() {
+            const button = document.getElementById('sync-agent-identity-btn');
+            try {
+                button.disabled = true;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Syncing...';
+                const response = await authFetch(`${API}/api/rootcall/sync-agent-identity/${CLIENT_ID}`, {
+                    method: 'POST'
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.detail || 'Identity sync failed');
+                showToast('Agent identity synchronized successfully!', 'success');
+            } catch (error) {
+                showToast('Identity sync failed: ' + error.message, 'error');
+            } finally {
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-sync-alt"></i> Sync Agent Identity';
             }
         }
 

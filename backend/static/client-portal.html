@@ -2400,7 +2400,7 @@
         async function saveAccountName() {
             const input = document.getElementById('user-fullname');
             const fullName = input.value.trim();
-            if (fullName.split(/\\s+/).length < 2) {
+            if (fullName.split(/\s+/).length < 2) {
                 showToast('Please enter your first and last name.', 'error');
                 return;
             }

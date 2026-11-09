@@ -26,6 +26,7 @@ class RootCallConfig(Base):
     # Retell AI configuration
     retell_agent_id = Column(String, nullable=False)
     retell_did = Column(String, nullable=False)  # The DID that Retell uses
+    voice_id = Column(String, nullable=False, default="11labs-Adrian", server_default="11labs-Adrian")
     
     # Trusted contacts (whitelist) - stored as JSON array
     # Example: ["+17545551234", "+18005551234"]

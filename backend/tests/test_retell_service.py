@@ -71,7 +71,7 @@ class RetellPublishingTest(unittest.TestCase):
         self.assertIn("Original master handbook text", update_llm.call_args.kwargs["general_prompt"])
         self.assertEqual(
             update_llm.call_args.kwargs["begin_message"],
-            "Hello, you've reached Root Call. Who would you like to speak with?"
+            "Hello, you've reached RootCall AI Assistant. Who would you like to speak with?"
         )
         publish.assert_not_called()
 

@@ -29,7 +29,7 @@ class RetellPublishingTest(unittest.TestCase):
         self.assertIn("Jordan Example", prompt)
         self.assertIn("Never reveal or suggest the stored owner name", prompt)
         self.assertIn("A name match is not authentication", prompt)
-        self.assertIn("caller supplies", prompt)
+        self.assertIn("recipient-routing rule", prompt)
         self.assertIn("do not transfer", prompt.lower())
         self.assertIn("bank, credit union, card issuer", prompt)
 
@@ -49,14 +49,30 @@ class RetellPublishingTest(unittest.TestCase):
         self.assertIn("OWNER IDENTITY IS NOT CONFIGURED", prompt)
         self.assertIn("do not transfer any caller", prompt)
 
-    def test_update_screening_identity_updates_prompt_without_publishing_agent(self):
-        with patch.object(self.service, "_get", return_value={
-            "response_engine": {"type": "retell-llm", "llm_id": "llm-test"}
-        }), patch.object(self.service, "update_llm", return_value={"ok": True}) as update_llm, patch.object(self.service, "publish_agent") as publish:
+    def test_screening_prompt_preserves_existing_handbook_without_nesting_on_resync(self):
+        handbook = "ROOT CALL — ADVANCED SCAM SHIELD\\nOriginal greeting and screening rules."
+        first_sync = self.module.build_scam_screening_prompt("Jordan Example", handbook)
+        self.assertIn(handbook, first_sync)
+        self.assertIn("Who would you like to speak with?", first_sync)
+        second_sync = self.module.build_scam_screening_prompt("Jordan Example", first_sync)
+        self.assertEqual(second_sync.count("ROOTCALL ORIGINAL HANDBOOK BEGIN"), 1)
+        self.assertEqual(second_sync.count(handbook), 1)
+
+    def test_update_screening_identity_updates_prompt_and_greeting_without_publishing_agent(self):
+        agent = {"response_engine": {"type": "retell-llm", "llm_id": "llm-test"}}
+        llm = {"general_prompt": "Original master handbook text"}
+        with patch.object(self.service, "_get", side_effect=[agent, llm]) as get, patch.object(self.service, "update_llm", return_value={"ok": True}) as update_llm, patch.object(self.service, "publish_agent") as publish:
             result = self.service.update_screening_identity("agent-test", "Jordan Example")
         self.assertEqual(result, {"ok": True})
+        self.assertEqual(get.call_args_list[0].args[0], "/get-agent/agent-test")
+        self.assertEqual(get.call_args_list[1].args[0], "/get-retell-llm/llm-test")
         self.assertEqual(update_llm.call_args.kwargs["llm_id"], "llm-test")
         self.assertIn("Jordan Example", update_llm.call_args.kwargs["general_prompt"])
+        self.assertIn("Original master handbook text", update_llm.call_args.kwargs["general_prompt"])
+        self.assertEqual(
+            update_llm.call_args.kwargs["begin_message"],
+            "Hello, you've reached Root Call. Who would you like to speak with?"
+        )
         publish.assert_not_called()
 
     def test_creation_publishes_returned_version(self):

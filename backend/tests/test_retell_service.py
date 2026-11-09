@@ -27,7 +27,7 @@ class RetellPublishingTest(unittest.TestCase):
     def test_screening_prompt_binds_owner_privately_and_rejects_other_names(self):
         prompt = self.module.build_scam_screening_prompt("Jordan Example")
         self.assertIn("Jordan Example", prompt)
-        self.assertIn("Never disclose, volunteer, hint at, or confirm this name", prompt)
+        self.assertIn("Never reveal or suggest the stored owner name", prompt)
         self.assertIn("A name match is not authentication", prompt)
         self.assertIn("caller supplies", prompt)
         self.assertIn("do not transfer", prompt.lower())
@@ -39,14 +39,17 @@ class RetellPublishingTest(unittest.TestCase):
         self.assertIn("first name alone", prompt)
         self.assertIn("last name alone", prompt)
         self.assertIn("case-insensitive", prompt)
-        self.assertIn("full name, first name alone, or last name alone", prompt)
+        self.assertIn("FIRST ask: \"Who would you like to speak with?\"", prompt)
+        self.assertIn("before asking what the call is about", prompt)
+        self.assertIn('If the protected owner is "Jordan Example" and the caller says "Michael"', prompt)
+        self.assertIn("do not say \"What would you like to speak to Michael about?\"", prompt)
 
     def test_screening_prompt_fails_closed_without_owner_identity(self):
         prompt = self.module.build_scam_screening_prompt(None)
         self.assertIn("OWNER IDENTITY IS NOT CONFIGURED", prompt)
         self.assertIn("do not transfer any caller", prompt)
 
-    def test_update_screening_identity_updates_prompt_and_publishes(self):
+    def test_update_screening_identity_updates_prompt_without_publishing_agent(self):
         with patch.object(self.service, "_get", return_value={
             "response_engine": {"type": "retell-llm", "llm_id": "llm-test"}
         }), patch.object(self.service, "update_llm", return_value={"ok": True}) as update_llm, patch.object(self.service, "publish_agent") as publish:
@@ -54,7 +57,7 @@ class RetellPublishingTest(unittest.TestCase):
         self.assertEqual(result, {"ok": True})
         self.assertEqual(update_llm.call_args.kwargs["llm_id"], "llm-test")
         self.assertIn("Jordan Example", update_llm.call_args.kwargs["general_prompt"])
-        publish.assert_called_once_with("agent-test")
+        publish.assert_not_called()
 
     def test_creation_publishes_returned_version(self):
         with patch.object(self.service, "_post", return_value={"agent_id": "agent-test", "version": 0}), patch.object(self.service, "publish_agent") as publish:

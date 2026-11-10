@@ -68,6 +68,18 @@ reaches `e254ab76f430`, then restart the web and activation worker. Until then, 
 onboarding status endpoint returns a clear `503` and the page offers retry/support;
 it does not report a false success or initiate provider setup.
 
+`render.yaml` now sets `preDeployCommand: cd backend && alembic upgrade head` on the web service, so each
+deploy migrates the database before the new version starts. If the command fails, Render keeps the previous
+version running and the deploy log shows the error; nothing is partially served. The first migration
+(`f6236c21f2cd`) is an empty placeholder because the base tables predate Alembic, so a database with no
+`alembic_version` table cannot be migrated from scratch. In that case, check the live revision first
+(`alembic current`). If it reports nothing but the base tables exist, stamp the newest revision whose tables are
+already present (likely `40508a9fb685`, the one immediately before `a813bc21e902` creates `customer_onboarding`)
+with `alembic stamp <revision>` before the first deploy. Verify that choice against the tables actually in the
+database; a wrong stamp skips or repeats schema changes. If the web service is not Blueprint-managed, set the same Pre-Deploy Command in the
+Render dashboard (Settings > Build & Deploy); pre-deploy commands require a paid instance type. The activation
+worker has no pre-deploy step and may log missing-table errors until the web service finishes migrating.
+
 The merged dashboard supports live Retell voice selection, editable account-holder
 names and explicit identity sync. New activations save their selected voice into the
 same configuration and use the recipient-first greeting/owner-routing gate while

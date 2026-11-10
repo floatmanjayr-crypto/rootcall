@@ -18,14 +18,82 @@ services:
         sync: false
       - key: RETELL_API_KEY
         sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: DEEPGRAM_API_KEY
+        sync: false
+      - key: APP_BASE_URL
+        sync: false
+      - key: TELNYX_SIP_USERNAME
+        sync: false
+      - key: TELNYX_SIP_PASSWORD
+        sync: false
+      - key: TELNYX_OUTBOUND_VOICE_PROFILE_ID
+        sync: false
       - key: STRIPE_SECRET_KEY
         sync: false
       - key: STRIPE_ESSENTIAL_PRICE_ID
         sync: false
-      - key: STRIPE_FAMILY_PRICE_ID
+      - key: STRIPE_WEBHOOK_SECRET
         sync: false
-      - key: STRIPE_GUARDIAN_PRICE_ID
+      - key: SENDGRID_API_KEY
         sync: false
+      - key: SENDER_EMAIL
+        sync: false
+
+  - type: worker
+    name: rootcall-activation
+    env: python
+    region: oregon
+    buildCommand: cd backend && pip install -r requirements.txt
+    startCommand: cd backend && python -m app.activation_worker
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: DATABASE_URL
+        fromDatabase:
+          name: rootcall-db
+          property: connectionString
+      - key: TELNYX_API_KEY
+        fromService:
+          type: web
+          name: rootcall-backend
+          envVarKey: TELNYX_API_KEY
+      - key: RETELL_API_KEY
+        fromService:
+          type: web
+          name: rootcall-backend
+          envVarKey: RETELL_API_KEY
+      - key: OPENAI_API_KEY
+        fromService:
+          type: web
+          name: rootcall-backend
+          envVarKey: OPENAI_API_KEY
+      - key: APP_BASE_URL
+        fromService:
+          type: web
+          name: rootcall-backend
+          envVarKey: APP_BASE_URL
+      - key: TELNYX_SIP_USERNAME
+        fromService:
+          type: web
+          name: rootcall-backend
+          envVarKey: TELNYX_SIP_USERNAME
+      - key: TELNYX_SIP_PASSWORD
+        fromService:
+          type: web
+          name: rootcall-backend
+          envVarKey: TELNYX_SIP_PASSWORD
+      - key: TELNYX_OUTBOUND_VOICE_PROFILE_ID
+        fromService:
+          type: web
+          name: rootcall-backend
+          envVarKey: TELNYX_OUTBOUND_VOICE_PROFILE_ID
+      - key: STRIPE_SECRET_KEY
+        fromService:
+          type: web
+          name: rootcall-backend
+          envVarKey: STRIPE_SECRET_KEY
 
 databases:
   - name: rootcall-db

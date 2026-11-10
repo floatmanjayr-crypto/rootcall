@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>RootCall | Set up your protection</title>
+  <link rel="stylesheet" href="/static/onboarding.css">
+  <script src="/static/onboarding.js" defer></script>
+</head>
+<body>
+  <div class="setup-layout">
+    <aside class="setup-sidebar" aria-label="Setup progress">
+      <a class="brand" href="/static/index.html"><span class="brand-mark" aria-hidden="true">R</span> ROOTCALL</a>
+      <p class="sidebar-copy">A quieter phone.<br>A little more peace of mind.</p>
+      <ol class="steps">
+        <li data-step="payment">Payment</li>
+        <li data-step="profile">Your details &amp; voice</li>
+        <li data-step="number">Shield number</li>
+        <li data-step="contacts">Trusted contacts (optional)</li>
+        <li data-step="review">Review &amp; activate</li>
+        <li data-step="done">Connect &amp; test</li>
+      </ol>
+      <p class="sidebar-note">Your progress is saved to your account. You can return and finish setup later.</p>
+    </aside>
+    <main class="setup-main">
+      <header class="setup-top"><span id="account-email">RootCall setup</span><button class="text-button" id="sign-out" type="button">Sign out</button></header>
+      <span class="eyebrow">Personalize your protection</span>
+      <h1 id="page-title" tabindex="-1">Let’s set up your call shield</h1>
+      <p class="intro">Choose where trusted calls should reach you, a voice for your AI assistant, and a new Shield number.</p>
+      <div id="message" class="notice error" role="alert" hidden></div>
+      <p id="loading" class="loading" role="status">Loading your saved setup…</p>
+      <section id="confirmation" class="panel" hidden aria-labelledby="confirmation-title">
+        <h2 id="confirmation-title">Confirming your payment</h2>
+        <p id="confirmation-status" role="status">Checking your checkout securely with Stripe before opening setup.</p>
+        <div class="actions"><button type="button" class="primary" id="retry-payment" hidden>Check payment again</button></div>
+        <p class="fine-print">No phone number is ordered during payment confirmation. Your account and setup progress are saved.</p>
+      </section>
+      <section id="payment" class="panel" hidden aria-labelledby="payment-title">
+        <h2 id="payment-title">Complete payment to begin</h2>
+        <p>Already paid? Check again to retrieve your payment. Otherwise choose a plan and continue to secure Stripe checkout.</p>
+        <label for="plan">Your plan</label>
+        <select id="plan"><option value="essential">Essential — $14.99/month · 1 Shield line</option></select>
+        <div class="actions"><button type="button" class="primary" id="pay">Continue to payment</button><button type="button" class="secondary" id="check-payment">Check payment again</button><button type="button" class="secondary" id="manage-billing" hidden>Manage existing subscription</button></div>
+        <p class="fine-print">No phone number is ordered before your payment is verified.</p>
+      </section>
+      <section id="profile" class="panel" hidden aria-labelledby="profile-title">
+        <h2 id="profile-title">Tell us who we’re protecting</h2>
+        <form id="profile-form">
+          <div class="form-grid">
+            <label>First name<input name="first_name" id="first-name" required maxlength="100" autocomplete="given-name"></label>
+            <label>Last name<input name="last_name" id="last-name" required maxlength="100" autocomplete="family-name"></label>
+            <label class="full">Account email<input id="email" type="email" readonly autocomplete="email"><span class="hint">This is the account used for payment. Contact support to change your email.</span></label>
+            <label class="full">Forwarding number<input id="forwarding-number" type="tel" required autocomplete="tel" placeholder="+1 202 555 0123"><span class="hint">Your existing phone. Verified callers are sent here. Include the country code for numbers outside the US.</span></label>
+            <div class="full">
+              <label for="voice">Your AI assistant’s voice</label>
+              <select id="voice" required><option value="">Loading voice choices…</option></select>
+              <audio id="voice-preview" controls preload="none" hidden aria-label="Preview selected agent voice"></audio>
+              <p id="voice-hint" class="hint">Choose a voice from your provider’s current catalog.</p>
+              <button type="button" class="text-button" id="reload-voices">Reload voices</button>
+            </div>
+          </div>
+          <div class="actions"><button class="primary" type="submit">Save &amp; choose my number &rarr;</button></div>
+        </form>
+      </section>
+      <section id="number" class="panel" hidden aria-labelledby="number-title">
+        <h2 id="number-title">Find your Shield number</h2>
+        <p>Give this number to callers you want RootCall to screen. Numbers are subject to availability until ordered.</p>
+        <form id="number-search" class="search-row">
+          <label>US area code<input id="area-code" inputmode="numeric" pattern="[2-9][0-9]{2}" maxlength="3" placeholder="813" required></label>
+          <button type="submit" class="primary">Search numbers</button>
+        </form>
+        <p id="search-status" role="status"></p>
+        <fieldset id="number-options" class="choices" hidden><legend>Available Shield numbers</legend></fieldset>
+        <div class="actions"><button type="button" class="secondary" id="back-profile">Back</button><button type="button" class="secondary" id="keep-number" hidden></button><button type="button" class="primary" id="save-number" disabled>Continue &rarr;</button></div>
+      </section>
+      <section id="contacts" class="panel" hidden aria-labelledby="contacts-title">
+        <span class="eyebrow">Optional · You can do this later</span>
+        <h2 id="contacts-title">Who do you want to hear from?</h2>
+        <p>Add the phone numbers of family, friends, or other callers you trust. You can manage this list from your dashboard any time.</p>
+        <form id="contact-form" class="search-row">
+          <label for="contact-number">Trusted caller’s phone number<input id="contact-number" type="tel" autocomplete="off" placeholder="+1 202 555 0145" required aria-describedby="contact-hint"></label>
+          <button type="submit" class="secondary">Add to list</button>
+        </form>
+        <p id="contact-hint" class="hint">Use the number they call from, including its country code outside the US. Select Save &amp; continue to save your list.</p>
+        <ul id="setup-contacts" class="contact-list" aria-label="Your trusted callers"></ul>
+        <p id="contacts-empty" class="hint">No contacts added yet. It’s fine to start without any.</p>
+        <div class="actions"><button type="button" class="secondary" id="back-number">Back</button><button type="button" class="primary" id="save-contacts">Save &amp; continue</button><button type="button" class="text-button" id="skip-contacts">Do this later</button></div>
+      </section>
+      <section id="review" class="panel" hidden aria-labelledby="review-title">
+        <h2 id="review-title">Ready for a quieter phone?</h2>
+        <dl id="review-details" class="review"></dl>
+        <p class="fine-print">Confirm once to order your chosen number and connect your assistant automatically. Setup continues if you close this page, with safe retries and saved checkpoints. Carrier forwarding from your old number requires a separate carrier action.</p>
+        <div class="actions"><button type="button" class="secondary" id="edit-details">Edit setup</button><button type="button" class="secondary" id="edit-contacts">Edit contacts</button><button type="button" class="primary" id="activate">Activate my Shield</button><button type="button" class="secondary" id="refresh-setup">Refresh status</button></div>
+        <p id="activation-status" role="status"></p>
+      </section>
+      <section id="done" class="panel" hidden aria-labelledby="done-title">
+        <span class="eyebrow">Setup complete</span>
+        <h2 id="done-title">Your Shield line is configured</h2>
+        <p>Your new RootCall number: <strong id="active-number"></strong></p>
+        <p>Your assistant and number are configured. Complete these guided checks before relying on your service. No test calls are placed automatically.</p>
+        <div id="service-setup-error" class="notice error" role="alert" hidden></div>
+        <button type="button" class="secondary" id="reload-service-setup" hidden>Reload call checks</button>
+        <form id="service-setup-form" hidden>
+          <label for="setup-mode">How will callers reach RootCall?</label>
+          <select id="setup-mode">
+            <option value="direct">Use my new Shield number directly (recommended)</option>
+            <option value="carrier">Forward an existing number through my carrier</option>
+          </select>
+          <p id="direct-guide" class="hint">Share your Shield number with callers you want screened. Your existing number stays private and receives approved calls. No carrier changes are needed.</p>
+          <div id="carrier-guide" class="notice error" hidden>
+            <strong>Avoid a forwarding loop.</strong>
+            <p>Do not forward the same phone number that RootCall sends approved calls back to. That can repeatedly send calls through screening instead of reaching you.</p>
+            <ol>
+              <li>Arrange a separate, unforwarded destination for approved calls. Update your forwarding destination in dashboard Settings first.</li>
+              <li>Ask your carrier for the correct forwarding setup, eligibility, charges, and how to turn it off. RootCall cannot change your carrier settings automatically.</li>
+              <li>Only after confirming a loop-free destination, forward your existing number to your Shield number. Test from another phone; disable carrier forwarding if calls loop or fail.</li>
+            </ol>
+            <label class="setup-check"><input id="carrier-confirmed" type="checkbox">I confirmed a separate unforwarded destination and enabled forwarding with my carrier.</label>
+          </div>
+          <p>Approved calls currently go to <strong id="test-destination"></strong>. <a href="/static/client-portal.html">Change this in dashboard Settings</a>.</p>
+          <ol class="test-instructions">
+            <li>From a number <strong>not</strong> in your trusted contacts, call your Shield number (or the original number if using carrier forwarding). Confirm the assistant screens the call and a legitimate call reaches your destination phone.</li>
+            <li id="trusted-test-guide">From a saved trusted contact's phone, call again. Confirm it skips screening and reaches your destination. You can add trusted contacts in your dashboard.</li>
+            <li>Answer a test call and speak in both directions. Check that you can both hear each other, and that calls do not loop.</li>
+          </ol>
+          <label class="setup-check"><input id="screening-tested" type="checkbox">I tested an unknown caller and confirmed screening and transfer.</label>
+          <label class="setup-check"><input id="trusted-tested" type="checkbox">I tested a saved trusted caller and confirmed direct transfer (optional without contacts).</label>
+          <label class="setup-check"><input id="audio-tested" type="checkbox">I confirmed clear two-way audio with no forwarding loop.</label>
+          <p class="fine-print">These are your own reported checks, not automatic provider or audio verification. Saving them does not change call routing.</p>
+          <div class="actions"><button type="submit" class="secondary">Save my call checks</button></div>
+          <p id="service-setup-status" role="status"></p>
+        </form>
+        <a class="primary button-link" href="/static/client-portal.html">Open my dashboard &rarr;</a>
+      </section>
+      <p class="fine-print">Need help? <a href="mailto:info@getrootcall.com">Contact RootCall support</a>. <a href="/static/privacy.html">Privacy</a> &middot; <a href="/static/terms.html">Terms</a></p>
+    </main>
+  </div>
+</body>
+</html>

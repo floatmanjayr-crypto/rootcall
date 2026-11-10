@@ -117,7 +117,7 @@
             height: 6px;
             border-radius: 50%;
             background: var(--mint);
-            animation: blink 2.4s ease-in-out infinite;
+            animation: none;
         }
 
         .sidebar-nav {
@@ -214,6 +214,19 @@
             color: #fff;
         }
 
+        .account-signout {
+            background: white;
+            color: var(--green);
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 0.65rem 0.85rem;
+            font: inherit;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
         /* ================= Main / Top bar ================= */
         .main-content {
             margin-left: 272px;
@@ -263,6 +276,17 @@
             border-radius: 50%;
             box-shadow: 0 0 0 3px rgba(16,185,129,.18);
             animation: blink 2.4s ease-in-out infinite;
+        }
+
+        .protection-status[data-state="attention"] {
+            background: #fffbeb;
+            color: #92400e;
+            border-color: #fcd34d;
+        }
+
+        .protection-status[data-state="attention"]::before {
+            background: #d97706;
+            box-shadow: none;
         }
 
         @keyframes blink {
@@ -797,6 +821,33 @@
 
         .number-card.selected .number-text { color: var(--green); }
 
+        .shield-card {
+            padding: clamp(1.25rem, 3vw, 2rem);
+            background: var(--light-green);
+            border: 1px solid var(--accent);
+            border-radius: 16px;
+            min-width: 0;
+        }
+
+        .shield-card-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            color: var(--green);
+            font-weight: 700;
+        }
+
+        .shield-card-number {
+            display: block;
+            font-size: clamp(1.25rem, 4vw, 2.5rem);
+            font-weight: 800;
+            color: var(--green);
+            overflow-wrap: anywhere;
+            margin: 1.25rem 0 0.75rem;
+        }
+
         .number-info {
             display: flex;
             flex-direction: column;
@@ -975,6 +1026,8 @@
 
         .info-badge i { color: var(--accent); }
 
+        #dashboard-error { flex-wrap: wrap; }
+
         .step-indicator {
             display: flex;
             align-items: center;
@@ -1043,7 +1096,7 @@
         }
         .live-heading { justify-content: space-between; }
         .live-actions { margin-top: 1rem; }
-        [hidden]#live-conversation, .live-actions [hidden] { display: none; }
+        [hidden] { display: none !important; }
 
         .live-heading h2 {
             font-size: 1.05rem;
@@ -1080,6 +1133,98 @@
         .live-call-row { border-top: 1px solid var(--line); }
         .live-actions .btn { border-radius: 11px; }
         .live-actions .live-danger { background: var(--danger); color: #fff; border-radius: 11px; }
+
+        .dashboard-intro {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 1.5rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .dashboard-intro .page-head { margin-bottom: 0; }
+
+        .dashboard-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .dashboard-actions .btn { min-height: 44px; }
+
+        .dashboard-stats { gap: 1rem; margin-bottom: 1.5rem; }
+
+        .dashboard-stats .stat-card {
+            display: grid;
+            grid-template-columns: 42px minmax(0, 1fr);
+            align-items: center;
+            column-gap: 0.9rem;
+            min-width: 0;
+            padding: 1.1rem 1.15rem;
+        }
+
+        .dashboard-stats .stat-icon { grid-row: 1 / span 2; margin-bottom: 0; }
+        .dashboard-stats .stat-number { font-size: 1.75rem; }
+        .dashboard-stats .stat-label { margin-top: 0.2rem; }
+
+        .dashboard-main-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.55fr) minmax(280px, 0.85fr);
+            align-items: start;
+            gap: 1.5rem;
+        }
+
+        .dashboard-primary { min-width: 0; }
+
+        .scam-pattern-list {
+            display: grid;
+            gap: 0.75rem;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .scam-pattern-list li {
+            padding: 0.95rem 1rem;
+            background: var(--ivory);
+            border: 1px solid var(--line);
+            border-left: 3px solid var(--warning);
+            border-radius: 10px;
+        }
+
+        .scam-pattern-heading {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            color: var(--green);
+            font-size: 0.9rem;
+        }
+
+        .scam-pattern-heading i { color: var(--warning); }
+
+        .scam-pattern-list p {
+            margin: 0.45rem 0 0;
+            color: var(--muted);
+            font-size: 0.82rem;
+            line-height: 1.55;
+        }
+
+        @media (max-width: 1024px) {
+            .dashboard-main-grid { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 640px) {
+            .dashboard-intro { align-items: stretch; flex-direction: column; gap: 0.85rem; }
+            .dashboard-actions .btn { flex: 1 1 160px; justify-content: center; }
+            .dashboard-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
+            .dashboard-stats .stat-card { grid-template-columns: 1fr; align-content: start; row-gap: 0.5rem; }
+            .dashboard-stats .stat-icon { grid-row: auto; }
+            .dashboard-stats .stat-number { font-size: 1.55rem; }
+        }
+
+        @media (max-width: 380px) {
+            .dashboard-stats { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
@@ -1114,7 +1259,7 @@
             </div>
             <div class="nav-item" data-page="numbers" onclick="showPage('numbers', event)">
                 <i class="fas fa-phone-alt"></i>
-                <span>Shield Numbers</span>
+                <span>Shield Number</span>
             </div>
             <div class="nav-item" data-page="contacts" onclick="showPage('contacts', event)">
                 <i class="fas fa-user-shield"></i>
@@ -1143,8 +1288,8 @@
         <div class="top-bar">
             <div>
                 <h1 class="greeting">Welcome back, <span id="user-name">User</span></h1>
-                <div class="protection-status">
-                    <span>AI Scam Protection Active 24/7</span>
+                <div class="protection-status" data-state="attention">
+                    <span id="protection-status" role="status">Checking line configuration...</span>
                 </div>
             </div>
             <div style="display: flex; align-items: center; gap: 1rem;">
@@ -1152,146 +1297,102 @@
                     <i class="fas fa-ban"></i>
                     SCAM SHIELD
                 </span>
+                <button type="button" onclick="logout()" class="account-signout" id="account-signout">Sign out</button>
             </div>
+        </div>
+
+        <div id="dashboard-error" class="info-badge" role="alert" hidden style="margin: 1rem 2rem;">
+            <span id="dashboard-error-message"></span>
+            <button type="button" class="btn btn-outline" onclick="loadData()">Retry</button>
+        </div>
+        <div id="billing-notice" class="info-badge" role="status" hidden style="margin: 1rem 2rem; flex-wrap: wrap;">
+            <span id="billing-notice-text"></span>
+            <button type="button" class="btn btn-outline" onclick="showPage('settings')">View billing</button>
         </div>
 
         <!-- ================= Dashboard ================= -->
         <div id="page-dashboard" class="page-content active">
             <div class="content-area">
-                <section class="live-calls" aria-labelledby="live-calls-heading">
-                    <div class="live-heading">
-                        <h2 id="live-calls-heading"><i class="fas fa-wave-square" aria-hidden="true"></i> Live Calls</h2>
-                        <button id="live-refresh" class="btn btn-primary" type="button" title="Refresh live calls" aria-label="Refresh live calls"><i class="fas fa-sync-alt" aria-hidden="true"></i></button>
+                <div class="dashboard-intro">
+                    <div class="page-head">
+                        <h2>Protection overview</h2>
+                        <p>Your shield activity and live calls, in one place.</p>
                     </div>
-                    <p id="live-call-status" role="status">Loading live calls...</p>
-                    <div id="live-call-list"></div>
-                    <div id="live-conversation" hidden>
-                        <h3 id="live-caller"></h3>
-                        <div id="live-transcript" role="log" aria-label="Live conversation" aria-live="polite"></div>
-                        <div class="live-actions">
-                            <button id="live-listen" class="btn btn-primary" type="button"><i class="fas fa-headphones" aria-hidden="true"></i> Listen</button>
-                            <button id="live-takeover" class="btn btn-primary" type="button" disabled><i class="fas fa-microphone" aria-hidden="true"></i> Take Over</button>
-                            <button id="live-mute" class="btn btn-outline" type="button" hidden aria-pressed="false"><i class="fas fa-microphone-slash" aria-hidden="true"></i> Mute</button>
-                            <button id="live-leave" class="btn btn-outline" type="button"><i class="fas fa-sign-out-alt" aria-hidden="true"></i> Disconnect</button>
-                            <button id="live-end" class="btn live-danger" type="button"><i class="fas fa-phone-slash" aria-hidden="true"></i> End Call</button>
-                        </div>
+                    <div class="dashboard-actions" aria-label="Quick actions">
+                        <button onclick="showPage('numbers', event)" class="btn btn-primary">
+                            <i class="fas fa-phone-alt" aria-hidden="true"></i> My Shield Number
+                        </button>
+                        <button onclick="showPage('contacts', event)" class="btn btn-outline">
+                            <i class="fas fa-user-plus" aria-hidden="true"></i> Add Trusted Contact
+                        </button>
                     </div>
-                </section>
+                </div>
 
-                <div class="grid-4" style="margin-bottom: 2rem;">
+                <div class="grid-4 dashboard-stats">
                     <div class="stat-card">
                         <div class="stat-icon red"><i class="fas fa-ban"></i></div>
-                        <div class="stat-number" id="spam-blocked">0</div>
+                        <div class="stat-number" id="spam-blocked">--</div>
                         <div class="stat-label">Scams Blocked</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon green"><i class="fas fa-shield-halved"></i></div>
-                        <div class="stat-number" id="calls-screened">0</div>
+                        <div class="stat-number" id="calls-screened">--</div>
                         <div class="stat-label">Calls Screened</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon blue"><i class="fas fa-user-check"></i></div>
-                        <div class="stat-number" id="trusted-connected">0</div>
-                        <div class="stat-label">Trusted Connected</div>
+                        <div class="stat-number" id="trusted-connected">--</div>
+                        <div class="stat-label">Trusted Calls</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon purple"><i class="fas fa-robot"></i></div>
-                        <div class="stat-number">AI</div>
-                        <div class="stat-label">Powered Screening</div>
+                        <div class="stat-icon purple"><i class="fas fa-phone"></i></div>
+                        <div class="stat-number" id="total-calls-summary">--</div>
+                        <div class="stat-label">Total Calls</div>
                     </div>
                 </div>
 
-                <div class="grid-3" style="grid-template-columns: 2fr 1fr;">
-                    <div>
-                        <div class="card" style="margin-bottom: 1.5rem;">
-                            <h3 class="card-title">
-                                <i class="fas fa-chart-line"></i> Scam Protection Summary
-                            </h3>
-                            <div class="summary-grid">
-                                <div class="summary-tile">
-                                    <div class="tile-label">Total Calls</div>
-                                    <div class="tile-value" id="total-calls-summary">0</div>
-                                </div>
-                                <div class="summary-tile">
-                                    <div class="tile-label">Protection Rate</div>
-                                    <div class="tile-value ok">99.8%</div>
-                                </div>
-                                <div class="summary-tile">
-                                    <div class="tile-label">AI Response</div>
-                                    <div class="tile-value info">&lt;1s</div>
-                                </div>
-                                <div class="summary-tile">
-                                    <div class="tile-label">Scam Accuracy</div>
-                                    <div class="tile-value ok">99.9%</div>
+                <div class="dashboard-main-grid">
+                    <div class="dashboard-primary">
+                        <section class="live-calls" aria-labelledby="live-calls-heading">
+                            <div class="live-heading">
+                                <h2 id="live-calls-heading"><i class="fas fa-wave-square" aria-hidden="true"></i> Live Calls</h2>
+                                <button id="live-refresh" class="btn btn-primary" type="button" title="Refresh live calls" aria-label="Refresh live calls"><i class="fas fa-sync-alt" aria-hidden="true"></i></button>
+                            </div>
+                            <p id="live-call-status" role="status">Loading live calls...</p>
+                            <div id="live-call-list"></div>
+                            <div id="live-conversation" hidden>
+                                <h3 id="live-caller"></h3>
+                                <div id="live-transcript" role="log" aria-label="Live conversation" aria-live="polite"></div>
+                                <div class="live-actions">
+                                    <button id="live-listen" class="btn btn-primary" type="button"><i class="fas fa-headphones" aria-hidden="true"></i> Listen</button>
+                                    <button id="live-takeover" class="btn btn-primary" type="button" disabled><i class="fas fa-microphone" aria-hidden="true"></i> Take Over</button>
+                                    <button id="live-mute" class="btn btn-outline" type="button" hidden aria-pressed="false"><i class="fas fa-microphone-slash" aria-hidden="true"></i> Mute</button>
+                                    <button id="live-leave" class="btn btn-outline" type="button"><i class="fas fa-sign-out-alt" aria-hidden="true"></i> Disconnect</button>
+                                    <button id="live-end" class="btn live-danger" type="button"><i class="fas fa-phone-slash" aria-hidden="true"></i> End Call</button>
                                 </div>
                             </div>
-                        </div>
-
-                        <div class="card">
-                            <h3 class="card-title">
-                                <i class="fas fa-bolt"></i> Quick Actions
-                            </h3>
-                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
-                                <button onclick="showPage('numbers', event)" class="btn btn-primary" style="justify-content: center; padding: 1rem;">
-                                    <i class="fas fa-plus-circle"></i>
-                                    Add Shield Number
-                                </button>
-                                <button onclick="showPage('contacts', event)" class="btn btn-outline" style="justify-content: center; padding: 1rem;">
-                                    <i class="fas fa-user-plus"></i>
-                                    Add Contact
-                                </button>
-                            </div>
-                        </div>
+                        </section>
                     </div>
 
-                    <div class="card">
-                        <h3 class="card-title danger">
-                            <i class="fas fa-exclamation-triangle"></i> Trending Scam Alerts
+                    <aside class="card" aria-labelledby="scam-patterns-heading">
+                        <h3 class="card-title" id="scam-patterns-heading">
+                            <i class="fas fa-shield-alt" aria-hidden="true"></i> Scam patterns to watch
                         </h3>
-                        <div id="fraud-alerts-container">
-                            <div class="fraud-alert-card">
-                                <div class="fraud-alert-head">
-                                    <div class="fraud-alert-title">
-                                        <i class="fas fa-fire"></i>
-                                        IRS Impersonation
-                                    </div>
-                                    <span class="trending-badge">HOT</span>
-                                </div>
-                                <p>Scammers claiming to be IRS agents demanding immediate payment via gift cards or cryptocurrency.</p>
-                                <div class="fraud-alert-meta">
-                                    <i class="fas fa-clock"></i> Updated 2 hours ago
-                                </div>
-                            </div>
-
-                            <div class="fraud-alert-card">
-                                <div class="fraud-alert-head">
-                                    <div class="fraud-alert-title">
-                                        <i class="fas fa-fire"></i>
-                                        Tech Support Scam
-                                    </div>
-                                    <span class="trending-badge">HOT</span>
-                                </div>
-                                <p>Fake Microsoft/Apple support claiming your computer is infected and requesting remote access.</p>
-                                <div class="fraud-alert-meta">
-                                    <i class="fas fa-clock"></i> Updated 5 hours ago
-                                </div>
-                            </div>
-
-                            <div class="fraud-alert-card">
-                                <div class="fraud-alert-head">
-                                    <div class="fraud-alert-title">
-                                        <i class="fas fa-fire"></i>
-                                        Social Security Fraud
-                                    </div>
-                                    <span class="trending-badge">NEW</span>
-                                </div>
-                                <p>Calls claiming your SSN has been suspended or involved in criminal activity.</p>
-                                <div class="fraud-alert-meta">
-                                    <i class="fas fa-clock"></i> Updated 1 day ago
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                        <ul class="scam-pattern-list" id="fraud-alerts-container">
+                            <li>
+                                <div class="scam-pattern-heading"><i class="fas fa-landmark" aria-hidden="true"></i><strong>Government impersonation</strong></div>
+                                <p>Be wary of callers demanding immediate payment or threatening legal action while claiming to represent a government agency.</p>
+                            </li>
+                            <li>
+                                <div class="scam-pattern-heading"><i class="fas fa-laptop-medical" aria-hidden="true"></i><strong>Tech support fraud</strong></div>
+                                <p>Unexpected calls about infected devices are often a pretext to request remote access or payment.</p>
+                            </li>
+                            <li>
+                                <div class="scam-pattern-heading"><i class="fas fa-id-card" aria-hidden="true"></i><strong>Identity threats</strong></div>
+                                <p>Legitimate agencies will not demand gift cards or cryptocurrency to resolve an identity or account issue.</p>
+                            </li>
+                        </ul>
+                    </aside>
                 </div>
             </div>
         </div>
@@ -1300,7 +1401,7 @@
         <div id="page-numbers" class="page-content">
             <div class="content-area">
                 <div class="page-head">
-                    <h2>Shield Numbers</h2>
+                    <h2>Shield Number</h2>
                     <p>AI-protected phone numbers with automatic scam detection &amp; blocking</p>
                 </div>
 
@@ -1309,9 +1410,9 @@
                 <div class="card" style="margin-bottom: 2rem;">
                     <div class="card-header-row">
                         <h3 class="card-title">
-                            <i class="fas fa-shield-alt"></i> Your Protected Numbers
+                            <i class="fas fa-shield-alt"></i> Your Protected Number
                         </h3>
-                        <button onclick="openProvisionModal()" class="btn btn-primary">
+                        <button onclick="openProvisionModal()" class="btn btn-primary" id="get-shield-number">
                             <i class="fas fa-plus"></i>
                             Get Shield Number
                         </button>
@@ -1333,6 +1434,13 @@
                     <h2>Trusted Contacts</h2>
                     <p>Numbers that bypass AI screening and connect directly</p>
                 </div>
+                <div class="info-badge" style="margin-bottom: 1.5rem;">
+                    <div>
+                        <p id="trusted-routing-status" role="status">Checking trusted caller routing...</p>
+                        <button type="button" class="btn btn-outline" id="connect-trusted-routing" onclick="connectTrustedRouting()" hidden>Connect trusted caller routing</button>
+                        <p class="field-hint">Only add numbers you recognize. Caller ID can be spoofed; a trusted number is not proof of identity.</p>
+                    </div>
+                </div>
 
                 <div class="grid-2">
                     <div class="card">
@@ -1342,21 +1450,22 @@
                         <div style="display: flex; flex-direction: column; gap: 1rem;">
                             <div>
                                 <label class="field-label" for="new-contact-name">Contact name <span style="font-weight:500;color:var(--muted)">(optional)</span></label>
-                                <input type="text" id="new-contact-name" placeholder="e.g. Mom" />
+                                <input type="text" id="new-contact-name" placeholder="e.g. Mom" maxlength="100" />
                             </div>
                             <div>
                                 <label class="field-label" for="new-contact">Phone number</label>
                                 <input type="tel" id="new-contact" placeholder="+1234567890" />
                             </div>
                             <button onclick="addContact()" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 0.95rem;">
-                                <i class="fas fa-save"></i>
-                                Add Contact
+                                <i class="fas fa-save" aria-hidden="true"></i>
+                                Save Contact
                             </button>
                         </div>
                         <div class="info-badge">
                             <i class="fas fa-info-circle" style="font-size: 1.1rem;"></i>
                             <span>Trusted contacts bypass AI screening and ring through immediately</span>
                         </div>
+                        <p class="field-hint">To update a name, save the same phone number again with the new name.</p>
                     </div>
 
                     <div class="card">
@@ -1374,7 +1483,7 @@
             <div class="content-area">
                 <div class="page-head">
                     <h2>Call Activity</h2>
-                    <p>Complete history of all screened and blocked calls</p>
+                    <p>Your 20 most recent calls. Export CSV to download all saved activity.</p>
                 </div>
 
                 <div class="card">
@@ -1382,7 +1491,7 @@
                         <h3 class="card-title">
                             <i class="fas fa-history"></i> Recent Calls
                         </h3>
-                        <button onclick="exportCalls()" class="btn btn-outline">
+                        <button onclick="exportCalls()" class="btn btn-outline" id="export-calls">
                             <i class="fas fa-download"></i> Export CSV
                         </button>
                     </div>
@@ -1393,7 +1502,7 @@
                                     <th>Time</th>
                                     <th>From</th>
                                     <th>Caller</th>
-                                    <th>AI Action</th>
+                                    <th>Call handling</th>
                                     <th>Status</th>
                                 </tr>
                             </thead>
@@ -1426,7 +1535,7 @@
                                         <i class="fas fa-save"></i>
                                     </button>
                                 </div>
-                                <p class="field-hint">Trusted calls forward here after AI verification</p>
+                                <p class="field-hint">Screened calls forward here. Connected trusted callers skip AI screening.</p>
                             </div>
 
                             <label class="switch-row">
@@ -1481,9 +1590,18 @@
                         <div class="info-badge" style="margin-top: 1.5rem;">
                             <i class="fas fa-shield-halved" style="font-size: 1.1rem;"></i>
                             <div>
-                                <div style="font-weight: 700;">Fully Protected</div>
-                                <div style="font-size: 0.8rem;">All your numbers are protected by advanced AI screening</div>
+                                <div style="font-weight: 700;" id="settings-line-status">Checking line configuration...</div>
+                                <div style="font-size: 0.8rem;">Configuration is not a live health check. Place a test call to confirm screening, forwarding, and audio.</div>
+                                <a id="setup-guide-link" href="/static/onboarding.html" style="font-size: 0.8rem;" hidden>Open setup &amp; call-test guide</a>
                             </div>
+                        </div>
+                        <div style="margin-top: 1.5rem;">
+                            <h4 style="color: var(--green); margin-bottom: 0.5rem;">Subscription &amp; billing</h4>
+                            <p class="field-hint">Use secure Stripe billing to view invoices, update your payment method, or manage cancellation.</p>
+                            <p id="billing-status" class="field-hint" role="status">Checking subscription status...</p>
+                            <p class="field-hint">Billing issues are reviewed by support. This rollout does not automatically restrict calls or release your number.</p>
+                            <button type="button" class="btn btn-outline" id="refresh-billing" onclick="loadBilling()">Refresh billing status</button>
+                            <button type="button" class="btn btn-outline" id="manage-billing" onclick="manageBilling()">Manage billing</button>
                         </div>
                     </div>
                 </div>
@@ -1763,6 +1881,19 @@
             }
         }
 
+        function escapeHTML(value) {
+            return String(value ?? '').replace(/[&<>"']/g, character => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            })[character]);
+        }
+
+        function setLineStatus(message, configured = false) {
+            const label = document.getElementById('protection-status');
+            label.textContent = message;
+            label.parentElement.dataset.state = configured ? 'configured' : 'attention';
+            document.getElementById('settings-line-status').textContent = message;
+        }
+
         function showToast(message, type = 'success') {
             const toast = document.createElement('div');
             toast.className = 'toast';
@@ -1770,8 +1901,9 @@
             toast.innerHTML = `
                 <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}" 
                    style="color: ${type === 'success' ? 'var(--success)' : 'var(--danger)'}; font-size: 1.5rem;"></i>
-                <span style="font-weight: 600;">${message}</span>
+                <span style="font-weight: 600;">${escapeHTML(message)}</span>
             `;
+            toast.setAttribute('role', type === 'success' ? 'status' : 'alert');
             document.body.appendChild(toast);
             setTimeout(() => {
                 toast.style.opacity = '0';
@@ -1787,7 +1919,7 @@
             alert.innerHTML = `
                 <div style="display: flex; align-items: center; gap: 0.75rem;">
                     <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
-                    <span>${message}</span>
+                    <span>${escapeHTML(message)}</span>
                 </div>
             `;
             container.innerHTML = '';
@@ -1822,38 +1954,58 @@
                 return;
             }
             try {
-                const payload = JSON.parse(atob(token.split('.')[1]));
-                CLIENT_ID = payload.sub;
+                const response = await authFetch(`${API}/api/auth/me`);
+                if (!response.ok) throw new Error('Unable to load your account. Please reload to retry.');
+                const profile = await response.json();
+                if (profile.next_url && profile.next_url !== '/static/client-portal.html') {
+                    location.replace(profile.next_url);
+                    return;
+                }
+                CLIENT_ID = profile.id;
                 if (!CLIENT_ID) {
                     console.error('No client ID in token');
                     logout();
                     return;
                 }
-                USER_DATA = payload;
-                document.getElementById('user-name').textContent = payload.email?.split('@')[0] || 'User';
-                document.getElementById('user-fullname').value = payload.email || '';
-                document.getElementById('user-email').value = payload.email || '';
+                USER_DATA = profile;
+                document.getElementById('user-name').textContent = profile.full_name || profile.email.split('@')[0];
+                document.getElementById('user-fullname').value = profile.full_name || '';
+                document.getElementById('user-email').value = profile.email;
                 await loadData();
             } catch (err) {
                 console.error('Init error:', err);
-                logout();
+                showToast(err.message || 'Unable to load your account. Please reload.', 'error');
             }
         }
 
-        async function loadData() {
+        let dashboardLoading = false;
+        async function loadData(background = false) {
+            if (dashboardLoading || !CLIENT_ID) return;
+            dashboardLoading = true;
             try {
-                showLoading(true);
+                if (!background) showLoading(true);
+                const number = await loadNumbers();
                 const statsResponse = await authFetch(`${API}/api/rootcall/stats/${CLIENT_ID}`);
+                if (!statsResponse.ok) throw new Error('Unable to load call totals. Retry to refresh your dashboard.');
                 if (statsResponse.ok) {
                     const stats = await statsResponse.json();
                     document.getElementById('spam-blocked').textContent = stats.spam_blocked || 0;
                     document.getElementById('calls-screened').textContent = stats.calls_screened || 0;
-                    document.getElementById('trusted-connected').textContent = stats.trusted_forwarded || 0;
+                    document.getElementById('trusted-connected').textContent = stats.trusted_calls ?? stats.trusted_forwarded ?? 0;
                     document.getElementById('total-calls-summary').textContent = stats.total_calls || 0;
                 }
                 const configResponse = await authFetch(`${API}/api/rootcall/config/${CLIENT_ID}`);
+                if (!configResponse.ok && !(configResponse.status === 404 && !number.has_number)) {
+                    throw new Error('Unable to load line configuration. Retry to refresh your dashboard.');
+                }
                 if (configResponse.ok) {
                     const config = await configResponse.json();
+                    document.getElementById('setup-guide-link').hidden = !config.setup_guide_available;
+                    setLineStatus(config.line_configured ? 'Shield line configured' : 'Line setup needs attention', Boolean(config.line_configured));
+                    document.getElementById('trusted-routing-status').textContent = config.trusted_routing_enabled
+                        ? 'Trusted caller routing is connected. Saved contacts skip screening and transfer to your forwarding phone.'
+                        : 'Contacts are saved, but direct-to-Retell bypass is not connected for this line yet.';
+                    document.getElementById('connect-trusted-routing').hidden = Boolean(config.trusted_routing_enabled);
                     document.getElementById('client-cell').value = config.client_cell || '';
                     document.getElementById('sms-alerts').checked = config.sms_alerts_enabled || false;
                     document.getElementById('alert-spam').checked = config.alert_on_spam || false;
@@ -1866,52 +2018,112 @@
                             const name = typeof c === 'object' ? (c.name || '') : '';
                             return `
                                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.25rem; background: var(--light-green); border-radius: 12px; margin-bottom: 0.75rem; border: 1px solid var(--green);">
-                                    <div>
-                                        ${name ? `<div style="font-weight: 700; font-size: 1.05rem; color: var(--green);">${name}</div>` : ''}
-                                        <div style="font-size: 0.9rem; color: #666; font-weight: 600; ${name ? 'margin-top: 0.25rem;' : ''}">${phone}</div>
+                                    <div style="min-width: 0; flex: 1; overflow-wrap: anywhere;">
+                                        ${name ? `<div style="font-weight: 700; font-size: 1.05rem; color: var(--green);">${escapeHTML(name)}</div>` : ''}
+                                        <div style="font-size: 0.9rem; color: #666; font-weight: 600; ${name ? 'margin-top: 0.25rem;' : ''}">${escapeHTML(phone)}</div>
                                     </div>
-                                    <button onclick="removeContact('${phone}')" class="btn" style="padding: 0.75rem 1rem; background: var(--danger); color: white;">
+                                    <button data-remove-contact="${escapeHTML(phone)}" aria-label="Remove ${escapeHTML(name || phone)}" class="btn" style="padding: 0.75rem 1rem; background: var(--danger); color: white; flex-shrink: 0;">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </div>
                             `;
                         }).join('');
+                        list.querySelectorAll('[data-remove-contact]').forEach(button => {
+                            button.addEventListener('click', () => removeContact(button.dataset.removeContact));
+                        });
                     } else {
                         list.innerHTML = '<p style="text-align: center; color: #999; padding: 2rem; font-weight: 600;">No trusted contacts yet. Add your first contact above!</p>';
                     }
+                } else {
+                    setLineStatus('Choose and configure your Shield line');
+                    document.getElementById('trusted-routing-status').textContent = 'Configure your Shield line before adding trusted callers.';
+                    document.getElementById('connect-trusted-routing').hidden = true;
+                    document.getElementById('contacts-list').textContent = 'No Shield line configured yet.';
                 }
-                await loadNumbers();
                 const callsResponse = await authFetch(`${API}/api/rootcall/calls/${CLIENT_ID}`);
+                if (!callsResponse.ok) throw new Error('Unable to load call history. Retry to refresh your dashboard.');
                 if (callsResponse.ok) {
                     const calls = await callsResponse.json();
                     const tbody = document.getElementById('call-history');
                     if (calls.length > 0) {
                         tbody.innerHTML = calls.map(call => `
                             <tr style="border-top: 1px solid #e5e5e5; transition: all 0.3s ease;" onmouseover="this.style.background='var(--ivory)'" onmouseout="this.style.background='white'">
-                                <td style="padding: 1.25rem; font-weight: 600;">${new Date(call.timestamp).toLocaleString()}</td>
-                                <td style="padding: 1.25rem; font-weight: 700; color: var(--green);">${call.from_number}</td>
-                                <td style="padding: 1.25rem;">${call.caller_name || 'Unknown'}</td>
-                                <td style="padding: 1.25rem; font-weight: 600;">${call.action.replace(/_/g, ' ')}</td>
+                                <td style="padding: 1.25rem; font-weight: 600;">${call.timestamp ? new Date(call.timestamp).toLocaleString() : 'Not available'}</td>
+                                <td style="padding: 1.25rem; font-weight: 700; color: var(--green);">${escapeHTML(call.from_number || 'Private / unknown')}</td>
+                                <td style="padding: 1.25rem;">${escapeHTML(call.caller_name || 'Unknown')}</td>
+                                <td style="padding: 1.25rem; font-weight: 600;">${escapeHTML((call.action || 'received').replace(/_/g, ' '))}</td>
                                 <td style="padding: 1.25rem;">
                                     <span style="padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: 700; ${
-                                        call.status === 'blocked' ? 'background: #fee2e2; color: #991b1b;' :
-                                        call.status === 'screening' ? 'background: #fef3c7; color: #92400e;' :
+                                        ['blocked', 'failed'].includes(call.status) ? 'background: #fee2e2; color: #991b1b;' :
+                                        ['screening', 'in-progress', 'initiated', 'unknown'].includes(call.status || 'unknown') ? 'background: #fef3c7; color: #92400e;' :
                                         'background: #d1fae5; color: #065f46;'
-                                    }">${call.status.toUpperCase()}</span>
+                                    }">${escapeHTML((call.status || 'unknown').replace(/[-_]/g, ' ').toUpperCase())}</span>
                                 </td>
                             </tr>
                         `).join('');
                     } else {
-                        tbody.innerHTML = '<tr><td colspan="5" style="padding: 3rem; text-align: center; color: #999; font-weight: 600;">No call history yet. Your AI agent will log all activity here.</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="5" style="padding: 3rem; text-align: center; color: #999; font-weight: 600;">No saved call activity yet. Place a test call to your Shield number to get started.</td></tr>';
                     }
                 }
+                document.getElementById('dashboard-error').hidden = true;
+                await loadBilling();
             } catch (err) {
                 console.error('Error loading data:', err);
                 if (err.message !== 'Session expired') {
-                    showToast('Error loading data', 'error');
+                    setLineStatus('Line status unavailable');
+                    document.getElementById('dashboard-error-message').textContent = `${err.message} Previously loaded information may be out of date.`;
+                    document.getElementById('dashboard-error').hidden = false;
+                    for (const id of ['spam-blocked', 'calls-screened', 'trusted-connected', 'total-calls-summary']) {
+                        document.getElementById(id).textContent = '--';
+                    }
                 }
             } finally {
-                showLoading(false);
+                if (!background) showLoading(false);
+                dashboardLoading = false;
+            }
+        }
+
+        let billingLoading = false;
+        async function loadBilling() {
+            if (billingLoading) return;
+            billingLoading = true;
+            const button = document.getElementById('refresh-billing');
+            button.disabled = true;
+            try {
+                const response = await authFetch(`${API}/api/payments/status`);
+                if (!response.ok) throw new Error('Billing status could not be verified. Please retry or contact support.');
+                const data = await response.json();
+                let text = 'Billing is not linked to this setup. Contact support if you already subscribe.';
+                let attention = false;
+                const date = value => new Date(value).toLocaleDateString();
+                if (data.managed) {
+                    text = `Subscription: ${(data.status || 'not yet verified').replace(/_/g, ' ')}.`;
+                    if (data.current_period_end) text += ` Current period ends ${date(data.current_period_end)}.`;
+                    if (data.cancel_at_period_end || data.cancel_at) {
+                        text += data.cancel_at || data.current_period_end
+                            ? ` Cancellation scheduled for ${date(data.cancel_at || data.current_period_end)}.`
+                            : ' Cancellation is scheduled at the end of the current period.';
+                        attention = true;
+                    }
+                    if (data.needs_attention) {
+                        text += ' Your billing needs attention. Open Manage billing to review payment or contact support.';
+                        attention = true;
+                    }
+                    if (data.status === 'canceled' && data.canceled_at) text += ` Canceled on ${date(data.canceled_at)}.`;
+                }
+                document.getElementById('billing-status').textContent = text;
+                document.getElementById('billing-notice-text').textContent = text;
+                document.getElementById('billing-notice').hidden = !attention;
+            } catch (error) {
+                if (error.message !== 'Session expired') {
+                    const text = error.message || 'Billing status unavailable. Please retry.';
+                    document.getElementById('billing-status').textContent = text;
+                    document.getElementById('billing-notice-text').textContent = text;
+                    document.getElementById('billing-notice').hidden = false;
+                }
+            } finally {
+                button.disabled = false;
+                billingLoading = false;
             }
         }
 
@@ -1919,40 +2131,26 @@
             try {
                 const response = await authFetch(`${API}/api/rootcall/my-number`);
                 const data = await response.json();
+                if (!response.ok) throw new Error(data.detail || 'Unable to load your Shield number.');
                 const container = document.getElementById('numbers-list');
+                document.getElementById('get-shield-number').hidden = Boolean(data.has_number);
                 console.log('My number response:', data);
                 if (data.has_number) {
                     const pendingKey = pendingProvisionKey();
                     if (pendingKey) localStorage.removeItem(pendingKey);
                     container.innerHTML = `
-                        <div style="padding: 2rem; background: linear-gradient(135deg, var(--light-green) 0%, #c6f6d5 100%); border: 3px solid var(--green); border-radius: 16px; box-shadow: 0 8px 20px rgba(13, 61, 47, 0.15);">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <div style="flex: 1;">
-                                    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
-                                        <div style="font-size: 0.9rem; color: var(--green); font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">
-                                            <i class="fas fa-shield-halved"></i> ${data.friendly_name || 'Your Scam Shield Number'}
-                                        </div>
-                                        <span style="padding: 0.5rem 1rem; background: var(--success); color: white; border-radius: 20px; font-weight: 700; font-size: 0.85rem;">
-                                            <i class="fas fa-robot"></i> AI ACTIVE
-                                        </span>
-                                        <span class="scam-shield-badge">
-                                            <i class="fas fa-ban"></i> SCAM SHIELD
-                                        </span>
-                                    </div>
-                                    <div style="font-size: 2.75rem; font-weight: 900; color: var(--green); margin: 0.75rem 0; letter-spacing: 2px;">${data.number}</div>
-                                    <div style="font-size: 0.95rem; color: #666; font-weight: 600;">
-                                        <i class="fas fa-calendar-check"></i> Activated: ${new Date(data.purchased_at).toLocaleDateString()}
-                                    </div>
-                                </div>
-                                <div style="text-align: center; padding: 0 2rem;">
-                                    <div style="width: 100px; height: 100px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
-                                        <i class="fas fa-shield-alt" style="font-size: 3rem; color: var(--green);"></i>
-                                    </div>
-                                    <div style="font-weight: 700; color: var(--green);">Protected</div>
-                                </div>
+                        <article class="shield-card">
+                            <div class="shield-card-top">
+                                <span><i class="fas fa-shield-halved" aria-hidden="true"></i> <span data-shield-name></span></span>
+                                <span><i class="fas fa-check-circle" aria-hidden="true"></i> Assigned Shield number</span>
                             </div>
-                        </div>
-                    `;
+                            <strong class="shield-card-number" data-shield-number></strong>
+                            <p class="field-hint" data-shield-date></p>
+                            <p class="field-hint">One Shield line is included. Manage forwarding and billing in Settings.</p>
+                        </article>`;
+                    container.querySelector('[data-shield-name]').textContent = data.friendly_name || 'Your Shield number';
+                    container.querySelector('[data-shield-number]').textContent = formatPhoneNumber(data.number);
+                    container.querySelector('[data-shield-date]').textContent = `Activated: ${new Date(data.purchased_at).toLocaleDateString()}`;
                 } else {
                     const pendingKey = pendingProvisionKey();
                     const pendingNumber = pendingKey ? localStorage.getItem(pendingKey) : null;
@@ -1960,7 +2158,7 @@
                         <div style="text-align: center; padding: 4rem; background: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%); border-radius: 16px; border: 2px dashed #d1d5db;">
                             <i class="fas fa-shield-alt" style="font-size: 5rem; color: #d1d5db; margin-bottom: 1.5rem;"></i>
                             <h4 style="font-size: 1.5rem; font-weight: 800; color: #666; margin-bottom: 0.75rem;">No Shield Number Yet</h4>
-                            ${pendingNumber ? `<p style="color: #666; margin-bottom: 1rem;">Finish setup for ${formatPhoneNumber(pendingNumber)}</p><button onclick="resumePendingProvisioning()" class="btn btn-primary" style="padding: 1rem 2rem; margin-bottom: 1rem;"><i class="fas fa-redo"></i> Resume Setup</button>` : ''}
+                            ${pendingNumber ? `<p style="color: #666; margin-bottom: 1rem;">Finish setup for ${escapeHTML(formatPhoneNumber(pendingNumber))}</p><button onclick="resumePendingProvisioning()" class="btn btn-primary" style="padding: 1rem 2rem; margin-bottom: 1rem;"><i class="fas fa-redo"></i> Resume Setup</button>` : ''}
                             ${!pendingNumber ? `<p style="color: #666; margin-bottom: 0.75rem;">Already purchased a number? Enter it to finish setup.</p><input type="tel" id="recovery-number" placeholder="+14075550100" style="max-width: 320px; margin-bottom: 0.75rem;"><button onclick="resumePendingProvisioning()" class="btn btn-primary" style="display: block; margin: 0 auto 1.5rem; padding: 1rem 2rem;"><i class="fas fa-link"></i> Recover Purchased Number</button>` : ''}
                             <p style="color: #999; margin-bottom: 2rem; font-size: 1.05rem;">Protect yourself from scams with an AI-powered Shield number</p>
                             <button onclick="openProvisionModal()" class="btn btn-primary" style="padding: 1.25rem 2.5rem; font-size: 1.1rem;">
@@ -1969,11 +2167,13 @@
                         </div>
                     `;
                 }
+                return data;
             } catch (err) {
                 console.error('Error loading numbers:', err);
                 if (err.message !== 'Session expired') {
                     document.getElementById('numbers-list').innerHTML = '<p style="text-align: center; color: var(--danger); padding: 2rem; font-weight: 600;">Error loading numbers. Please refresh the page.</p>';
                 }
+                throw err;
             }
         }
 
@@ -2281,6 +2481,23 @@
             }
         }
 
+        async function connectTrustedRouting() {
+            const button = document.getElementById('connect-trusted-routing');
+            if (button.disabled) return;
+            button.disabled = true;
+            try {
+                const response = await authFetch(`${API}/api/rootcall/trusted-routing/${CLIENT_ID}`, { method: 'POST' });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.detail || 'Unable to connect trusted routing.');
+                await loadData();
+                showToast('Trusted caller routing connected.', 'success');
+            } catch (error) {
+                showToast(error.message || 'Unable to connect. Please retry.', 'error');
+            } finally {
+                button.disabled = false;
+            }
+        }
+
         async function removeContact(phone) {
             if (!confirm(`Remove ${phone} from trusted contacts?`)) return;
             try {
@@ -2350,8 +2567,45 @@
             }
         }
 
-        function exportCalls() {
-            window.open(`${API}/api/rootcall/export/${CLIENT_ID}`, '_blank');
+        async function exportCalls() {
+            const button = document.getElementById('export-calls');
+            if (button.disabled) return;
+            button.disabled = true;
+            try {
+                const response = await authFetch(`${API}/api/rootcall/export/${CLIENT_ID}`);
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Unable to export calls. Please retry.');
+                }
+                const url = URL.createObjectURL(await response.blob());
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'rootcall_calls.csv';
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+            } catch (error) {
+                showToast(error.message || 'Unable to export calls. Please retry.', 'error');
+            } finally {
+                button.disabled = false;
+            }
+        }
+
+        async function manageBilling() {
+            const button = document.getElementById('manage-billing');
+            if (button.disabled) return;
+            button.disabled = true;
+            try {
+                const response = await authFetch(`${API}/api/payments/billing-portal`, { method: 'POST' });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.detail || 'Unable to open billing.');
+                window.location.assign(data.portal_url);
+            } catch (error) {
+                showToast(error.message || 'Unable to connect to billing. Please retry.', 'error');
+            } finally {
+                button.disabled = false;
+            }
         }
 
         function logout() {
@@ -2369,7 +2623,7 @@
             clearTimeout(refreshTimer);
             refreshTimer = setTimeout(() => {
                 if (document.visibilityState === 'visible') {
-                    loadData();
+                    loadData(true);
                 }
                 scheduleRefresh();
             }, 30000);

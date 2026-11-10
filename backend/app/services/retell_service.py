@@ -1,6 +1,7 @@
 """Retell.ai Integration Service - Automated Setup (Agent + Inbound/Outbound)"""
 import logging
 import os
+import re
 import requests
 from typing import Any, Dict, List, Optional
 
@@ -94,6 +95,15 @@ class RetellService:
             patch["start_speaker"] = start_speaker
         return self._patch(f"/update-retell-llm/{llm_id}", patch, expected=200)
 
+    def list_voices(self) -> List[Dict[str, Any]]:
+        return self._get("/list-voices")
+
+    def list_phone_numbers(self) -> List[Dict[str, Any]]:
+        return self._get("/list-phone-numbers")
+
+    def configure_call_webhook(self, agent_id: str, webhook_url: str):
+        return self._patch(f"/update-agent/{agent_id}", {"webhook_url": webhook_url}, expected=200)
+
     # ---------- Agent ----------
 
     def create_agent(
@@ -145,6 +155,9 @@ class RetellService:
 
     def list_agents(self) -> List[Dict[str, Any]]:
         data = self._get("/list-agents", expected=200)
+        if isinstance(data, list):
+            return data
+        return data.get("agents", [])
 
     def update_agent(
         self,
@@ -161,32 +174,109 @@ class RetellService:
         log.info(f"Updating Retell Agent: {agent_id}")
         return self._patch(f"/update-agent/{agent_id}", patch, expected=200)
 
-    def configure_transfer_tool(self, agent_id: str, transfer_number: Optional[str] = None) -> Dict[str, Any]:
+    def configure_transfer_tool(
+        self, agent_id: str, transfer_number: Optional[str] = None,
+        custom_sip_headers: Optional[Dict[str, str]] = None,
+    ) -> Dict[str, Any]:
         """Configure agent with transfer_call tool for forwarding legitimate calls"""
+        if transfer_number and not re.fullmatch(r"\+[1-9]\d{1,14}", transfer_number):
+            raise ValueError("Forwarding number must be in E.164 format")
+        agent = self._get(f"/get-agent/{agent_id}")
+        engine = agent.get("response_engine") or {}
+        if engine.get("type") != "retell-llm" or not engine.get("llm_id"):
+            raise RuntimeError("Transfer configuration requires a Retell LLM agent")
+        llm_id = engine["llm_id"]
+        llm = self._get(f"/get-retell-llm/{llm_id}")
+        previous_transfer = next(
+            (tool for tool in (llm.get("general_tools") or []) if tool.get("name") == "transfer_call"), {}
+        )
         general_tools = [
-            {
+            tool for tool in (llm.get("general_tools") or [])
+            if tool.get("name") != "transfer_call"
+        ]
+        if not any(tool.get("type") == "end_call" for tool in general_tools):
+            general_tools.append({
                 "type": "end_call",
                 "name": "end_call",
                 "description": "End call for spam/scam callers"
-            }
-        ]
+            })
         if transfer_number:
-            general_tools.append({
+            transfer_tool = {
                 "type": "transfer_call",
                 "name": "transfer_call",
                 "description": "Transfer legitimate calls to the client's phone",
-                "number": transfer_number
-            })
+                "transfer_destination": {"type": "predefined", "number": transfer_number},
+                "transfer_option": {"type": "cold_transfer"},
+            }
+            headers = custom_sip_headers if custom_sip_headers is not None else previous_transfer.get("custom_sip_headers")
+            if headers:
+                transfer_tool["custom_sip_headers"] = headers
+            general_tools.append(transfer_tool)
             log.info(f"✅ Configured transfer to {transfer_number} for agent {agent_id}")
         else:
             log.info(f"⚠️  Removed transfer tool from agent {agent_id}")
-        return self.update_agent(agent_id, general_tools=general_tools)
-        # Sometimes API returns a list already
-        if isinstance(data, list):
-            return data
-        return data.get("agents", [])
+        result = self._patch(
+            f"/update-retell-llm/{llm_id}", {"general_tools": general_tools}, expected=200
+        )
+        self.publish_agent(agent_id)
+        return result
 
     # ---------- Phone numbers / inbound & outbound binding ----------
+
+    def create_trusted_transfer_flow(self, sip_username: Optional[str] = None) -> str:
+        payload = {
+            "start_speaker": "agent",
+            "model_choice": {"type": "cascading", "model": "gpt-4.1"},
+            "flex_mode": False,
+            "start_node_id": "trusted_transfer",
+            "nodes": [
+                {
+                    "id": "trusted_transfer", "type": "transfer_call",
+                    "transfer_destination": {"type": "predefined", "number": "{{rootcall_forwarding}}"},
+                    "transfer_option": {"type": "cold_transfer"},
+                    "speak_during_execution": False,
+                    "edge": {
+                        "id": "transfer_failed", "destination_node_id": "transfer_failed_end",
+                        "transition_condition": {"type": "prompt", "prompt": "Transfer failed"},
+                    },
+                },
+                {
+                    "id": "transfer_failed_end", "type": "end",
+                    "speak_during_execution": True,
+                    "instruction": {"type": "static_text", "text": "Sorry, we could not connect your call. Please try again later."},
+                },
+            ],
+        }
+        if sip_username:
+            payload["nodes"][0]["custom_sip_headers"] = {"X-Telnyx-Username": sip_username}
+        data = self._post("/create-conversation-flow", payload, expected=(200, 201))
+        if not data.get("conversation_flow_id"):
+            raise RuntimeError("Retell did not return a trusted transfer flow ID")
+        return data["conversation_flow_id"]
+
+    def create_trusted_transfer_agent(self, name: str, flow_id: str, source_agent_id: str, webhook_url: str) -> str:
+        source = self._get(f"/get-agent/{source_agent_id}")
+        if not source.get("voice_id"):
+            raise RuntimeError("Screening agent has no configured voice")
+        data = self._post("/create-agent", {
+            "agent_name": name,
+            "response_engine": {"type": "conversation-flow", "conversation_flow_id": flow_id},
+            "voice_id": source["voice_id"],
+            "language": source.get("language", "en-US"),
+            "enable_backchannel": False,
+            "webhook_url": webhook_url,
+        }, expected=(201,))
+        if not data.get("agent_id"):
+            raise RuntimeError("Retell did not return a trusted transfer agent ID")
+        return data["agent_id"]
+
+    def configure_inbound_webhook(self, phone_number: str, webhook_url: str):
+        return self._patch(
+            f"/update-phone-number/{phone_number}", {"inbound_webhook_url": webhook_url}, expected=200,
+        )
+
+    def get_phone_number(self, phone_number: str):
+        return self._get(f"/get-phone-number/{phone_number}")
 
     def import_phone_number(
         self,

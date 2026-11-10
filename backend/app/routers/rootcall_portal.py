@@ -3,9 +3,8 @@
 RootCall Client Portal API Routes - SECURE VERSION WITH TELNYX + RETELL
 """
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from sqlalchemy.orm import Session
-from sqlalchemy import func
 from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime
@@ -22,12 +21,14 @@ from app.database import get_db
 # Models
 from app.models.user import User
 from app.models.phone_number import PhoneNumber
-from app.models.rootcall_config import RootCallConfig
-from app.models.rootcall_call_log import RootCallCallLog
+from app.models.rootcall_config import RootCallConfig, TrustedContact
+from app.models.onboarding import CustomerOnboarding
 
 # Services
 from app.services.telnyx_service import TelnyxService
 from app.services.retell_service import RetellService
+from app.services.trusted_routing import enable_trusted_routing, normalize_caller
+from app.services.customer_activity import activity_query, activity_stats, serialize_activity
 
 # Auth
 try:
@@ -80,42 +81,7 @@ async def get_stats(
             detail="Cannot access other user's data"
         )
     
-    phones = db.query(PhoneNumber).filter(PhoneNumber.user_id == client_id).all()
-    phone_ids = [p.id for p in phones]
-    
-    if not phone_ids:
-        return {
-            "spam_blocked": 0,
-            "calls_screened": 0,
-            "trusted_forwarded": 0,
-            "total_calls": 0
-        }
-    
-    spam_blocked = db.query(RootCallCallLog).filter(
-        RootCallCallLog.phone_number_id.in_(phone_ids),
-        RootCallCallLog.action == "spam_blocked"
-    ).count()
-    
-    calls_screened = db.query(RootCallCallLog).filter(
-        RootCallCallLog.phone_number_id.in_(phone_ids),
-        RootCallCallLog.action == "screened"
-    ).count()
-    
-    trusted_forwarded = db.query(RootCallCallLog).filter(
-        RootCallCallLog.phone_number_id.in_(phone_ids),
-        RootCallCallLog.action == "trusted_forwarded"
-    ).count()
-    
-    total_calls = db.query(RootCallCallLog).filter(
-        RootCallCallLog.phone_number_id.in_(phone_ids)
-    ).count()
-    
-    return {
-        "spam_blocked": spam_blocked,
-        "calls_screened": calls_screened,
-        "trusted_forwarded": trusted_forwarded,
-        "total_calls": total_calls
-    }
+    return activity_stats(db, client_id)
 
 
 @router.get("/api/rootcall/calls/{client_id}")
@@ -132,26 +98,7 @@ async def get_recent_calls(
             detail="Cannot access other user's data"
         )
     
-    phones = db.query(PhoneNumber).filter(PhoneNumber.user_id == client_id).all()
-    phone_ids = [p.id for p in phones]
-    
-    if not phone_ids:
-        return []
-    
-    logs = db.query(RootCallCallLog).filter(
-        RootCallCallLog.phone_number_id.in_(phone_ids)
-    ).order_by(RootCallCallLog.timestamp.desc()).limit(20).all()
-    
-    return [
-        {
-            "timestamp": log.timestamp.isoformat(),
-            "from_number": log.from_number,
-            "caller_name": log.caller_name or "Unknown",
-            "action": log.action,
-            "status": log.status
-        }
-        for log in logs
-    ]
+    return [serialize_activity(row) for row in activity_query(db, client_id).limit(20)]
 
 
 # ============================================
@@ -180,15 +127,30 @@ async def get_config(
     if not config:
         raise HTTPException(status_code=404, detail="No config")
     
+    names = {
+        contact.phone_number: contact.name
+        for contact in db.query(TrustedContact).filter(
+            TrustedContact.rootcall_config_id == config.id,
+            TrustedContact.is_active.is_(True),
+        ).order_by(TrustedContact.id).all()
+    }
+    onboarding = db.get(CustomerOnboarding, client_id)
     return {
+        "setup_guide_available": bool(onboarding and onboarding.status == "completed"),
         "client_name": config.client_name,
         "client_cell": config.client_cell,
         "sms_alerts_enabled": config.sms_alerts_enabled,
         "alert_on_spam": config.alert_on_spam,
         "alert_on_unknown": config.alert_on_unknown,
         "auto_block_spam": config.auto_block_spam,
+        "trusted_routing_enabled": config.trusted_routing_enabled,
+        "line_configured": bool(
+            phone.is_active and config.is_active and config.retell_agent_id
+            and normalize_caller(config.client_cell)
+            and normalize_caller(config.client_cell) != phone.phone_number
+        ),
         "trusted_contacts": [
-            {"phone_number": p, "name": ""} 
+            {"phone_number": p, "name": names.get(p, "")}
             for p in (config.trusted_contacts or [])
         ]
     }
@@ -218,19 +180,24 @@ async def update_config(
         raise HTTPException(status_code=404, detail="No config")
     
     if updates.client_cell is not None:
-        config.client_cell = updates.client_cell
-        
         # Configure Retell agent to transfer calls to client_cell
         if config.retell_agent_id:
-            retell = RetellService()
             try:
+                retell = RetellService()
                 retell.configure_transfer_tool(
                     agent_id=config.retell_agent_id,
                     transfer_number=updates.client_cell if updates.client_cell else None
                 )
                 log.info(f"✅ Updated Retell transfer to {updates.client_cell or 'NONE'}")
-            except Exception as e:
-                log.error(f"Failed to update Retell transfer: {e}")
+            except ValueError as e:
+                raise HTTPException(status_code=422, detail=str(e))
+            except (RuntimeError, requests.RequestException):
+                log.exception("Failed to update Retell transfer")
+                raise HTTPException(
+                    status_code=502,
+                    detail="Forwarding setup failed. Your saved number was not changed. Check Retell before retrying.",
+                )
+        config.client_cell = updates.client_cell
     if updates.sms_alerts_enabled is not None:
         config.sms_alerts_enabled = updates.sms_alerts_enabled
     if updates.alert_on_spam is not None:
@@ -247,6 +214,33 @@ async def update_config(
 # ============================================
 # TRUSTED CONTACTS
 # ============================================
+
+@router.post("/api/rootcall/trusted-routing/{client_id}")
+def connect_trusted_routing(
+    client_id: int, current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if current_user.id != client_id or not current_user.is_active:
+        raise HTTPException(status_code=403, detail="Cannot modify this account's routing.")
+    setup = db.get(CustomerOnboarding, client_id)
+    if setup and setup.status != "completed":
+        raise HTTPException(status_code=409, detail="Resume onboarding or contact support before changing trusted routing.")
+    phone = db.query(PhoneNumber).filter(
+        PhoneNumber.user_id == client_id, PhoneNumber.is_active.is_(True),
+    ).first()
+    config = db.query(RootCallConfig).filter(
+        RootCallConfig.phone_number_id == phone.id, RootCallConfig.user_id == client_id,
+    ).with_for_update().first() if phone else None
+    if not config:
+        raise HTTPException(status_code=404, detail="No active Shield configuration.")
+    try:
+        enable_trusted_routing(db, config, phone.phone_number)
+    except (RuntimeError, requests.RequestException, ValueError):
+        db.rollback()
+        log.exception("Could not connect trusted routing for user %s", client_id)
+        raise HTTPException(status_code=502, detail="Trusted routing could not be connected. Your screening agent is unchanged; retry or contact support.")
+    return {"success": True, "trusted_routing_enabled": True}
+
 
 @router.post("/api/rootcall/trusted-contacts/{client_id}")
 async def add_trusted_contact(
@@ -267,16 +261,33 @@ async def add_trusted_contact(
     if not phone:
         raise HTTPException(status_code=404, detail="No phone number")
     
-    config = db.query(RootCallConfig).filter(RootCallConfig.phone_number_id == phone.id).first()
+    config = db.query(RootCallConfig).filter(
+        RootCallConfig.phone_number_id == phone.id
+    ).with_for_update().first()
     if not config:
         raise HTTPException(status_code=404, detail="No config")
     
-    if not config.trusted_contacts:
-        config.trusted_contacts = []
-    
-    if contact.phone_number not in config.trusted_contacts:
-        config.trusted_contacts.append(contact.phone_number)
-        db.commit()
+    normalized = normalize_caller(contact.phone_number)
+    if not normalized or normalized == phone.phone_number:
+        raise HTTPException(status_code=422, detail="Enter a valid trusted caller number different from your Shield number.")
+    name = (contact.name or "").strip()
+    if len(name) > 100:
+        raise HTTPException(status_code=422, detail="Contact names must be 100 characters or fewer.")
+    if normalized not in (config.trusted_contacts or []):
+        if len(config.trusted_contacts or []) >= 100:
+            raise HTTPException(status_code=422, detail="You can save up to 100 trusted contacts.")
+        config.trusted_contacts = [*(config.trusted_contacts or []), normalized]
+    saved = db.query(TrustedContact).filter(
+        TrustedContact.rootcall_config_id == config.id,
+        TrustedContact.phone_number == normalized,
+    ).order_by(TrustedContact.id).first()
+    if saved:
+        if contact.name is not None:
+            saved.name = name
+        saved.is_active = True
+    else:
+        db.add(TrustedContact(rootcall_config_id=config.id, phone_number=normalized, name=name))
+    db.commit()
     
     return {"success": True}
 
@@ -300,13 +311,19 @@ async def remove_trusted_contact(
     if not phone:
         raise HTTPException(status_code=404, detail="No phone number")
     
-    config = db.query(RootCallConfig).filter(RootCallConfig.phone_number_id == phone.id).first()
+    config = db.query(RootCallConfig).filter(
+        RootCallConfig.phone_number_id == phone.id
+    ).with_for_update().first()
     if not config:
         raise HTTPException(status_code=404, detail="No config")
     
     if config.trusted_contacts and phone_number in config.trusted_contacts:
-        config.trusted_contacts.remove(phone_number)
-        db.commit()
+        config.trusted_contacts = [p for p in config.trusted_contacts if p != phone_number]
+    db.query(TrustedContact).filter(
+        TrustedContact.rootcall_config_id == config.id,
+        TrustedContact.phone_number == phone_number,
+    ).delete(synchronize_session=False)
+    db.commit()
     
     return {"success": True}
 
@@ -335,21 +352,15 @@ async def export_calls(
     if not phone_ids:
         raise HTTPException(status_code=404, detail="No phone numbers")
     
-    logs = db.query(RootCallCallLog).filter(
-        RootCallCallLog.phone_number_id.in_(phone_ids)
-    ).order_by(RootCallCallLog.timestamp.desc()).all()
-    
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow(['Timestamp', 'From', 'Caller Name', 'Action', 'Status'])
     
-    for log in logs:
+    for row in activity_query(db, client_id).yield_per(500):
+        values = serialize_activity(row)
         writer.writerow([
-            log.timestamp.isoformat(),
-            log.from_number,
-            log.caller_name or 'Unknown',
-            log.action,
-            log.status
+            csv_cell(values[key])
+            for key in ("timestamp", "from_number", "caller_name", "action", "status")
         ])
     
     output.seek(0)
@@ -358,6 +369,12 @@ async def export_calls(
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=rootcall_calls.csv"}
     )
+
+
+def csv_cell(value):
+    text = "" if value is None else str(value)
+    # Phone numbers and caller names are untrusted spreadsheet input.
+    return "'" + text if text.lstrip().startswith(("=", "+", "-", "@", "\t", "\r", "\n")) else text
 
 
 # ============================================
@@ -374,6 +391,9 @@ async def get_available_numbers(
     Search for available phone numbers from Telnyx
     Query params: area_code (optional, e.g., "813")
     """
+    if db.get(CustomerOnboarding, current_user.id):
+        from app.services.customer_onboarding import require_paid
+        require_paid(db, current_user)
     try:
         log.info(f"Client {current_user.id} searching numbers for area code: {area_code}")
         
@@ -430,6 +450,11 @@ async def provision_rootcall(
     - Import to Retell
     - Configure for scam screening
     """
+    if db.get(CustomerOnboarding, current_user.id):
+        from app.services.activation_jobs import enqueue_activation
+        from app.routers.payments import public_url
+        public_url()
+        return JSONResponse(status_code=202, content=enqueue_activation(db, current_user))
     provision_step = "checking your account"
     order_accepted = False
     phone_number = request.phone_number
@@ -767,6 +792,8 @@ async def import_existing_number(
     db: Session = Depends(get_db)
 ):
     """Import existing Telnyx number into RootCall"""
+    if db.get(CustomerOnboarding, current_user.id):
+        raise HTTPException(status_code=409, detail="Use paid onboarding to activate your Shield number.")
     from urllib.parse import unquote
     
     phone_number = unquote(phone_number)

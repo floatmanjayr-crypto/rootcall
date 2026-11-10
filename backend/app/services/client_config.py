@@ -6,7 +6,7 @@ Reads RootCall configuration from database instead of hardcoded CLIENT_LINES
 from typing import Dict, Optional
 from sqlalchemy.orm import Session
 from app.database import SessionLocal
-from app.models.rootcall_config import RootCallConfig
+from app.models.rootcall_config import RootCallConfig, TrustedContact
 from app.models.phone_number import PhoneNumber
 import logging
 
@@ -133,11 +133,8 @@ def add_trusted_contact(telnyx_number: str, contact_number: str, db: Session) ->
             contact_normalized = f"+{contact_normalized}"
         
         # Add to list if not already there
-        if config.trusted_contacts is None:
-            config.trusted_contacts = []
-            
-        if contact_normalized not in config.trusted_contacts:
-            config.trusted_contacts.append(contact_normalized)
+        if contact_normalized not in (config.trusted_contacts or []):
+            config.trusted_contacts = [*(config.trusted_contacts or []), contact_normalized]
             db.commit()
             log.info(f"[CONFIG] Added trusted contact {contact_normalized} for {telnyx_number}")
             return True
@@ -173,7 +170,13 @@ def remove_trusted_contact(telnyx_number: str, contact_number: str, db: Session)
         
         # Remove from list
         if config.trusted_contacts and contact_normalized in config.trusted_contacts:
-            config.trusted_contacts.remove(contact_normalized)
+            config.trusted_contacts = [
+                number for number in config.trusted_contacts if number != contact_normalized
+            ]
+            db.query(TrustedContact).filter(
+                TrustedContact.rootcall_config_id == config.id,
+                TrustedContact.phone_number == contact_normalized,
+            ).delete(synchronize_session=False)
             db.commit()
             log.info(f"[CONFIG] Removed trusted contact {contact_normalized} for {telnyx_number}")
             return True

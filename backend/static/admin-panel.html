@@ -1,85 +1,284 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
-    <title>Admin Panel - RootCall Call Shield</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="referrer" content="no-referrer">
+    <title>RootCall - Administration</title>
+    <style>
+        :root { color-scheme: light; --green: #0d3d2f; --accent: #2d7a5f; --ivory: #f9f6f3; --muted: #5b6b64; }
+        * { box-sizing: border-box; }
+        body { margin: 0; background: var(--ivory); color: var(--green); font: 16px/1.5 system-ui, sans-serif; }
+        header, main { max-width: 1152px; margin: auto; padding: 24px; }
+        header { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+        h1 { font-size: 1.6rem; margin: 4px 0; }
+        h2 { font-size: 1.1rem; }
+        p { color: var(--muted); margin: 8px 0; }
+        a { color: var(--accent); }
+        button { cursor: pointer; border: 1px solid var(--accent); border-radius: 10px; padding: 10px 16px; color: var(--green); background: white; font: inherit; }
+        button:focus-visible, a:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+        button:disabled { opacity: .6; cursor: wait; }
+        .eyebrow { color: var(--accent); text-transform: uppercase; font-size: .75rem; font-weight: 700; letter-spacing: .12em; }
+        .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+        .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin: 24px 0; }
+        .card { padding: 24px; border: 1px solid #e7e2db; border-radius: 16px; background: white; overflow-wrap: anywhere; }
+        .value { display: block; font-size: 2rem; font-weight: 750; }
+        .label { font-size: .85rem; color: var(--muted); }
+        .table-scroll { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th, td { padding: 12px; border-bottom: 1px solid #e7e2db; overflow-wrap: anywhere; }
+        td { color: var(--muted); }
+        #error { border-color: #fcd34d; background: #fffbeb; }
+        #error p { color: #92400e; }
+        [hidden] { display: none !important; }
+        @media (max-width: 650px) {
+            header { flex-wrap: wrap; }
+            .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .card { padding: 16px; }
+        }
+    </style>
 </head>
-<body class="bg-gray-100">
-    <nav class="bg-white shadow mb-6">
-        <div class="container mx-auto px-6 py-4">
-            <h1 class="text-2xl font-bold">Ìª°Ô∏è RootCall Admin Panel</h1>
+<body>
+    <header>
+        <div><span class="eyebrow">RootCall</span><h1>Administration</h1><p id="account">Checking administrator access...</p></div>
+        <div class="actions">
+            <a href="/static/client-portal.html">Customer dashboard</a>
+            <button type="button" id="sign-out">Sign out</button>
         </div>
-    </nav>
-
-    <div class="container mx-auto px-6">
-        <div class="grid grid-cols-4 gap-6 mb-8">
-            <div class="bg-white p-6 rounded-lg shadow">
-                <div class="text-gray-600 text-sm">Total Users</div>
-                <div class="text-3xl font-bold text-blue-600" id="total-users">0</div>
+    </header>
+    <main>
+        <p id="loading" role="status">Loading your administrator dashboard...</p>
+        <section id="error" class="card" role="alert" hidden>
+            <p id="error-message"></p>
+            <button type="button" id="retry">Retry</button>
+        </section>
+        <section id="dashboard" hidden aria-label="Administrator overview">
+            <div class="actions">
+                <h2>Platform overview</h2>
+                <button type="button" id="refresh">Refresh</button>
             </div>
-            <div class="bg-white p-6 rounded-lg shadow">
-                <div class="text-gray-600 text-sm">Shield Numbers</div>
-                <div class="text-3xl font-bold text-purple-600" id="total-numbers">0</div>
+            <div class="stats">
+                <div class="card"><span class="label">Total users</span><strong class="value" id="total-users">--</strong></div>
+                <div class="card"><span class="label">Active Shield numbers</span><strong class="value" id="total-numbers">--</strong></div>
+                <div class="card"><span class="label">Legacy call logs</span><strong class="value" id="total-calls">--</strong></div>
+                <div class="card"><span class="label">Legacy spam blocks</span><strong class="value" id="spam-blocked">--</strong></div>
             </div>
-            <div class="bg-white p-6 rounded-lg shadow">
-                <div class="text-gray-600 text-sm">Calls Protected</div>
-                <div class="text-3xl font-bold text-green-600" id="total-calls">0</div>
-            </div>
-            <div class="bg-white p-6 rounded-lg shadow">
-                <div class="text-gray-600 text-sm">Spam Blocked</div>
-                <div class="text-3xl font-bold text-red-600" id="spam-blocked">0</div>
-            </div>
-        </div>
-
-        <div class="bg-white rounded-lg shadow p-6">
-            <h2 class="text-2xl font-bold mb-4">Recent Users</h2>
-            <table class="w-full">
-                <thead class="bg-gray-100">
-                    <tr>
-                        <th class="px-4 py-2 text-left">ID</th>
-                        <th class="px-4 py-2 text-left">Name</th>
-                        <th class="px-4 py-2 text-left">Email</th>
-                        <th class="px-4 py-2 text-left">Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="users-table"></tbody>
-            </table>
-        </div>
-    </div>
-
+            <section class="card" aria-labelledby="users-heading">
+                <h2 id="users-heading">Recent users</h2>
+                <p>Call totals above cover legacy screening logs, not the unified customer call history.</p>
+                <div class="table-scroll">
+                    <table>
+                        <thead><tr><th scope="col">ID</th><th scope="col">Name</th><th scope="col">Email</th></tr></thead>
+                        <tbody id="users-table"></tbody>
+                    </table>
+                </div>
+            </section>
+            <section class="card" style="margin-top: 24px;" aria-labelledby="attention-heading">
+                <h2 id="attention-heading">Billing and setup attention</h2>
+                <p>Warnings and manual review only. Calls are not automatically restricted and numbers are never released here.</p>
+                <p id="attention-status" role="status"></p>
+                <div id="attention-list"></div>
+                <div class="actions">
+                    <button type="button" id="attention-previous">Previous</button>
+                    <button type="button" id="attention-next">Next</button>
+                </div>
+            </section>
+            <form id="recovery-form" class="card" hidden style="margin-top: 24px;">
+                <h2 id="recovery-heading">Review activation</h2>
+                <p>Check Telnyx orders and Retell resources against the saved checkpoints first. Reconcile any untracked resource in the provider console. Do not delete resources used by working lines. Reopening automatically resumes a previously confirmed background job; older setups require the customer to resume. This review itself does not change providers.</p>
+                <label for="recovery-note">Provider reconciliation note</label>
+                <textarea id="recovery-note" required maxlength="500" rows="4" style="display: block; width: 100%; margin: 12px 0;"></textarea>
+                <label><input id="provider-reconciled" type="checkbox" required> I verified the provider resources and saved checkpoints, and no unmatched resource remains that could be duplicated on retry.</label>
+                <p id="recovery-message" role="status"></p>
+                <div class="actions" style="margin-top: 12px;">
+                    <button type="submit" id="reopen-activation">Reopen saved setup</button>
+                    <button type="button" id="cancel-recovery">Cancel</button>
+                </div>
+            </form>
+        </section>
+    </main>
     <script>
-        const API = 'http://localhost:8000';
-        const ADMIN_ID = 1; // TODO: Get from auth
+        let loading = false;
+        let attentionSkip = 0;
+        let attentionLoading = false;
+        let recoveryUser = null;
+        function signOut() {
+            for (const key of ['access_token', 'token', 'user', 'selected_plan']) localStorage.removeItem(key);
+            location.replace('/static/login.html');
+        }
+
+        async function accountFetch(path, options = {}) {
+            const token = localStorage.getItem('access_token') || localStorage.getItem('token');
+            if (!token) {
+                signOut();
+                throw new Error('Sign in to continue.');
+            }
+            const response = await fetch(path, {
+                ...options, headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                cache: 'no-store',
+            });
+            if (response.status === 401) {
+                signOut();
+                throw new Error('Your session expired. Please sign in again.');
+            }
+            if (!response.ok) {
+                if ([409, 422].includes(response.status)) {
+                    const data = await response.json();
+                    throw new Error(typeof data.detail === 'string' ? data.detail : 'Check the reconciliation confirmation and note.');
+                }
+                throw new Error(response.status === 403
+                    ? 'This account does not have administrator access.'
+                    : 'The administrator dashboard is unavailable. Please retry.');
+            }
+            return response.json();
+        }
 
         async function loadDashboard() {
+            if (loading) return;
+            loading = true;
+            document.getElementById('retry').disabled = true;
+            document.getElementById('refresh').disabled = true;
             try {
-                const response = await fetch(`${API}/api/admin/dashboard/${ADMIN_ID}`);
-                const data = await response.json();
-                
+                const user = await accountFetch('/api/auth/me');
+                if (!user.is_superuser) throw new Error('This account does not have administrator access.');
+                const data = await accountFetch('/api/admin/dashboard');
+                document.getElementById('account').textContent = user.email;
                 document.getElementById('total-users').textContent = data.stats.total_users;
                 document.getElementById('total-numbers').textContent = data.stats.total_shield_numbers;
                 document.getElementById('total-calls').textContent = data.stats.total_calls;
                 document.getElementById('spam-blocked').textContent = data.stats.spam_blocked;
-
                 const tbody = document.getElementById('users-table');
-                tbody.innerHTML = data.recent_users.map(user => `
-                    <tr class="border-t">
-                        <td class="px-4 py-3">${user.id}</td>
-                        <td class="px-4 py-3">${user.full_name}</td>
-                        <td class="px-4 py-3">${user.email}</td>
-                        <td class="px-4 py-3">
-                            <a href="/static/shield-dashboard.html?user=${user.id}" class="text-purple-600">View</a>
-                        </td>
-                    </tr>
-                `).join('');
-            } catch (err) {
-                console.error('Error:', err);
+                tbody.replaceChildren();
+                for (const user of data.recent_users) {
+                    const row = document.createElement('tr');
+                    for (const value of [user.id, user.full_name || 'Not provided', user.email]) {
+                        const cell = document.createElement('td');
+                        cell.textContent = value;
+                        row.appendChild(cell);
+                    }
+                    tbody.appendChild(row);
+                }
+                if (!data.recent_users.length) {
+                    const row = document.createElement('tr');
+                    const cell = document.createElement('td');
+                    cell.colSpan = 3;
+                    cell.textContent = 'No users yet.';
+                    row.appendChild(cell);
+                    tbody.appendChild(row);
+                }
+                document.getElementById('dashboard').hidden = false;
+                document.getElementById('error').hidden = true;
+                await loadAttention();
+            } catch (error) {
+                document.getElementById('dashboard').hidden = true;
+                document.getElementById('users-table').replaceChildren();
+                document.getElementById('attention-list').replaceChildren();
+                document.getElementById('recovery-form').hidden = true;
+                document.getElementById('account').textContent = 'Administrator access could not be confirmed.';
+                document.getElementById('error-message').textContent = error.message || 'Unable to load administration. Please retry.';
+                document.getElementById('error').hidden = false;
+            } finally {
+                document.getElementById('loading').hidden = true;
+                document.getElementById('retry').disabled = false;
+                document.getElementById('refresh').disabled = false;
+                loading = false;
             }
+            async function loadAttention() {
+                if (attentionLoading) return;
+                attentionLoading = true;
+                for (const id of ['attention-previous', 'attention-next']) document.getElementById(id).disabled = true;
+                try {
+                    const data = await accountFetch(`/api/admin/attention?skip=${attentionSkip}&limit=25`);
+                    const list = document.getElementById('attention-list');
+                    list.replaceChildren();
+                    document.getElementById('attention-status').textContent = data.total
+                        ? `${attentionSkip + 1}-${Math.min(attentionSkip + data.items.length, data.total)} of ${data.total} accounts`
+                        : 'No accounts currently need billing or setup review.';
+                    for (const item of data.items) {
+                        const card = document.createElement('article');
+                        card.className = 'card';
+                        card.style.marginBottom = '16px';
+                        const heading = document.createElement('h3');
+                        heading.textContent = `${item.email} - ${item.shield_number || 'No number chosen'}`;
+                        const details = document.createElement('p');
+                        details.textContent = `Setup: ${item.status}. Step: ${item.activation_stage || 'Not started'}. Billing: ${item.billing.status || 'Not verified'}.${item.billing.cancel_at_period_end || item.billing.cancel_at ? ' Cancellation scheduled.' : ''}`;
+                        if (item.activation_job) details.textContent += ` Automatic activation: ${item.activation_job.status}, attempt ${item.activation_job.attempts}.${item.activation_job.next_attempt_at ? ` Next attempt: ${new Date(item.activation_job.next_attempt_at).toLocaleString()}.` : ''}`;
+                        if (item.billing.checked_at) details.textContent += ` Last billing check: ${new Date(item.billing.checked_at).toLocaleString()}.`;
+                        if (item.billing.cancel_at) details.textContent += ` Scheduled cancellation: ${new Date(item.billing.cancel_at).toLocaleDateString()}.`;
+                        const error = document.createElement('p');
+                        error.textContent = item.error_message || '';
+                        const checkpoints = document.createElement('pre');
+                        checkpoints.style.cssText = 'white-space: pre-wrap; overflow-wrap: anywhere;';
+                        checkpoints.textContent = JSON.stringify(item.checkpoints, null, 2);
+                        card.append(heading, details, error, checkpoints);
+                        if (item.uncertain_operation) {
+                            const warning = document.createElement('p');
+                            warning.textContent = `Uncertain creation: ${item.uncertain_operation}. Provider review is required.`;
+                            card.appendChild(warning);
+                        }
+                        if (item.recovery_reviewed_at) {
+                            const review = document.createElement('p');
+                            review.textContent = `Last recovery review by administrator ${item.recovery_reviewed_by}: ${item.recovery_note || ''}`;
+                            card.appendChild(review);
+                        }
+                        if (item.can_review_recovery) {
+                            const button = document.createElement('button');
+                            button.type = 'button';
+                            button.textContent = 'Review activation';
+                            button.addEventListener('click', () => {
+                                recoveryUser = item.user_id;
+                                document.getElementById('recovery-heading').textContent = `Review activation for ${item.email}`;
+                                document.getElementById('recovery-note').value = '';
+                                document.getElementById('provider-reconciled').checked = false;
+                                document.getElementById('recovery-message').textContent = '';
+                                document.getElementById('recovery-form').hidden = false;
+                                document.getElementById('recovery-note').focus();
+                            });
+                            card.appendChild(button);
+                        }
+                        list.appendChild(card);
+                    }
+                    document.getElementById('attention-previous').disabled = attentionSkip === 0;
+                    document.getElementById('attention-next').disabled = attentionSkip + 25 >= data.total;
+                } catch (error) {
+                    document.getElementById('attention-list').replaceChildren();
+                    document.getElementById('recovery-form').hidden = true;
+                    recoveryUser = null;
+                    document.getElementById('attention-status').textContent = error.message || 'Attention queue unavailable. Use Refresh to retry.';
+                } finally {
+                    attentionLoading = false;
+                }
+            }
+            document.getElementById('attention-previous').addEventListener('click', () => { attentionSkip = Math.max(0, attentionSkip - 25); loadAttention(); });
+            document.getElementById('attention-next').addEventListener('click', () => { attentionSkip += 25; loadAttention(); });
+            document.getElementById('cancel-recovery').addEventListener('click', () => { document.getElementById('recovery-form').hidden = true; recoveryUser = null; });
+            document.getElementById('recovery-form').addEventListener('submit', async event => {
+                event.preventDefault();
+                if (!recoveryUser) return;
+                const button = document.getElementById('reopen-activation');
+                if (button.disabled) return;
+                button.disabled = true;
+                try {
+                    const result = await accountFetch(`/api/admin/customers/${recoveryUser}/reopen-activation`, {
+                        method: 'POST', body: JSON.stringify({
+                            provider_reconciled: document.getElementById('provider-reconciled').checked,
+                            note: document.getElementById('recovery-note').value.trim(),
+                        }),
+                    });
+                    document.getElementById('recovery-message').textContent = result.message;
+                    await loadAttention();
+                } catch (error) {
+                    document.getElementById('recovery-message').textContent = error.message || 'Recovery failed. No success was confirmed.';
+                } finally {
+                    button.disabled = false;
+                }
+            });
         }
-
+        document.getElementById('sign-out').addEventListener('click', signOut);
+        document.getElementById('retry').addEventListener('click', loadDashboard);
+        document.getElementById('refresh').addEventListener('click', loadDashboard);
         loadDashboard();
-        setInterval(loadDashboard, 30000);
+        setInterval(() => { if (!document.hidden) loadDashboard(); }, 30000);
     </script>
 </body>
 </html>

@@ -74,17 +74,23 @@ class TelnyxService:
         connection_name: str,
         sip_username: str,
         sip_password: str,
+        outbound_voice_profile_id: Optional[str] = None,
     ) -> Tuple[Dict[str, Any], str, str]:
         """Get or create Elastic SIP Trunk for Retell"""
-        try:
-            existing = self._get("/fqdn_connections", params={"filter[connection_name]": connection_name})
-            connections = existing.get("data", [])
-            if connections:
-                conn = connections[0]
-                log.info(f"Using existing trunk: {conn.get('id')}")
-                return conn, sip_username, sip_password
-        except Exception as e:
-            log.warning(f"Error checking trunks: {e}")
+        existing = self._get("/fqdn_connections", params={"filter[connection_name]": connection_name})
+        connections = [item for item in existing.get("data", [])
+                       if item.get("connection_name") == connection_name]
+        if connections:
+            conn = connections[0]
+            if outbound_voice_profile_id:
+                self._patch(f"/fqdn_connections/{conn['id']}", {
+                    "user_name": sip_username, "password": sip_password,
+                    "outbound": {"outbound_voice_profile_id": outbound_voice_profile_id,
+                                 "ip_authentication_method": "credential-authentication"},
+                })
+                self._ensure_retell_fqdn(conn["id"])
+            log.info(f"Using existing trunk: {conn.get('id')}")
+            return conn, sip_username, sip_password
         
         log.info(f"Creating Elastic SIP Trunk: {connection_name}")
         
@@ -106,27 +112,36 @@ class TelnyxService:
                 "localization": "US"
             }
         }
+        if outbound_voice_profile_id:
+            payload["outbound"]["outbound_voice_profile_id"] = outbound_voice_profile_id
+            payload["outbound"]["ip_authentication_method"] = "credential-authentication"
+            payload["user_name"] = sip_username
+            payload["password"] = sip_password
         
         trunk_response = self._post("/fqdn_connections", json=payload)
         trunk_data = trunk_response.get("data", {})
         trunk_id = trunk_data.get("id")
         log.info(f"Created trunk: {trunk_id}")
         
+        self._ensure_retell_fqdn(trunk_id)
+        return trunk_data, sip_username, sip_password
+
+    def _ensure_retell_fqdn(self, connection_id: str):
+        existing = self._get("/fqdns", params={"filter[connection_id]": connection_id})
+        if any(item.get("fqdn") == "sip.retellai.com"
+               and str(item.get("connection_id")) == str(connection_id)
+               for item in existing.get("data", [])):
+            return
         fqdn_payload = {
-            "connection_id": trunk_id,
+            "connection_id": connection_id,
             "fqdn": "sip.retellai.com",
             "dns_record_type": "srv",
             "port": 5060
         }
         
-        try:
-            self._post("/fqdns", json=fqdn_payload)
-            log.info(f"Added FQDN sip.retellai.com")
-        except Exception as e:
-            log.warning(f"FQDN already exists: {e}")
+        self._post("/fqdns", json=fqdn_payload)
+        log.info(f"Added FQDN sip.retellai.com")
         
-        return trunk_data, sip_username, sip_password
-
     def list_phone_numbers(self, phone_number: Optional[str] = None) -> List[Dict[str, Any]]:
         params = {}
         if phone_number:
@@ -136,7 +151,8 @@ class TelnyxService:
 
     def assign_number_to_connection(self, phone_number: str, connection_id: str) -> Dict[str, Any]:
         """Assign number to trunk"""
-        items = self.list_phone_numbers(phone_number=phone_number)
+        items = [item for item in self.list_phone_numbers(phone_number=phone_number)
+                 if item.get("phone_number") == phone_number]
         if not items:
             raise RuntimeError(f"Number not found: {phone_number}")
         number_id = items[0]["id"]

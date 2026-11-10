@@ -1,7 +1,8 @@
 import os
 import logging
+import re
 from typing import Optional
-from fastapi import APIRouter, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 from app.services.client_config import get_client_config
 import httpx
 
@@ -138,13 +139,16 @@ async def telnyx_speak(ccid: str, text: str):
 
 async def telnyx_transfer(ccid: str, to: str):
     """Transfer call to destination"""
+    if not to or not re.fullmatch(r"\+[1-9]\d{1,14}", to):
+        log.error("Missing or invalid forwarding number")
+        raise HTTPException(status_code=422, detail="A valid forwarding number must be configured")
     if DRY_RUN:
         log.info("[DRY_RUN] transfer ccid=%s to=%s", ccid, to)
         return {"ok": True, "dry_run": True}
     
     if not TELNYX_API_KEY:
         log.error("Missing TELNYX_API_KEY")
-        return {"error": "Missing API key"}
+        raise HTTPException(status_code=503, detail="Telnyx is not configured")
     
     url = f"https://api.telnyx.com/v2/calls/{ccid}/actions/transfer"
     async with httpx.AsyncClient(timeout=10) as client:
@@ -155,16 +159,11 @@ async def telnyx_transfer(ccid: str, to: str):
                 json={"to": to}
             )
             log.info("Transfer response: %s", r.status_code)
-            log.info("Transfer response body: %s", r.text)
-            
-            if r.status_code >= 400:
-                log.error("Transfer FAILED: %s", r.text)
-                return {"error": r.text, "status_code": r.status_code}
-            
+            r.raise_for_status()
             return r.json() if r.text else {"ok": True}
-        except Exception as e:
-            log.error("Transfer error: %s", e)
-            return {"error": str(e)}
+        except (httpx.HTTPError, ValueError):
+            log.exception("Call transfer failed")
+            raise HTTPException(status_code=502, detail="Call transfer failed. Check the call before retrying.")
 
 async def telnyx_hangup(ccid: str):
     """Hangup the call"""
@@ -253,6 +252,14 @@ async def screen_call(request: Request):
     if evt == "call.answered":
         client_cell = cfg.get("client_cell", "")
         trusted = cfg.get("trusted_contacts", [])
+
+        # Explicitly trusted callers bypass screening, including CNAM spam labels.
+        if from_num in trusted:
+            log.info("[TRUSTED] Forwarding %s to %s", from_num, client_cell)
+            if cfg.get("sms_alerts_enabled"):
+                await send_sms_alert(client_cell, f"[RootCall] Trusted contact {cnam or from_num} calling")
+            await telnyx_transfer(ccid, client_cell)
+            return {"status": "trusted_forwarded"}
         
         # 1) Check for spam
         spam_keywords = ["spam", "scam", "fraud", "robocall", "telemarketer"]
@@ -265,17 +272,6 @@ async def screen_call(request: Request):
             
             await telnyx_hangup(ccid)
             return {"status": "spam_blocked"}
-        
-        # 2) Check if trusted
-        if from_num in trusted:
-            log.info("[TRUSTED] Forwarding %s to %s", from_num, client_cell)
-            
-            # Alert about trusted contact
-            if cfg.get("sms_alerts_enabled"):
-                await send_sms_alert(client_cell, f"[RootCall] Trusted contact {cnam or from_num} calling")
-            
-            await telnyx_transfer(ccid, client_cell)
-            return {"status": "trusted_forwarded"}
         
         # 3) Unknown caller - Screen them
         log.info("[SCREENING] Asking %s to identify themselves", from_num)

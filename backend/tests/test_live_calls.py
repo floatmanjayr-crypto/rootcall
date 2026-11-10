@@ -3,6 +3,7 @@ import os
 import unittest
 from unittest.mock import AsyncMock, patch
 
+import httpx
 os.environ["DATABASE_URL"] = "sqlite://"
 os.environ.setdefault("OPENAI_API_KEY", "test-unused-key")
 
@@ -124,6 +125,30 @@ class LiveCallsTest(unittest.TestCase):
             action.return_value = {"success": False}
             response = self.client.post("/api/rootcall/live-calls/1/takeover", json={"participant_id": "listener"})
             self.assertEqual(response.status_code, 502)
+        self.db.expire_all()
+        self.assertEqual(self.db.query(Call).one().status, "in-progress")
+
+    def test_listen_sends_provider_authorization(self):
+        self.event()
+        async def respond(request):
+            self.assertEqual(request.headers["Authorization"], "Bearer test-key")
+            self.assertEqual(request.url.path, "/v2/listen-live-call/call_test")
+            return httpx.Response(200, json={"participant_id": "listener", "room": "test"})
+
+        client = httpx.AsyncClient(transport=httpx.MockTransport(respond))
+        with patch.object(live_calls.httpx, "AsyncClient", return_value=client):
+            response = self.client.post("/api/rootcall/live-calls/1/listen")
+        self.assertEqual(response.status_code, 200)
+
+    def test_provider_rejection_restores_ai_call_status(self):
+        self.event()
+        client = httpx.AsyncClient(transport=httpx.MockTransport(
+            lambda request: httpx.Response(401, json={"error": "Unauthorized"})
+        ))
+        with patch.object(live_calls.httpx, "AsyncClient", return_value=client):
+            response = self.client.post("/api/rootcall/live-calls/1/takeover",
+                                        json={"participant_id": "listener"})
+        self.assertEqual(response.status_code, 502)
         self.db.expire_all()
         self.assertEqual(self.db.query(Call).one().status, "in-progress")
 

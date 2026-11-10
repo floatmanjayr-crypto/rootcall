@@ -1,38 +1,38 @@
 # -*- coding: utf-8 -*-
-from fastapi import APIRouter, Depends, HTTPException, Request, status
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.user import User
 from pydantic import BaseModel, EmailStr, validator
-from passlib.context import CryptContext
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
+from urllib.parse import urlparse
+from urllib.error import URLError
+from python_http_client.exceptions import HTTPError as EmailHTTPError
 import hashlib
 import logging
-import os
 from app.config import settings
+from app.core.deps import get_current_active_user
+from app.core.security import create_access_token, get_password_hash, verify_password, signing_key, token_user_id
+from app.services.customer_onboarding import new_onboarding, next_url
+from app.services.email_service import EmailService
 router = APIRouter(tags=["Auth"])
 
 logger = logging.getLogger(__name__)
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
-
-SECRET_KEY = settings.JWT_SECRET_KEY
-ALGORITHM = settings.JWT_ALGORITHM
 
 RESET_TOKEN_EXPIRE_MINUTES = 30
 
 class UserSignup(BaseModel):
     email: EmailStr
     password: str
-    full_name: str
+    full_name: str = ""
     
     @validator('password')
-    def truncate_password(cls, v):
-        # bcrypt has a 72 byte limit, truncate if necessary
-        return v[:72] if len(v.encode('utf-8')) > 72 else v
+    def validate_password(cls, v):
+        if len(v) < 8 or len(v.encode("utf-8")) > 72:
+            raise ValueError("Use at least 8 characters and at most 72 UTF-8 bytes.")
+        return v
 
 
 class ForgotPasswordRequest(BaseModel):
@@ -45,24 +45,12 @@ class ResetPasswordRequest(BaseModel):
 
     @validator('new_password')
     def validate_password(cls, v):
-        if len(v) < 8:
-            raise ValueError('Password must be at least 8 characters long')
-        # bcrypt has a 72 byte limit, truncate if necessary
-        return v[:72] if len(v.encode('utf-8')) > 72 else v
-
-def get_password_hash(password):
-    # Ensure password is truncated to 72 bytes for bcrypt
-    password = password[:72]
-    return pwd_context.hash(password)
-
-def verify_password(plain, hashed):
-    # Ensure password is truncated to 72 bytes for bcrypt
-    plain = plain[:72]
-    return pwd_context.verify(plain, hashed)
+        if len(v) < 8 or len(v.encode("utf-8")) > 72:
+            raise ValueError("Use at least 8 characters and at most 72 UTF-8 bytes.")
+        return v
 
 def create_token(user_id: int):
-    expire = datetime.utcnow() + timedelta(hours=24)
-    return jwt.encode({"sub": str(user_id), "exp": expire}, SECRET_KEY, algorithm=ALGORITHM)
+    return create_access_token({"sub": str(user_id)}, expires_delta=timedelta(hours=24))
 
 
 def _password_fingerprint(hashed_password: str) -> str:
@@ -82,7 +70,7 @@ def create_reset_token(user: User) -> str:
         "purpose": "pwd_reset",
         "pwf": _password_fingerprint(user.hashed_password),
     }
-    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+    return jwt.encode(payload, signing_key(), algorithm=settings.JWT_ALGORITHM)
 
 
 def _reset_email_html(reset_link: str) -> str:
@@ -109,35 +97,46 @@ def _reset_email_html(reset_link: str) -> str:
 </div>"""
 
 
-@router.post("/api/auth/forgot-password")
-async def forgot_password(data: ForgotPasswordRequest, request: Request, db: Session = Depends(get_db)):
-    """Send a password reset link. Always returns the same generic response
-    so the endpoint can't be used to discover registered emails."""
+def deliver_reset_email(email: str, reset_link: str) -> None:
+    try:
+        result = EmailService.send_email(
+            email, "Reset your RootCall password", _reset_email_html(reset_link),
+        )
+    except (EmailHTTPError, URLError, OSError):
+        # Provider exception text can contain recipient details or reset-token HTML.
+        logger.error("Password recovery email delivery failed; check the email provider.")
+        return
+    if result.get("status") != 202:
+        logger.error("Password recovery email was not accepted by the provider.")
+
+
+@router.post("/api/auth/forgot-password", status_code=202)
+async def forgot_password(
+    data: ForgotPasswordRequest, background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+):
+    """Acknowledge the request, not email delivery, without revealing account existence."""
     generic_response = {
-        "message": "If an account exists for that email, a password reset link has been sent."
+        "message": "Your request was received. If an account exists for that email, check your inbox for a password reset link."
     }
+    signing_key()
+    base_url = settings.APP_BASE_URL.rstrip("/")
+    parsed = urlparse(base_url)
+    if (not settings.SENDGRID_API_KEY or not settings.SENDER_EMAIL
+            or parsed.scheme != "https" or not parsed.hostname
+            or parsed.username or parsed.password or parsed.path
+            or parsed.query or parsed.fragment):
+        logger.error("Password recovery is unavailable: configure SendGrid, sender, and an HTTPS APP_BASE_URL origin.")
+        raise HTTPException(status_code=503, detail="Password recovery is temporarily unavailable. Please contact support.")
 
     user = db.query(User).filter(User.email == data.email).first()
-    if not user:
+    if not user or not user.is_active:
         return generic_response
 
     token = create_reset_token(user)
-    base_url = settings.APP_BASE_URL.rstrip("/") or str(request.base_url).rstrip("/")
-    reset_link = f"{base_url}/static/reset-password.html?token={token}"
+    reset_link = f"{base_url}/static/reset-password.html#token={token}"
 
-    if getattr(settings, "SENDGRID_API_KEY", None):
-        try:
-            from app.services.email_service import EmailService
-            EmailService.send_email(
-                user.email,
-                "Reset your RootCall password",
-                _reset_email_html(reset_link),
-            )
-        except Exception:
-            logger.exception("Failed to send password reset email to %s", user.email)
-    else:
-        # No email provider configured (e.g. local development) — log the link.
-        logger.warning("SENDGRID_API_KEY not set; password reset link for %s: %s", user.email, reset_link)
+    background_tasks.add_task(deliver_reset_email, user.email, reset_link)
 
     return generic_response
 
@@ -149,15 +148,21 @@ async def reset_password(data: ResetPasswordRequest, db: Session = Depends(get_d
         detail="This reset link is invalid or has expired. Please request a new one.",
     )
     try:
-        payload = jwt.decode(data.token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(
+            data.token, signing_key(), algorithms=[settings.JWT_ALGORITHM],
+            options={"require_exp": True, "require_sub": True},
+        )
     except JWTError:
         raise invalid
 
     if payload.get("purpose") != "pwd_reset":
         raise invalid
 
-    user = db.query(User).filter(User.id == payload.get("sub")).first()
-    if not user:
+    user_id = token_user_id(payload)
+    if user_id is None:
+        raise invalid
+    user = db.query(User).filter(User.id == user_id).with_for_update().first()
+    if not user or not user.is_active:
         raise invalid
 
     # Single-use: the fingerprint changes once the password is updated.
@@ -171,6 +176,7 @@ async def reset_password(data: ResetPasswordRequest, db: Session = Depends(get_d
 
 @router.post("/api/auth/signup")
 async def signup(data: UserSignup, db: Session = Depends(get_db)):
+    signing_key()
     existing = db.query(User).filter(User.email == data.email).first()
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -184,86 +190,37 @@ async def signup(data: UserSignup, db: Session = Depends(get_db)):
         balance=0.0
     )
     db.add(user)
+    db.flush()
+    db.add(new_onboarding(user.id))
     db.commit()
-    db.refresh(user)
     
     token = create_token(user.id)
     return {
         "access_token": token,
         "token_type": "bearer",
-        "user": {"id": user.id, "email": user.email, "full_name": user.full_name}
+        "user": {"id": user.id, "email": user.email, "full_name": user.full_name},
+        "next_url": next_url(db, user.id),
     }
 
 @router.post("/api/auth/login")
 async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == form_data.username).first()
-    if not user or not verify_password(form_data.password, user.hashed_password):
+    if not user or not user.is_active or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
     token = create_token(user.id)
     return {
         "access_token": token,
         "token_type": "bearer",
-        "user": {"id": user.id, "email": user.email, "full_name": user.full_name}
+        "user": {"id": user.id, "email": user.email, "full_name": user.full_name},
+        "next_url": next_url(db, user.id),
     }
 
 @router.get("/api/auth/me")
-async def get_me(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id = payload.get("sub")
-        user = db.query(User).filter(User.id == user_id).first()
-        if not user:
-            raise HTTPException(status_code=401)
-        return {"id": user.id, "email": user.email, "full_name": user.full_name}
-    except JWTError:
-        raise HTTPException(status_code=401)
-
-
-@router.get("/api/auth/debug-jwt")
-async def debug_jwt():
-    """Debug: Check if JWT secrets match"""
-    import os
-    from app.config import settings
-    
-    env_secret = os.getenv("JWT_SECRET_KEY", "NOT_SET")
-    
+async def get_me(
+    user: User = Depends(get_current_active_user), db: Session = Depends(get_db),
+):
     return {
-        "env_JWT_SECRET_KEY_first20": env_secret[:20] + "..." if env_secret != "NOT_SET" else "NOT_SET",
-        "settings_JWT_SECRET_KEY_first20": settings.JWT_SECRET_KEY[:20] + "...",
-        "auth_SECRET_KEY_first20": SECRET_KEY[:20] + "...",
-        "env_equals_settings": env_secret == settings.JWT_SECRET_KEY,
-        "settings_equals_auth": settings.JWT_SECRET_KEY == SECRET_KEY,
-        "all_match": env_secret == settings.JWT_SECRET_KEY == SECRET_KEY,
-        "algorithm": ALGORITHM,
-        "settings_algorithm": settings.JWT_ALGORITHM
+        "id": user.id, "email": user.email, "full_name": user.full_name,
+        "is_superuser": bool(user.is_superuser), "next_url": next_url(db, user.id),
     }
-
-
-@router.get("/api/auth/test-token-decode")
-async def test_token_decode(token: str, db: Session = Depends(get_db)):
-    """Debug: Show each step of token validation"""
-    from jose import JWTError
-    
-    try:
-        # Step 1: Decode token
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        
-        # Step 2: Get user_id
-        user_id = payload.get("sub")
-        
-        # Step 3: Query database
-        from app.models.user import User
-        user = db.query(User).filter(User.id == user_id).first()
-        
-        return {
-            "step1_decode": "SUCCESS",
-            "step2_payload": payload,
-            "step3_user_id": user_id,
-            "step4_user_exists": user is not None,
-            "step5_user_details": {"id": user.id, "email": user.email} if user else None
-        }
-    except JWTError as e:
-        return {"error": "JWT decode failed", "detail": str(e)}
-    except Exception as e:
-        return {"error": "Unexpected error", "detail": str(e)}

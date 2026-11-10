@@ -8,6 +8,8 @@ from app.models.bulk_campaign import BulkCampaign, CampaignRecipient, CampaignTe
 from app.models.subscription import Subscription, UserFeature, UsageLog
 from app.models.ivr import IVRFlow, IVRNode, IVRAction, IVRCallLog, BusinessHours
 from app.models.rootcall_config import RootCallConfig, TrustedContact
+from app.models.onboarding import CustomerOnboarding
+from app.models.activation_job import ActivationJob
 __all__ = [
     "User", "PhoneNumber", "Call", "Recording", "AIAgent",
     "ClientMapping", "BulkCampaign", "CampaignRecipient", "CampaignTemplate",

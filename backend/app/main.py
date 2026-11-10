@@ -1,13 +1,14 @@
 """VoIP Platform Main Application"""
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.database import engine, Base
+from app.core.deps import require_operator
 from app.routers import rootcall_portal
 from app.routers import payments, number_management, auth, admin
-from app.routers import live_calls
+from app.routers import live_calls, onboarding, trusted_inbound
 
 # Import routers
 from app.routers import (
@@ -53,20 +54,22 @@ app.include_router(texml.router)
 app.include_router(retell.router)
 app.include_router(retell_inbound_router)
 app.include_router(auto_retell.router)
-app.include_router(provision_inbound.router)
-app.include_router(client_onboarding.router)
+app.include_router(provision_inbound.router, dependencies=[Depends(require_operator)])
+app.include_router(client_onboarding.router, dependencies=[Depends(require_operator)])
 app.include_router(telnyx_router.router)
-app.include_router(bulk_router.router)
-app.include_router(provision_finalize.router)
-app.include_router(outbound_calls.router)
+app.include_router(bulk_router.router, dependencies=[Depends(require_operator)])
+app.include_router(provision_finalize.router, dependencies=[Depends(require_operator)])
+app.include_router(outbound_calls.router, dependencies=[Depends(require_operator)])
 app.include_router(rootcall_portal.router)
-app.include_router(agent_templates.router)
+app.include_router(agent_templates.router, dependencies=[Depends(require_operator)])
 app.include_router(rootcall_screen_router)  # RootCall Call Screening
 app.include_router(payments.router)
 app.include_router(number_management.router)
 app.include_router(auth.router)
 app.include_router(admin.router)
 app.include_router(live_calls.router)
+app.include_router(onboarding.router)
+app.include_router(trusted_inbound.router)
 
 @app.get("/")
 async def root():
@@ -84,6 +87,10 @@ async def health():
 def login_redirect():
     return RedirectResponse(url="/static/login.html")
 
+@app.get("/onboarding.html", include_in_schema=False)
+def onboarding_redirect():
+    return RedirectResponse(url="/static/onboarding.html")
+
 @app.get("/client-portal.html", include_in_schema=False)
 def portal_redirect():
     return RedirectResponse(url="/static/client-portal.html")
@@ -91,7 +98,7 @@ def portal_redirect():
 @app.get("/success.html", include_in_schema=False)
 def success_redirect(request: Request):
     query = f"?{request.url.query}" if request.url.query else ""
-    return RedirectResponse(url=f"/static/success.html{query}")
+    return RedirectResponse(url=f"/static/onboarding.html{query}")
 
 @app.get("/forgot-password.html", include_in_schema=False)
 def forgot_password_redirect():

@@ -26,6 +26,9 @@ class RootCallConfig(Base):
     # Retell AI configuration
     retell_agent_id = Column(String, nullable=False)
     retell_did = Column(String, nullable=False)  # The DID that Retell uses
+    trusted_flow_id = Column(String, nullable=True)
+    trusted_agent_id = Column(String, nullable=True)
+    trusted_routing_enabled = Column(Boolean, nullable=False, default=False)
     
     # Trusted contacts (whitelist) - stored as JSON array
     # Example: ["+17545551234", "+18005551234"]
@@ -79,4 +82,3 @@ class TrustedContact(Base):
     
     # Relationships
     rootcall_config = relationship("RootCallConfig", backref="trusted_contacts_list")# [PASTE THE CONTENT FROM rootcall_config_model.py HERE]
-

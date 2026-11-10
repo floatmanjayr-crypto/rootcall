@@ -10,7 +10,9 @@ from app.database import get_db
 from app.models.call import Call
 from app.models.phone_number import PhoneNumber
 from app.models.ai_agent import AIAgent
+from app.models.rootcall_config import RootCallConfig
 from app.services.retell_service import RetellService
+from app.core.deps import require_operator
 
 router = APIRouter(prefix="/retell", tags=["Retell"])
 log = logging.getLogger(__name__)
@@ -71,6 +73,15 @@ async def handle_retell_webhook(request: Request, db: Session = Depends(get_db))
         )
         db.add(call)
 
+    config = db.query(RootCallConfig).filter(
+        RootCallConfig.phone_number_id == call.phone_number_id,
+        RootCallConfig.user_id == call.user_id,
+    ).first()
+    if config and config.trusted_agent_id and payload.get("agent_id") == config.trusted_agent_id:
+        call.is_trusted = True
+        if call.screening_action != "trusted_transfer":
+            call.screening_action = "trusted_bypass"
+
     if "transcript" in payload and (call.ended_at is None or event_type in {"call_ended", "call_analyzed"}):
         call.transcription = payload["transcript"]
     if event_type == "call_ended":
@@ -78,20 +89,29 @@ async def handle_retell_webhook(request: Request, db: Session = Depends(get_db))
         if payload.get("disconnection_reason") == "call_take_over":
             call.status = "human-connected"
         else:
-            call.status = "completed"
+            call.status = "failed" if payload.get("call_status") == "error" else "completed"
+            if payload.get("disconnection_reason") == "call_transfer":
+                call.status = "transferred"
+                if call.is_trusted:
+                    call.screening_action = "trusted_transfer"
             call.ended_at = datetime.utcnow()
     elif event_type == "call_analyzed":
         analysis = payload.get("call_analysis") or {}
         call.summary = analysis.get("call_summary", "")
         call.sentiment = analysis.get("user_sentiment", "")
         if call.status not in {"takeover-pending", "human-connected"}:
-            call.status = "completed"
+            if call.status not in {"failed", "transferred"}:
+                call.status = "failed" if payload.get("call_status") == "error" else "completed"
+            if payload.get("disconnection_reason") == "call_transfer":
+                call.status = "transferred"
+                if call.is_trusted:
+                    call.screening_action = "trusted_transfer"
             call.ended_at = call.ended_at or datetime.utcnow()
     db.commit()
 
     return {"status": "ok"}
 
-@router.post("/agents/create")
+@router.post("/agents/create", dependencies=[Depends(require_operator)])
 async def create_agent(request: Request, db: Session = Depends(get_db)):
     """Create a new Retell agent"""
     
@@ -109,7 +129,7 @@ async def create_agent(request: Request, db: Session = Depends(get_db)):
     
     return {"agent_id": agent_id, "status": "created"}
 
-@router.post("/phone-numbers/register")
+@router.post("/phone-numbers/register", dependencies=[Depends(require_operator)])
 async def register_number(request: Request, db: Session = Depends(get_db)):
     """Register Telnyx number with Retell"""
     
@@ -127,7 +147,7 @@ async def register_number(request: Request, db: Session = Depends(get_db)):
     
     return {"status": "registered", "phone_number": phone_number}
 
-@router.post("/calls/create")
+@router.post("/calls/create", dependencies=[Depends(require_operator)])
 async def create_outbound_call(request: Request):
     """Create outbound call via Retell"""
     

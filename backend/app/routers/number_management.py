@@ -4,6 +4,8 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.phone_number import PhoneNumber
 from app.models.rootcall_config import RootCallConfig
+from app.core.deps import require_operator, get_current_active_user
+from app.models.user import User
 from pydantic import BaseModel
 import telnyx
 import os
@@ -21,7 +23,7 @@ class PurchaseNumber(BaseModel):
     user_id: int
     nickname: str
 
-@router.post("/api/numbers/search")
+@router.post("/api/numbers/search", dependencies=[Depends(require_operator)])
 async def search_numbers(data: SearchNumbers):
     try:
         available = telnyx.AvailablePhoneNumber.list(
@@ -46,7 +48,7 @@ async def search_numbers(data: SearchNumbers):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/api/numbers/purchase")
+@router.post("/api/numbers/purchase", dependencies=[Depends(require_operator)])
 async def purchase_number(data: PurchaseNumber, db: Session = Depends(get_db)):
     try:
         order = telnyx.NumberOrder.create(
@@ -82,7 +84,10 @@ async def purchase_number(data: PurchaseNumber, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/api/numbers/my-numbers/{user_id}")
-async def get_my_numbers(user_id: int, db: Session = Depends(get_db)):
+async def get_my_numbers(user_id: int, db: Session = Depends(get_db),
+                         user: User = Depends(get_current_active_user)):
+    if user.id != user_id:
+        raise HTTPException(status_code=403, detail="Cannot access another account's numbers.")
     phones = db.query(PhoneNumber).filter(
         PhoneNumber.user_id == user_id,
         PhoneNumber.is_active == True

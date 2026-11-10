@@ -340,8 +340,8 @@
   </section>
 
   <section class="container section" id="pricing" aria-label="Pricing">
-    <h2 style="color:var(--green);margin:0 0 12px">Simple plans — priceless protection</h2>
-    <p style="color:var(--muted);margin-top:0">You're not buying minutes. You're buying peace of mind.</p>
+    <h2 style="color:var(--green);margin:0 0 12px">One line. One simple plan.</h2>
+    <p style="color:var(--muted);margin-top:0">Start with Essential. Multi-line and caregiver plans are not available at launch.</p>
 
     <div class="grid grid-3 price-wrap">
       <div class="price" aria-label="Essential plan">
@@ -350,8 +350,8 @@
         <p class="muted">Solo protection for one line</p>
         <ul class="list">
           <li><span class="tick">•</span> AI answers & screens</li>
-          <li><span class="tick">•</span> Spoof & scam blocking</li>
-          <li><span class="tick">•</span> Verified call forwarding</li>
+          <li><span class="tick">•</span> AI scam screening</li>
+          <li><span class="tick">•</span> Forward legitimate calls to your phone</li>
         </ul>
         <div style="margin-top:14px">
           <button onclick="selectPlan('essential')" class="btn btn-primary" style="width:100%;justify-content:center">
@@ -361,34 +361,30 @@
       </div>
 
       <div class="price" style="border-color:#1c6b53" aria-label="Family plan">
-        <span class="ribbon">Most Popular</span>
+        <span class="ribbon">Coming later</span>
         <h4>Family</h4>
-        <div class="amt">$24.99<span style="font-size:.9rem">/mo</span></div>
-        <p class="muted">Protect up to 3 lines</p>
+        <p class="muted">Multi-line protection is not available yet.</p>
         <ul class="list">
-          <li><span class="tick">•</span> Everything in Essential</li>
-          <li><span class="tick">•</span> Caregiver SMS alerts</li>
-          <li><span class="tick">•</span> Priority screening queue</li>
+          <li><span class="tick">•</span> Planned: multiple Shield lines</li>
+          <li><span class="tick">•</span> Planned: family account management</li>
         </ul>
         <div style="margin-top:14px">
-          <button onclick="selectPlan('family')" class="btn btn-primary" style="width:100%;justify-content:center">
-            Secure My Family
+          <button disabled class="btn btn-primary" style="width:100%;justify-content:center">
+            Not available yet
           </button>
         </div>
       </div>
 
       <div class="price" style="border-color:#0b3629" aria-label="Guardian plan">
         <h4>Guardian</h4>
-        <div class="amt">$34.99<span style="font-size:.9rem">/mo</span></div>
-        <p class="muted">Maximum protection + white-glove setup</p>
+        <p class="muted">Caregiver features are planned for a later release.</p>
         <ul class="list">
-          <li><span class="tick">•</span> Dedicated onboarding</li>
-          <li><span class="tick">•</span> Expanded allow/deny lists</li>
-          <li><span class="tick">•</span> Priority support</li>
+          <li><span class="tick">•</span> Planned: consent-based caregiver access</li>
+          <li><span class="tick">•</span> Planned: caregiver notifications</li>
         </ul>
         <div style="margin-top:14px">
-          <button onclick="selectPlan('guardian')" class="btn btn-primary" style="width:100%;justify-content:center">
-            Get Guardian
+          <button disabled class="btn btn-primary" style="width:100%;justify-content:center">
+            Not available yet
           </button>
         </div>
       </div>
@@ -412,7 +408,7 @@
     <details>
       <summary>Can my caregiver receive alerts?</summary>
       <div style="margin-top:10px;color:var(--muted)">
-        Yes, Family and Guardian plans include optional SMS alerts with quick summaries.
+        Caregiver alerts are planned for a future release. The current Essential plan protects one Shield line.
       </div>
     </details>
     <details>
@@ -430,25 +426,20 @@
       <h3>Get Protected with RootCall</h3>
       <div id="modal-message" class="message"></div>
       <form onsubmit="handleSignup(event)">
-        <div class="form-group">
-          <label>Full Name</label>
-          <input type="text" id="signup-name" required>
-        </div>
+        <p style="color:var(--muted);font-size:14px">Create your account, complete secure payment, then personalize your protection.</p>
         <div class="form-group">
           <label>Email</label>
           <input type="email" id="signup-email" required>
         </div>
         <div class="form-group">
           <label>Password</label>
-          <input type="password" id="signup-password" required minlength="6">
+          <input type="password" id="signup-password" required minlength="8" autocomplete="new-password">
         </div>
         <div class="form-group">
           <label>Select Plan</label>
           <select id="signup-plan" required>
             <option value="">Choose your plan...</option>
             <option value="essential">Essential - $14.99/mo</option>
-            <option value="family">Family - $24.99/mo (Most Popular)</option>
-            <option value="guardian">Guardian - $34.99/mo</option>
           </select>
         </div>
         <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">
@@ -490,7 +481,7 @@
     }
 
     function selectPlan(plan) {
-      document.getElementById('signup-plan').value = plan;
+      document.getElementById('signup-plan').value = 'essential';
       openSignup();
     }
 
@@ -504,18 +495,22 @@
     async function handleSignup(e) {
       e.preventDefault();
       
-      const name = document.getElementById('signup-name').value;
       const email = document.getElementById('signup-email').value;
       const password = document.getElementById('signup-password').value;
       const plan = document.getElementById('signup-plan').value;
+      const button = e.target.querySelector('button[type="submit"]');
+      button.disabled = true;
 
       try {
-        // Create account
+        if (localStorage.getItem('access_token') || localStorage.getItem('token')) {
+          localStorage.setItem('selected_plan', plan);
+          location.assign('/static/onboarding.html');
+          return;
+        }
         const signupResponse = await fetch(API + '/api/auth/signup', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({
-            full_name: name,
             email: email,
             password: password
           })
@@ -524,43 +519,35 @@
         const signupData = await signupResponse.json();
         
         if (!signupResponse.ok) {
-          showMessage(signupData.detail || 'Signup failed', true);
+          const detail = Array.isArray(signupData.detail) ? signupData.detail.map(item => item.msg).join(' ') : signupData.detail;
+          showMessage(detail || 'Signup failed', true);
           return;
         }
 
         // Store user data
         localStorage.setItem('token', signupData.access_token);
+        localStorage.setItem('access_token', signupData.access_token);
         localStorage.setItem('user', JSON.stringify(signupData.user));
         localStorage.setItem('selected_plan', plan);
 
         showMessage('Account created! Redirecting to payment...');
         
-        // Redirect to Stripe checkout
-        setTimeout(async () => {
-          try {
-            const checkoutResponse = await fetch(API + '/api/payments/create-checkout', {
-              method: 'POST',
-              headers: {'Content-Type': 'application/json'},
-              body: JSON.stringify({
-                tier: plan,
-                user_id: signupData.user.id
-              })
-            });
-
-            const checkoutData = await checkoutResponse.json();
-            
-            if (checkoutResponse.ok) {
-              window.location.href = checkoutData.checkout_url;
-            } else {
-              showMessage('Payment setup failed: ' + (checkoutData.detail || 'Unknown error'), true);
-            }
-          } catch (err) {
-            showMessage('Error: ' + err.message, true);
-          }
-        }, 1500);
+        const checkoutResponse = await fetch(API + '/api/payments/create-checkout', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json', Authorization: `Bearer ${signupData.access_token}`},
+          body: JSON.stringify({tier: plan})
+        });
+        const checkoutData = await checkoutResponse.json();
+        if (checkoutResponse.ok) location.assign(checkoutData.checkout_url);
+        else {
+          showMessage('Account saved. ' + (checkoutData.detail || 'Payment setup failed.') + ' Use Sign in to resume setup without registering again.', true);
+          e.target.querySelector('button[type="submit"]').textContent = 'Resume setup';
+        }
 
       } catch (err) {
         showMessage('Error: ' + err.message, true);
+      } finally {
+        button.disabled = false;
       }
     }
 

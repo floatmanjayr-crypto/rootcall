@@ -81,6 +81,48 @@ class RetellPublishingTest(unittest.TestCase):
             "outbound_agents": [{"agent_id": "agent-out", "weight": 1.0}],
         }, expected=200)
 
+    def test_service_authenticates_with_configured_key(self):
+        self.assertEqual(self.service.headers["Authorization"], "Bearer unused-test-key")
+
+    def test_transfer_updates_llm_preserves_tools_and_publishes(self):
+        existing_tools = [{"type": "custom", "name": "lookup_contact"}]
+        agent = {"response_engine": {"type": "retell-llm", "llm_id": "llm-test"}}
+        with patch.object(self.service, "_get", side_effect=[agent, {"general_tools": existing_tools}]), \
+                patch.object(self.service, "_patch", return_value={}) as update, \
+                patch.object(self.service, "publish_agent") as publish:
+            self.service.configure_transfer_tool("agent-test", "+12025550102")
+        update.assert_called_once_with("/update-retell-llm/llm-test", {
+            "general_tools": existing_tools + [
+                {"type": "end_call", "name": "end_call", "description": "End call for spam/scam callers"},
+                {
+                    "type": "transfer_call", "name": "transfer_call",
+                    "description": "Transfer legitimate calls to the client's phone",
+                    "transfer_destination": {"type": "predefined", "number": "+12025550102"},
+                    "transfer_option": {"type": "cold_transfer"},
+                },
+            ],
+        }, expected=200)
+        publish.assert_called_once_with("agent-test")
+
+    def test_removing_transfer_preserves_other_tools(self):
+        tools = [
+            {"type": "end_call", "name": "end_call"},
+            {"type": "transfer_call", "name": "transfer_call"},
+            {"type": "custom", "name": "lookup_contact"},
+        ]
+        agent = {"response_engine": {"type": "retell-llm", "llm_id": "llm-test"}}
+        with patch.object(self.service, "_get", side_effect=[agent, {"general_tools": tools}]), \
+                patch.object(self.service, "_patch", return_value={}) as update, \
+                patch.object(self.service, "publish_agent"):
+            self.service.configure_transfer_tool("agent-test", None)
+        self.assertEqual(update.call_args.args[1]["general_tools"], [tools[0], tools[2]])
+
+    def test_invalid_forwarding_number_does_not_contact_provider(self):
+        with patch.object(self.service, "_get") as get:
+            with self.assertRaises(ValueError):
+                self.service.configure_transfer_tool("agent-test", "invalid")
+        get.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()

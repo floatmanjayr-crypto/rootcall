@@ -572,7 +572,7 @@
       messageBox.style.display = 'none';
 
       const email = emailInput.value.trim();
-      const password = passwordInput.value.trim();
+      const password = passwordInput.value;
 
       if (!email || !password) {
         showMessage('Please enter your email and password.', 'error');
@@ -618,7 +618,7 @@
         showMessage('Login successful! Redirecting...', 'success');
 
         setTimeout(() => {
-          window.location.href = DASHBOARD_URL;
+          window.location.href = data.next_url || DASHBOARD_URL;
         }, 500);
 
       } catch (err) {
@@ -639,9 +639,21 @@
     });
 
     // If already logged in, go straight to dashboard (App Runner)
-    const existingToken = localStorage.getItem('access_token');
+    const existingToken = localStorage.getItem('access_token') || localStorage.getItem('token');
     if (existingToken) {
-      window.location.href = DASHBOARD_URL;
+      fetch('/api/auth/me', {headers: {Authorization: `Bearer ${existingToken}`}})
+        .then(async response => {
+          if (response.status === 401) {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('token');
+          } else if (response.ok) {
+            const user = await response.json();
+            location.replace(user.next_url || DASHBOARD_URL);
+          } else {
+            showMessage('Could not check your account. Please try signing in again.', 'error');
+          }
+        })
+        .catch(() => showMessage('Cannot reach the server. Please try again.', 'error'));
     }
   </script>
 </body>

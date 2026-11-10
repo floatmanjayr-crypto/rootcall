@@ -18,6 +18,9 @@ class Settings:
     # Telnyx
     TELNYX_API_KEY: str = os.getenv("TELNYX_API_KEY", "")
     TELNYX_PUBLIC_KEY: str = os.getenv("TELNYX_PUBLIC_KEY", "")
+    TELNYX_SIP_USERNAME: str = os.getenv("TELNYX_SIP_USERNAME", "")
+    TELNYX_SIP_PASSWORD: str = os.getenv("TELNYX_SIP_PASSWORD", "")
+    TELNYX_OUTBOUND_VOICE_PROFILE_ID: str = os.getenv("TELNYX_OUTBOUND_VOICE_PROFILE_ID", "")
 
     # Database
     DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./voip.db")
@@ -39,17 +42,18 @@ class Settings:
     CLOUDFLARE_R2_PUBLIC_URL: str = os.getenv("CLOUDFLARE_R2_PUBLIC_URL", "")
 
     # JWT/Auth - ✅ Now reads JWT_SECRET_KEY from Render environment
-    JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", os.getenv("SECRET_KEY", "your-secret-key-change-in-production"))
+    JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", os.getenv("SECRET_KEY", ""))
     JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
 
     # Email (SendGrid) — transactional mail such as password resets.
-    # If SENDGRID_API_KEY is unset, reset links are logged instead of emailed.
+    # Password recovery requires a configured provider and public application URL.
     SENDGRID_API_KEY: str = os.getenv("SENDGRID_API_KEY", "")
     SENDER_EMAIL: str = os.getenv("SENDER_EMAIL", "no-reply@rootcall.ai")
 
     # Public base URL used to build links in emails (e.g. https://app.rootcall.ai)
     APP_BASE_URL: str = os.getenv("APP_BASE_URL", "")
+    STRIPE_WEBHOOK_SECRET: str = os.getenv("STRIPE_WEBHOOK_SECRET", "")
 
     
     # ✅ Backward compatibility alias

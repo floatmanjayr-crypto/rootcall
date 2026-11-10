@@ -28,6 +28,7 @@ const baseURL = process.env.ROOTCALL_PREVIEW_URL || 'http://127.0.0.1:8765';
             let activationAttempts = 0;
             let checkoutAttempts = 0;
             let guideUnavailable = false;
+            let statusUnavailable = false;
             let guideChecks = { mode: 'direct', screening_tested: false, trusted_tested: false,
                 audio_tested: false, carrier_forwarding_confirmed: false };
             await page.route('**/api/**', async (route) => {
@@ -36,7 +37,12 @@ const baseURL = process.env.ROOTCALL_PREVIEW_URL || 'http://127.0.0.1:8765';
                 assert.equal(request.headers().authorization, 'Bearer browser-test-token');
                 let result = {};
                 let status = 200;
-                if (path === '/api/onboarding/status') result = state;
+                if (path === '/api/onboarding/status') {
+                    if (statusUnavailable) {
+                        status = 503;
+                        result = { detail: 'Your saved setup is temporarily unavailable. Please try again or contact support.' };
+                    } else result = state;
+                }
                 else if (path === '/api/onboarding/voices') result = {
                     voices: [{ voice_id: 'voice-test', name: 'Avery', accent: 'American', gender: 'female', preview_url: null }],
                 };
@@ -202,8 +208,11 @@ const baseURL = process.env.ROOTCALL_PREVIEW_URL || 'http://127.0.0.1:8765';
             state.status = 'completed';
             state.activation_job.status = 'completed';
             await page.locator('#done').waitFor({ state: 'visible' });
+            assert.equal(await page.locator('#page-title').textContent(), 'Your RootCall line is ready');
             assert.equal(activationAttempts, 1);
             assert.equal(await page.locator('#active-number').textContent(), '+12025550100');
+            await page.getByText('Your next steps', { exact: true }).waitFor();
+            await page.getByText('Share this number with callers you want screened.', { exact: true }).waitFor();
             await page.locator('#service-setup-form').waitFor({ state: 'visible' });
             await page.locator('#setup-mode').selectOption('carrier');
             await page.locator('#carrier-guide').waitFor({ state: 'visible' });
@@ -223,6 +232,16 @@ const baseURL = process.env.ROOTCALL_PREVIEW_URL || 'http://127.0.0.1:8765';
             guideUnavailable = false;
             await page.locator('#reload-service-setup').click();
             await page.locator('#service-setup-form').waitFor({ state: 'visible' });
+            statusUnavailable = true;
+            await page.goto(`${baseURL}/static/onboarding.html`);
+            await page.locator('#load-error').waitFor({ state: 'visible' });
+            assert.equal(await page.locator('#page-title').textContent(), 'Let’s get your setup back');
+            await page.locator('#load-error').getByText(/Your saved progress has not changed/).waitFor();
+            assert.equal(await page.locator('#message').isVisible(), false);
+            assert.equal(await page.locator('#done').isVisible(), false);
+            statusUnavailable = false;
+            await page.locator('#retry-setup-load').click();
+            await page.locator('#done').waitFor({ state: 'visible' });
             paymentVerified = false;
             await page.goto(`${baseURL}/static/success.html?session_id=cs-test`);
             await page.getByText('Payment is not confirmed yet.', { exact: true }).waitFor();

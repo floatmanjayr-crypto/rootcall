@@ -3,6 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0d3d2f">
+    <meta name="robots" content="noindex">
+    <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="/static/rootcall.css">
     <title>RootCall - AI Scam Screening Dashboard</title>
     <link rel="stylesheet" href="/static/live-calls.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -97,7 +101,7 @@
         }
 
         .tagline {
-            font-size: 0.62rem;
+            font-size: 0.75rem;
             color: var(--mint);
             font-weight: 700;
             text-transform: uppercase;
@@ -130,7 +134,7 @@
         }
 
         .nav-label {
-            font-size: 0.66rem;
+            font-size: 0.75rem;
             font-weight: 700;
             letter-spacing: 0.16em;
             text-transform: uppercase;
@@ -140,6 +144,11 @@
         }
 
         .nav-item {
+            width: 100%;
+            border: 0;
+            background: transparent;
+            font-family: inherit;
+            text-align: left;
             padding: 0.8rem 0.85rem;
             display: flex;
             align-items: center;
@@ -295,17 +304,17 @@
         }
 
         .scam-shield-badge {
-            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
-            color: white;
+            background: var(--green-50, #e8f3ed);
+            color: var(--green);
+            border: 1px solid rgba(13,61,47,.18);
             padding: 0.45rem 0.9rem;
             border-radius: 999px;
             font-weight: 700;
-            font-size: 0.7rem;
+            font-size: 0.75rem;
             letter-spacing: 0.08em;
             display: inline-flex;
             align-items: center;
             gap: 0.45rem;
-            box-shadow: 0 6px 16px -6px rgba(220,38,38,.55);
         }
 
         .content-area {
@@ -456,7 +465,7 @@
 
         .summary-tile .tile-label {
             color: var(--muted);
-            font-size: 0.72rem;
+            font-size: 0.75rem;
             font-weight: 700;
             letter-spacing: 0.1em;
             text-transform: uppercase;
@@ -517,7 +526,7 @@
 
         .fraud-alert-meta {
             margin-top: 0.65rem;
-            font-size: 0.72rem;
+            font-size: 0.75rem;
             color: #9aa8a1;
             font-weight: 600;
         }
@@ -527,7 +536,7 @@
             color: white;
             padding: 0.2rem 0.6rem;
             border-radius: 999px;
-            font-size: 0.64rem;
+            font-size: 0.75rem;
             font-weight: 800;
             letter-spacing: 0.08em;
             text-transform: uppercase;
@@ -958,8 +967,8 @@
         }
 
         @media (max-width: 1024px) {
-            .sidebar { transform: translateX(-100%); box-shadow: 20px 0 60px rgba(0,0,0,.3); }
-            .sidebar.open { transform: translateX(0); }
+            .sidebar { transform: translateX(-100%); visibility: hidden; transition: transform 0.3s ease, visibility 0s linear 0.3s; }
+            .sidebar.open { transform: translateX(0); visibility: visible; box-shadow: 20px 0 60px rgba(0,0,0,.3); transition: transform 0.3s ease; }
             .main-content { margin-left: 0; }
             .top-bar { padding-left: 4.5rem; }
             .grid-4, .grid-3 { grid-template-columns: repeat(2, 1fr); }
@@ -1026,6 +1035,35 @@
 
         .info-badge i { color: var(--accent); }
 
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 2.25rem 1.25rem;
+            text-align: center;
+            color: var(--muted);
+        }
+        .empty-state > i {
+            display: grid;
+            place-items: center;
+            width: 48px;
+            height: 48px;
+            margin-bottom: 0.4rem;
+            border-radius: 14px;
+            background: rgba(45,122,95,.1);
+            color: var(--accent);
+            font-size: 1.1rem;
+        }
+        .empty-state-title { margin: 0; color: var(--ink); font-weight: 700; }
+        .empty-state p { margin: 0; font-size: 0.9rem; max-width: 34rem; }
+        .empty-state .btn { margin-top: 0.75rem; }
+        td > .empty-state {
+            position: sticky;
+            left: 0;
+            width: min(100%, calc(100vw - 6.5rem));
+        }
+
         #dashboard-error { flex-wrap: wrap; }
 
         .step-indicator {
@@ -1062,7 +1100,7 @@
         .data-table thead th {
             padding: 0.85rem 1.25rem;
             text-align: left;
-            font-size: 0.72rem;
+            font-size: 0.75rem;
             font-weight: 700;
             letter-spacing: 0.1em;
             text-transform: uppercase;
@@ -1228,7 +1266,8 @@
     </style>
 </head>
 <body>
-    <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Toggle menu">
+    <a class="rc-skip-link" href="#main-content">Skip to main content</a>
+    <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Toggle menu" aria-controls="sidebar" aria-expanded="false">
         <i class="fas fa-bars" style="font-size: 1.15rem; color: #fff;"></i>
     </button>
 
@@ -1251,29 +1290,29 @@
             </div>
         </div>
 
-        <div class="sidebar-nav">
+        <nav class="sidebar-nav" aria-label="Dashboard sections">
             <div class="nav-label">Menu</div>
-            <div class="nav-item active" data-page="dashboard" onclick="showPage('dashboard', event)">
-                <i class="fas fa-home"></i>
+            <button type="button" class="nav-item active" data-page="dashboard" aria-current="page" onclick="showPage('dashboard', event)">
+                <i class="fas fa-home" aria-hidden="true"></i>
                 <span>Dashboard</span>
-            </div>
-            <div class="nav-item" data-page="numbers" onclick="showPage('numbers', event)">
-                <i class="fas fa-phone-alt"></i>
+            </button>
+            <button type="button" class="nav-item" data-page="numbers" onclick="showPage('numbers', event)">
+                <i class="fas fa-phone-alt" aria-hidden="true"></i>
                 <span>Shield Number</span>
-            </div>
-            <div class="nav-item" data-page="contacts" onclick="showPage('contacts', event)">
-                <i class="fas fa-user-shield"></i>
+            </button>
+            <button type="button" class="nav-item" data-page="contacts" onclick="showPage('contacts', event)">
+                <i class="fas fa-user-shield" aria-hidden="true"></i>
                 <span>Trusted Contacts</span>
-            </div>
-            <div class="nav-item" data-page="activity" onclick="showPage('activity', event)">
-                <i class="fas fa-history"></i>
+            </button>
+            <button type="button" class="nav-item" data-page="activity" onclick="showPage('activity', event)">
+                <i class="fas fa-history" aria-hidden="true"></i>
                 <span>Call Activity</span>
-            </div>
-            <div class="nav-item" data-page="settings" onclick="showPage('settings', event)">
-                <i class="fas fa-cog"></i>
+            </button>
+            <button type="button" class="nav-item" data-page="settings" onclick="showPage('settings', event)">
+                <i class="fas fa-cog" aria-hidden="true"></i>
                 <span>Settings</span>
-            </div>
-        </div>
+            </button>
+        </nav>
 
         <div class="sidebar-foot">
             <button onclick="logout()" class="btn-logout">
@@ -1284,7 +1323,7 @@
     </div>
 
     <!-- ================= Main ================= -->
-    <div class="main-content">
+    <div class="main-content" id="main-content" tabindex="-1">
         <div class="top-bar">
             <div>
                 <h1 class="greeting">Welcome back, <span id="user-name">User</span></h1>
@@ -1294,7 +1333,7 @@
             </div>
             <div style="display: flex; align-items: center; gap: 1rem;">
                 <span class="scam-shield-badge">
-                    <i class="fas fa-ban"></i>
+                    <i class="fas fa-shield-halved" aria-hidden="true"></i>
                     SCAM SHIELD
                 </span>
                 <button type="button" onclick="logout()" class="account-signout" id="account-signout">Sign out</button>
@@ -1359,6 +1398,7 @@
                                 <button id="live-refresh" class="btn btn-primary" type="button" title="Refresh live calls" aria-label="Refresh live calls"><i class="fas fa-sync-alt" aria-hidden="true"></i></button>
                             </div>
                             <p id="live-call-status" role="status">Loading live calls...</p>
+                            <p id="live-updated" class="live-updated" aria-hidden="true"></p>
                             <div id="live-call-list"></div>
                             <div id="live-conversation" hidden>
                                 <h3 id="live-caller"></h3>
@@ -1954,17 +1994,25 @@
 
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('open');
+            const open = sidebar.classList.toggle('open');
+            document.querySelector('.mobile-menu-btn').setAttribute('aria-expanded', String(open));
         }
 
         function showPage(page, evt) {
             document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => {
+                n.classList.remove('active');
+                n.removeAttribute('aria-current');
+            });
             document.getElementById('page-' + page).classList.add('active');
             const navItem = document.querySelector(`.nav-item[data-page="${page}"]`);
-            if (navItem) navItem.classList.add('active');
+            if (navItem) {
+                navItem.classList.add('active');
+                navItem.setAttribute('aria-current', 'page');
+            }
             if (window.innerWidth <= 1024) {
                 document.getElementById('sidebar').classList.remove('open');
+                document.querySelector('.mobile-menu-btn').setAttribute('aria-expanded', 'false');
             }
         }
 
@@ -2054,7 +2102,7 @@
                             button.addEventListener('click', () => removeContact(button.dataset.removeContact));
                         });
                     } else {
-                        list.innerHTML = '<p style="text-align: center; color: #999; padding: 2rem; font-weight: 600;">No trusted contacts yet. Add your first contact above!</p>';
+                        list.innerHTML = '<div class="empty-state"><i class="fas fa-user-shield" aria-hidden="true"></i><p class="empty-state-title">No trusted contacts yet. Add your first contact above!</p><p>Trusted contacts skip screening and ring straight through to your phone.</p></div>';
                     }
                 } else {
                     setLineStatus('Choose and configure your Shield line');
@@ -2085,7 +2133,7 @@
                             </tr>
                         `).join('');
                     } else {
-                        tbody.innerHTML = '<tr><td colspan="5" style="padding: 3rem; text-align: center; color: #999; font-weight: 600;">No saved call activity yet. Place a test call to your Shield number to get started.</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><i class="fas fa-phone-volume" aria-hidden="true"></i><p class="empty-state-title">No saved call activity yet</p><p>Call your Shield number from a phone that is not in your trusted contacts to see how screening works.</p><button type="button" class="btn btn-outline" onclick="showPage(\'numbers\')">View my Shield number</button></div></td></tr>';
                     }
                 }
                 document.getElementById('dashboard-error').hidden = true;
@@ -2343,7 +2391,7 @@
         function displayAvailableNumbers() {
             const container = document.getElementById('available-numbers');
             if (AVAILABLE_NUMBERS.length === 0) {
-                container.innerHTML = '<p style="text-align: center; color: #999; padding: 2rem;">No numbers found</p>';
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-search" aria-hidden="true"></i><p class="empty-state-title">No numbers found</p><p>Try a different area code or search again in a moment.</p></div>';
                 return;
             }
             

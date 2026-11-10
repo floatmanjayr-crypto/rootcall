@@ -3,6 +3,8 @@
 .live-heading { justify-content: space-between; }
 .live-heading h2 { margin: 0; font-size: 1.4rem; color: var(--green); }
 #live-call-status { color: #555; overflow-wrap: anywhere; }
+.live-updated { margin: .25rem 0 0; color: #5b6b64; font-size: .75rem; }
+.live-updated:empty { display: none; }
 .live-call-row { padding: .75rem 0; border-top: 1px solid #ddd; justify-content: space-between; }
 .live-call-row span { min-width: 0; overflow-wrap: anywhere; }
 .live-call-row button { min-height: 44px; }

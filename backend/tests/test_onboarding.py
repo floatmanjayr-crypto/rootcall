@@ -160,6 +160,23 @@ class OnboardingTest(unittest.TestCase):
         self.assertIsNone(state.first_name)
         self.assertTrue(state.checkout_key)
 
+    def test_missing_onboarding_table_returns_actionable_service_unavailable(self):
+        CustomerOnboarding.__table__.drop(self.engine)
+        self.db.expunge_all()
+        response = self.client.get("/api/onboarding/status", headers=self.headers)
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(
+            response.json()["detail"],
+            "Your saved setup is temporarily unavailable. Please try again or contact support.",
+        )
+
+    def test_missing_activation_job_table_returns_actionable_service_unavailable(self):
+        ActivationJob.__table__.drop(self.engine)
+        self.db.expire_all()
+        response = self.client.get("/api/onboarding/status", headers=self.headers)
+        self.assertEqual(response.status_code, 503)
+        self.assertIn("saved setup is temporarily unavailable", response.json()["detail"])
+
     def test_signup_rejects_short_and_multibyte_oversized_passwords(self):
         for password in ("short", "x" * 73, "\u00e9" * 37):
             with self.subTest(password_length=len(password)):

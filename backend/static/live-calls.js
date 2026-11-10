@@ -135,7 +135,9 @@ async function refresh() {
             return row;
         });
         element('call-list').replaceChildren(...rows);
-        if (!selected) status(calls.length ? `${calls.length} active call${calls.length === 1 ? '' : 's'}` : 'No calls in progress');
+        if (!selected) status(calls.length ? `${calls.length} active call${calls.length === 1 ? '' : 's'}` : 'No calls in progress right now. Calls appear here the moment they start.');
+        const stamp = element('updated');
+        if (stamp) stamp.textContent = `Updated ${new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`;
         if (selected && !calls.some((call) => call.id === selected.id) && !busy) {
             streamController?.abort();
             session?.disconnect();
@@ -144,7 +146,8 @@ async function refresh() {
             status('Call ended');
         }
     } catch (error) {
-        status(error.message);
+        const generic = !error.message || error.message === 'Live call request failed';
+        status(generic ? 'We couldn’t load live calls. We’ll keep retrying, or press refresh to try now.' : error.message);
     } finally {
         refreshing = false;
     }

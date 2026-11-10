@@ -43,7 +43,9 @@ async function run(action) {
     const states = buttons.map((button) => button.disabled);
     buttons.forEach((button) => { button.disabled = true; });
     try { await action(); }
-    catch (error) { message(error.message || 'Unable to connect. Please try again.'); }
+    catch (error) {
+        if (byId('load-error').hidden) message(error.message || 'Unable to connect. Please try again.');
+    }
     finally {
         busy = false;
         buttons.forEach((button, index) => { button.disabled = states[index]; });
@@ -52,14 +54,30 @@ async function run(action) {
 }
 
 function show(step) {
+    const copy = {
+        confirmation: ['Confirming your payment', 'A secure check before setup'],
+        'load-error': ['Let’s get your setup back', 'Your saved details are still yours'],
+        payment: ['Start with your subscription', 'Simple, secure billing before setup'],
+        profile: ['Let’s set up your call shield', 'Personalize where approved calls go'],
+        number: ['Choose your Shield number', 'Find a number callers can use to reach your assistant'],
+        contacts: ['Choose who can reach you', 'Trusted callers can skip screening and go straight to you'],
+        review: ['Ready to connect your Shield?', 'Review your choices before automatic activation'],
+        done: ['Your RootCall line is ready', 'Run a quick call test before relying on your service'],
+    };
+    const [title, eyebrow] = copy[step] || copy.profile;
+    byId('page-title').textContent = title;
+    byId('page-eyebrow').textContent = eyebrow;
     if (step === 'number') {
         byId('keep-number').hidden = !saved.shield_number;
         byId('keep-number').textContent = `Keep ${saved.shield_number}`;
     }
-    for (const id of ['confirmation', 'payment', 'profile', 'number', 'contacts', 'review', 'done']) byId(id).hidden = id !== step;
+    const steps = ['payment', 'profile', 'number', 'contacts', 'review', 'done'];
+    for (const id of ['confirmation', 'load-error', ...steps]) byId(id).hidden = id !== step;
     document.querySelectorAll('[data-step]').forEach((item) => {
         if (item.dataset.step === step) item.setAttribute('aria-current', 'step');
         else item.removeAttribute('aria-current');
+        const index = steps.indexOf(item.dataset.step);
+        item.dataset.complete = String(index !== -1 && index < steps.indexOf(step));
     });
     byId('page-title').focus();
 }
@@ -224,6 +242,7 @@ function showContacts() {
 
 async function load() {
     clearTimeout(progressTimer);
+    byId('load-error').hidden = true;
     byId('loading').hidden = false;
     try {
         if (checkoutSession) {
@@ -266,6 +285,12 @@ async function load() {
             scheduleProgress();
         }
         if (saved.error_message) message(saved.error_message);
+    } catch (error) {
+        if (!checkoutSession && !signedOut) {
+            show('load-error');
+            byId('load-error-message').textContent = 'Your saved progress has not changed. The setup service may be temporarily unavailable. Try again, and contact support if the problem continues.';
+        }
+        throw error;
     } finally { byId('loading').hidden = true; }
 }
 
@@ -280,6 +305,7 @@ byId('manage-billing').onclick = () => run(async () => {
     location.assign(portal.portal_url);
 });
 byId('refresh-setup').onclick = () => run(load);
+byId('retry-setup-load').onclick = () => run(load);
 byId('reload-voices').onclick = () => run(loadVoices);
 byId('voice').onchange = previewVoice;
 byId('voice-preview').onerror = () => { byId('voice-hint').textContent = 'This preview could not play. Try another voice or reload the choices.'; };

@@ -5,6 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>RootCall — Your AI Call Shield</title>
   <meta name="description" content="RootCall screens calls, blocks spoofers, and forwards only verified callers. Peace of mind for you and your loved ones." />
+  <meta name="theme-color" content="#0d3d2f" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="RootCall" />
+  <meta property="og:title" content="RootCall — Your AI Call Shield" />
+  <meta property="og:description" content="RootCall answers and screens unknown callers so only people you trust reach your phone." />
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/static/rootcall.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -68,7 +75,7 @@
       display:flex;
       align-items:center;
       justify-content:space-between;
-      padding:14px 0
+      padding:14px 24px
     }
     .nav a.cta{margin-left:auto}
     .logo{
@@ -84,7 +91,7 @@
       grid-template-columns:1.1fr .9fr;
       gap:40px;
       align-items:center;
-      padding:54px 0 18px
+      padding:54px 24px 18px
     }
     .hero h1{
       font-size:clamp(2.1rem, 3.6vw + 1rem, 3.2rem);
@@ -112,7 +119,7 @@
       color:var(--muted)
     }
     .stat strong{color:var(--green)}
-    .section{padding:56px 0}
+    .section{padding:56px 24px}
     .grid{display:grid;gap:22px}
     .grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}
     .card{
@@ -240,6 +247,25 @@
     .message.error{background:#fee;color:#c00;border:1px solid #fcc}
     .message.success{background:#efe;color:#060;border:1px solid #cfc}
     
+    .section-title{color:var(--green);margin:0 0 14px}
+    .flow{list-style:none;margin:0 0 18px;padding:0 0 18px;border-bottom:1px solid #eee}
+    .flow-label{margin:0 0 12px;font-size:.75rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--green-600)}
+    .flow li{display:flex;align-items:flex-start;gap:12px;margin:0 0 12px;color:var(--muted);font-size:.95rem;line-height:1.45}
+    .flow li:last-child{margin-bottom:0}
+    .flow-num{flex:none;display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--green);color:#fff;font-size:.8rem;font-weight:800}
+    .flow strong{display:block;color:var(--green)}
+    .footer-links{display:flex;gap:16px;flex-wrap:wrap}
+    .footer-links a{text-decoration:underline;text-underline-offset:3px}
+    .mobile-cta{display:none}
+    @media (max-width: 640px){
+      body{padding-bottom:84px}
+      .mobile-cta{
+        display:block;position:fixed;left:0;right:0;bottom:0;z-index:60;
+        padding:12px 16px calc(12px + env(safe-area-inset-bottom));
+        background:rgba(249,246,243,.96);border-top:1px solid #e7e2db;backdrop-filter:blur(8px)
+      }
+      .mobile-cta .btn{width:100%;justify-content:center}
+    }
     @media (max-width: 960px){ 
       .hero{grid-template-columns:1fr} 
       .nav .hide-sm{display:none} 
@@ -255,10 +281,10 @@
 
   <header>
     <div class="container nav">
-      <div class="logo" aria-label="RootCall logo">
-        <!-- Your PNG logo -->
-        <img src="/static/rootcall-logo.png" alt="RootCall Logo" style="height:clamp(36px, 5vw, 48px);">
-      </div>
+      <a class="logo" href="#top" aria-label="RootCall home">
+        <img src="/static/favicon.svg" alt="" width="36" height="36">
+        <span>ROOTCALL</span>
+      </a>
       <!-- Moved nav a bit to the right to give logo space -->
       <nav class="hide-sm" aria-label="Main navigation" style="margin-left:40px">
         <a href="#how" class="hide-sm" style="margin-right:18px">How it works</a>
@@ -284,6 +310,12 @@
       </div>
     </div>
     <div class="hero-card" role="group" aria-label="Highlights">
+      <p class="flow-label" id="flow-label">How a screened call works</p>
+      <ol class="flow" aria-labelledby="flow-label">
+        <li><span class="flow-num" aria-hidden="true">1</span><span><strong>An unknown caller dials your number</strong>RootCall’s AI answers instead of your phone ringing.</span></li>
+        <li><span class="flow-num" aria-hidden="true">2</span><span><strong>The AI asks who is calling and why</strong>Scam and spoof patterns are flagged and ended.</span></li>
+        <li><span class="flow-num" aria-hidden="true">3</span><span><strong>Only verified callers reach you</strong>Trusted contacts skip screening and ring straight through.</span></li>
+      </ol>
       <div class="stat"><span class="tick">✓</span> Answers unknown calls for you</div>
       <div class="stat"><span class="tick">✓</span> Blocks spoofed & high-risk callers</div>
       <div class="stat"><span class="tick">✓</span> Forwards only verified callers</div>
@@ -302,7 +334,7 @@
   </section>
 
   <section class="container section" id="how">
-    <h2 style="color:var(--green);margin:0 0 14px">How RootCall protects you</h2>
+    <h2 class="section-title">How RootCall protects you</h2>
     <div class="grid grid-3">
       <div class="card">
         <h3>1) RootCall picks up</h3>
@@ -340,7 +372,7 @@
   </section>
 
   <section class="container section" id="pricing" aria-label="Pricing">
-    <h2 style="color:var(--green);margin:0 0 12px">One line. One simple plan.</h2>
+    <h2 class="section-title">One line. One simple plan.</h2>
     <p style="color:var(--muted);margin-top:0">Start with Essential. Multi-line and caregiver plans are not available at launch.</p>
 
     <div class="grid grid-3 price-wrap">
@@ -392,7 +424,7 @@
   </section>
 
   <section class="container section faq" id="faq">
-    <h2 style="color:var(--green);margin:0 0 10px">Frequently asked questions</h2>
+    <h2 class="section-title">Frequently asked questions</h2>
     <details>
       <summary>Will this work with my current phone number?</summary>
       <div style="margin-top:10px;color:var(--muted)">
@@ -456,16 +488,24 @@
   <footer>
     <div class="container foot">
       <div class="logo" style="opacity:.9">
-        <img src="/static/rootcall-logo.png" alt="RootCall Logo" style="height:clamp(36px, 5vw, 48px);">
+        <img src="/static/favicon.svg" alt="" width="36" height="36">
         <span>ROOTCALL</span>
       </div>
       <div>
         © <span id="y"></span> RootCall. Peace-of-Mind Guarantee.
         &nbsp;|&nbsp;
         Contact: <a href="mailto:info@getrootcall.com">info@getrootcall.com</a>
+        <nav class="footer-links" aria-label="Legal" style="margin-top:8px">
+          <a href="/static/privacy.html">Privacy</a>
+          <a href="/static/terms.html">Terms</a>
+        </nav>
       </div>
     </div>
   </footer>
+
+  <div class="mobile-cta">
+    <a href="#" onclick="openSignup(event)" class="btn btn-primary">Get Protected Now</a>
+  </div>
 
   <script>
     const API = window.location.origin;

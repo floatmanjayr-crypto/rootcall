@@ -5,6 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
   <title>RootCall | Set up your protection</title>
+  <meta name="theme-color" content="#0d3d2f">
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/rootcall.css">
   <link rel="stylesheet" href="/static/onboarding.css">
   <script src="/static/onboarding.js" defer></script>
 </head>
@@ -12,7 +19,10 @@
   <div class="setup-layout">
     <aside class="setup-sidebar" aria-label="Setup progress">
       <a class="brand" href="/static/index.html"><span class="brand-mark" aria-hidden="true">R</span> ROOTCALL</a>
-      <p class="sidebar-copy">A quieter phone.<br>A little more peace of mind.</p>
+      <div class="sidebar-copy">
+        <p>A quieter phone.<br>A little more peace of mind.</p>
+        <span class="saved-indicator"><span aria-hidden="true"></span>Your progress saves as you go</span>
+      </div>
       <ol class="steps">
         <li data-step="payment">Payment</li>
         <li data-step="profile">Your details &amp; voice</li>
@@ -25,11 +35,21 @@
     </aside>
     <main class="setup-main">
       <header class="setup-top"><span id="account-email">RootCall setup</span><button class="text-button" id="sign-out" type="button">Sign out</button></header>
-      <span class="eyebrow">Personalize your protection</span>
+      <span id="page-eyebrow" class="eyebrow">Personalize your protection</span>
       <h1 id="page-title" tabindex="-1">Let’s set up your call shield</h1>
       <p class="intro">Choose where trusted calls should reach you, a voice for your AI assistant, and a new Shield number.</p>
       <div id="message" class="notice error" role="alert" hidden></div>
       <p id="loading" class="loading" role="status">Loading your saved setup…</p>
+      <section id="load-error" class="panel load-error" hidden aria-labelledby="load-error-title">
+        <span class="error-mark" aria-hidden="true">!</span>
+        <h2 id="load-error-title">We couldn’t load your saved setup</h2>
+        <p id="load-error-message">Your account progress is still saved. Try again in a moment.</p>
+        <p class="fine-print">This page won’t repeat your payment or start another number order while loading. If this keeps happening, contact RootCall support and ask us to check your onboarding setup.</p>
+        <div class="actions">
+          <button type="button" class="primary" id="retry-setup-load">Try again</button>
+          <a class="secondary button-link" href="mailto:info@getrootcall.com?subject=RootCall%20onboarding%20help">Contact support</a>
+        </div>
+      </section>
       <section id="confirmation" class="panel" hidden aria-labelledby="confirmation-title">
         <h2 id="confirmation-title">Confirming your payment</h2>
         <p id="confirmation-status" role="status">Checking your checkout securely with Stripe before opening setup.</p>
@@ -95,10 +115,18 @@
         <p id="activation-status" role="status"></p>
       </section>
       <section id="done" class="panel" hidden aria-labelledby="done-title">
-        <span class="eyebrow">Setup complete</span>
-        <h2 id="done-title">Your Shield line is configured</h2>
-        <p>Your new RootCall number: <strong id="active-number"></strong></p>
-        <p>Your assistant and number are configured. Complete these guided checks before relying on your service. No test calls are placed automatically.</p>
+        <span class="eyebrow">Your setup is ready</span>
+        <h2 id="done-title">Your RootCall line is set up</h2>
+        <p>The number and assistant are connected. Before relying on the service, run the quick checks below. RootCall has not placed test calls or verified live audio.</p>
+        <div class="shield-number-card">
+          <span class="number-label">Your Shield number</span>
+          <strong id="active-number" class="active-number"></strong>
+          <span class="hint">Share this number with callers you want screened.</span>
+        </div>
+        <div class="success-next">
+          <h3>Your next steps</h3>
+          <p>Call this number from a phone that is not in your trusted contacts. Confirm the assistant screens the call and approved calls reach your forwarding phone.</p>
+        </div>
         <div id="service-setup-error" class="notice error" role="alert" hidden></div>
         <button type="button" class="secondary" id="reload-service-setup" hidden>Reload call checks</button>
         <form id="service-setup-form" hidden>
@@ -120,9 +148,9 @@
           </div>
           <p>Approved calls currently go to <strong id="test-destination"></strong>. <a href="/static/client-portal.html">Change this in dashboard Settings</a>.</p>
           <ol class="test-instructions">
-            <li>From a number <strong>not</strong> in your trusted contacts, call your Shield number (or the original number if using carrier forwarding). Confirm the assistant screens the call and a legitimate call reaches your destination phone.</li>
-            <li id="trusted-test-guide">From a saved trusted contact's phone, call again. Confirm it skips screening and reaches your destination. You can add trusted contacts in your dashboard.</li>
-            <li>Answer a test call and speak in both directions. Check that you can both hear each other, and that calls do not loop.</li>
+            <li>From a number <strong>not</strong> in your trusted contacts, call your Shield number (or the original number if using carrier forwarding). Confirm the assistant screens the call and an approved call reaches your destination phone.</li>
+            <li id="trusted-test-guide">If you have trusted contacts, ask one to call from their saved number. Confirm it skips screening and reaches your destination. No contacts yet? You can add them later in your dashboard.</li>
+            <li>Answer a test call and speak in both directions. Confirm you can both hear each other and calls do not loop.</li>
           </ol>
           <label class="setup-check"><input id="screening-tested" type="checkbox">I tested an unknown caller and confirmed screening and transfer.</label>
           <label class="setup-check"><input id="trusted-tested" type="checkbox">I tested a saved trusted caller and confirmed direct transfer (optional without contacts).</label>

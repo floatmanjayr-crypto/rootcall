@@ -135,6 +135,24 @@ const baseURL = process.env.ROOTCALL_PREVIEW_URL || 'http://127.0.0.1:8765';
             await page.locator('#contacts-list').getByText(unsafeName, { exact: true }).waitFor();
             await page.locator('[data-remove-contact]').click();
             await page.locator('#contacts-list').getByText('No trusted contacts yet. Add your first contact above!', { exact: true }).waitFor();
+            assert.equal(await page.locator('#contacts-list .empty-state').count(), 1);
+            const nav = page.locator('nav[aria-label="Dashboard sections"]');
+            assert.equal(await nav.locator('button.nav-item[data-page="contacts"]').getAttribute('aria-current'), 'page');
+            assert.equal(await nav.locator('[aria-current="page"]').count(), 1);
+            if (width <= 1024) {
+                assert.equal(await page.locator('#sidebar').evaluate(node => getComputedStyle(node).visibility), 'hidden');
+                await page.locator('.mobile-menu-btn').click();
+                assert.equal(await page.locator('.mobile-menu-btn').getAttribute('aria-expanded'), 'true');
+                await page.locator('#sidebar').waitFor({ state: 'visible' });
+            }
+            await nav.locator('button.nav-item[data-page="settings"]').focus();
+            await page.keyboard.press('Enter');
+            assert.equal(await nav.locator('button.nav-item[data-page="settings"]').getAttribute('aria-current'), 'page');
+            assert.equal(await page.locator('#page-settings').evaluate(node => node.classList.contains('active')), true);
+            for (const selector of ['.tagline', '.nav-label', '.scam-shield-badge']) {
+                assert.ok(await page.locator(selector).first().evaluate(node => parseFloat(getComputedStyle(node).fontSize)) >= 12, `${selector} is at least 12px`);
+            }
+            await page.evaluate(() => showPage('contacts'));
             await page.evaluate(() => showPage('activity'));
             await page.locator('#export-calls').click();
             await page.locator('.toast').filter({ hasText: 'Export unavailable. Retry.' }).waitFor();

@@ -58,6 +58,15 @@ Apply migration `d143fa65e329` after `c032ef54d218`, then `e254ab76f430`, before
 processes. It adds `activation_jobs` and a nullable JSON field for customer-reported
 setup checks. It does not enqueue old drafts or trigger purchases during migration.
 Back up and rehearse migrations on staging first.
+The deployment log attached for this support report shows PostgreSQL
+`UndefinedTable: relation "customer_onboarding" does not exist`; the deployed
+database has not received the onboarding migrations. This is a schema/deployment
+failure, not customer-entered onboarding data. Do not have the UI create tables or
+bypass paid setup. On Render, run `cd backend && alembic upgrade head` against the
+intended PostgreSQL database after a backup and staging rehearsal, verify the revision
+reaches `e254ab76f430`, then restart the web and activation worker. Until then, the
+onboarding status endpoint returns a clear `503` and the page offers retry/support;
+it does not report a false success or initiate provider setup.
 
 The merged dashboard supports live Retell voice selection, editable account-holder
 names and explicit identity sync. New activations save their selected voice into the
@@ -580,3 +589,12 @@ forwarding, two-way audio, live captions and browser takeover.
 6. Add quiet hours, explainable screening outcomes, accessible caregiver controls,
    optional voicemail summaries and consent-based notifications after core routing is
    verified. Never advertise AI screening as guaranteed scam detection.
+## Design System and Frontend Polish
+
+- [rootcall.css](../static/rootcall.css) is the shared foundation: `--rc-*` colour, spacing, radius, shadow and type-scale tokens, a visible `:focus-visible` ring, `prefers-reduced-motion` support, a skip link, and the legal/404 page components. Load it before page styles; page styles may override tokens. Keep readable text at 12px (`--rc-text-xs`) or larger.
+- Every page ships the shared SVG favicon (`favicon.svg`) and `theme-color`. Signed-in pages (dashboard, onboarding, admin) are `noindex`.
+- The dashboard sidebar uses real `<nav>`/`<button>` elements with `aria-current`, and the mobile drawer is hidden from keyboard and screen readers while closed.
+- Empty states use the shared `.empty-state` pattern with one next action. Live-call refresh failures show a plain-language message and a "last updated" time.
+- Removed the unreferenced legacy pages (`shield-dashboard`, `rootcall-portal`, `james-portal`, `test`) and the tracked `.backup`/`.old` copies. The login page no longer shows unverified "99.8% block rate" or "<1s response" figures; only claim numbers you can measure.
+- Browser tests (`backend/tests/*.browser.cjs`) need Playwright and a static preview: from `backend/` run `python -m http.server 8765 --bind 127.0.0.1 --directory .`, then `PLAYWRIGHT_MODULE=<path to @playwright/test> node tests/design.browser.cjs` (also `dashboard`, `live_calls`, `onboarding`, `account_access`).
+- Not yet done: moving login/forgot/reset/portal onto the shared tokens (each still defines its own copy), replacing the portal's remaining inline `onclick` handlers, and a dark theme.

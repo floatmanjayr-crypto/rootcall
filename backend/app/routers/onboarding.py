@@ -5,7 +5,7 @@ from typing import Literal
 import requests
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, EmailStr, Field, validator
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, OperationalError, ProgrammingError
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_active_user
@@ -35,11 +35,19 @@ def normalize_phone(value: str) -> str:
 
 @router.get("/status")
 def status(user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
-    onboarding = db.get(CustomerOnboarding, user.id)
+    try:
+        onboarding = db.get(CustomerOnboarding, user.id)
+        job = db.get(ActivationJob, user.id) if onboarding else None
+    except (OperationalError, ProgrammingError) as error:
+        db.rollback()
+        log.exception("Onboarding status query failed; verify database migrations for user %s", user.id)
+        raise HTTPException(
+            status_code=503,
+            detail="Your saved setup is temporarily unavailable. Please try again or contact support.",
+        ) from error
     if not onboarding:
         return {"legacy": True, "status": "completed", "next_url": "/static/client-portal.html"}
     # Recover paid checkout even if the customer closed Stripe before its redirect.
-    job = db.get(ActivationJob, user.id)
     if onboarding.checkout_session_id and not onboarding.stripe_subscription_id:
         try:
             verify_checkout(db, user, onboarding.checkout_session_id)

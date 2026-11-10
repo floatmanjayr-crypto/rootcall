@@ -82,9 +82,12 @@ webhook while keeping Telnyx SIP and the existing unknown-caller agent. Existing
 customers can enable it from **Trusted Contacts → Connect trusted caller routing**.
 Caller ID matching is not verified identity and can be spoofed.
 
-Apply migrations through `d143fa65e329` before serving the updated code (including
+Apply migrations through `e254ab76f430` before serving the updated code (including
 onboarding migration `a813bc21e902` and trusted-routing migration `b921df43c107`).
 Back up the database and rehearse migrations on staging first.
+The final migration preserves the remote dashboard voice preference and adds its
+column only when missing, so activation workers can start before any web startup hook.
+It retains existing preferences on downgrade.
 See the [onboarding rollout checklist](backend/docs/ROOTCALL_UPGRADES.md#paid-onboarding)
 for webhook events, retry handling, limitations, and required real-call tests.
 Local tests do not certify a production deployment.

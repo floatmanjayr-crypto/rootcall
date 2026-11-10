@@ -274,6 +274,8 @@ const baseURL = process.env.ROOTCALL_PREVIEW_URL || 'http://127.0.0.1:8765';
                 result = { legacy: false, status: 'draft', payment_status: 'pending', email: 'new@example.com' };
             } else if (path === '/api/rootcall/live-calls') {
                 result = [];
+            } else if (path === '/api/rootcall/voice-options') {
+                result = { voices: [] };
             } else throw new Error(`Unexpected API request: ${path}`);
             await route.fulfill({ json: result });
         });

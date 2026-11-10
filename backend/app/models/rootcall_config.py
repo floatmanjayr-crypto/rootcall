@@ -29,6 +29,7 @@ class RootCallConfig(Base):
     trusted_flow_id = Column(String, nullable=True)
     trusted_agent_id = Column(String, nullable=True)
     trusted_routing_enabled = Column(Boolean, nullable=False, default=False)
+    voice_id = Column(String, nullable=False, default="11labs-Adrian", server_default="11labs-Adrian")
     
     # Trusted contacts (whitelist) - stored as JSON array
     # Example: ["+17545551234", "+18005551234"]

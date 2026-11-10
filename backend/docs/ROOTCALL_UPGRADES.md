@@ -54,10 +54,23 @@ forwarding are described below; neither changes the saved billing restriction po
 
 ## Automatic activation and guided service setup
 
-Apply migration `d143fa65e329` after `c032ef54d218` before starting updated web/worker
+Apply migration `d143fa65e329` after `c032ef54d218`, then `e254ab76f430`, before starting updated web/worker
 processes. It adds `activation_jobs` and a nullable JSON field for customer-reported
 setup checks. It does not enqueue old drafts or trigger purchases during migration.
 Back up and rehearse migrations on staging first.
+
+The merged dashboard supports live Retell voice selection, editable account-holder
+names and explicit identity sync. New activations save their selected voice into the
+same configuration and use the recipient-first greeting/owner-routing gate while
+retaining screening instructions. Existing agent handbooks are preserved on identity
+sync; syncing does not republish the agent. Voice updates use the returned draft
+version and publish only that version. Transfer updates preserve existing LLM tools
+and SIP-auth headers while retaining SIP INVITE cold-transfer mode.
+
+Migration `e254ab76f430` adds the voice-preference column only if absent, accommodating
+databases already upgraded by the remote version's web startup hook. It does not change
+existing voices and retains the column/preferences on downgrade. Apply it before
+starting activation workers, which must not depend on a web process running first.
 
 Deploy the separate `rootcall-activation` Render worker from `render.yaml`, using
 the web service's PostgreSQL database and matching Telnyx, Retell, Stripe and public

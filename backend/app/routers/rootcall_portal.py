@@ -13,6 +13,7 @@ import csv
 import os
 import secrets
 import logging
+import re
 import requests
 
 # Database
@@ -26,7 +27,7 @@ from app.models.onboarding import CustomerOnboarding
 
 # Services
 from app.services.telnyx_service import TelnyxService
-from app.services.retell_service import RetellService
+from app.services.retell_service import RetellService, build_scam_screening_prompt
 from app.services.trusted_routing import enable_trusted_routing, normalize_caller
 from app.services.customer_activity import activity_query, activity_stats, serialize_activity
 
@@ -47,12 +48,39 @@ router = APIRouter(tags=["RootCall Portal"])
 # PYDANTIC MODELS
 # ============================================
 
+
+
+def normalize_transfer_number(value: str) -> str:
+    """Normalize a US phone number or validate an E.164 destination."""
+    raw = value.strip()
+    digits = re.sub(r"\D", "", raw)
+    if len(digits) == 10:
+        normalized = f"+1{digits}"
+    elif len(digits) == 11 and digits.startswith("1"):
+        normalized = f"+{digits}"
+    elif raw.startswith("+") and 8 <= len(digits) <= 15 and not digits.startswith("0"):
+        normalized = f"+{digits}"
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Enter a valid phone number, including the country code (example: +14155550123)."
+        )
+    if not re.fullmatch(r"\+[1-9]\d{7,14}", normalized):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Enter a valid phone number in international format."
+        )
+    return normalized
+
+
 class ConfigUpdate(BaseModel):
     client_cell: Optional[str] = None
     sms_alerts_enabled: Optional[bool] = None
     alert_on_spam: Optional[bool] = None
     alert_on_unknown: Optional[bool] = None
     auto_block_spam: Optional[bool] = None
+    voice_id: Optional[str] = None
+    full_name: Optional[str] = None
 
 class TrustedContactAdd(BaseModel):
     phone_number: str
@@ -138,6 +166,7 @@ async def get_config(
     return {
         "setup_guide_available": bool(onboarding and onboarding.status == "completed"),
         "client_name": config.client_name,
+        "voice_id": config.voice_id or "11labs-Adrian",
         "client_cell": config.client_cell,
         "sms_alerts_enabled": config.sms_alerts_enabled,
         "alert_on_spam": config.alert_on_spam,
@@ -154,6 +183,83 @@ async def get_config(
             for p in (config.trusted_contacts or [])
         ]
     }
+
+
+@router.get("/api/rootcall/voice-options")
+async def get_voice_options(
+    current_user: User = Depends(get_current_user)
+):
+    """Return every voice available in the connected Retell workspace."""
+    try:
+        catalog = RetellService().list_voices()
+    except Exception as exc:
+        log.exception("Could not retrieve Retell voice catalog")
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Could not load voices from Retell. Check the Retell API connection."
+        ) from exc
+
+    voices = []
+    for item in catalog:
+        if not isinstance(item, dict) or not item.get("voice_id"):
+            continue
+        voices.append({
+            "voice_id": item.get("voice_id"),
+            "voice_name": item.get("voice_name") or item.get("name") or item.get("voice_id"),
+            "provider": item.get("provider") or "Unknown provider",
+            "gender": item.get("gender") or "",
+            "accent": item.get("accent") or "",
+            "age": item.get("age") or "",
+            "preview_audio_url": item.get("preview_audio_url"),
+        })
+    voices.sort(key=lambda voice: (str(voice["provider"]).lower(), str(voice["voice_name"]).lower()))
+    return {"voices": voices}
+
+
+@router.post("/api/rootcall/sync-agent-identity/{client_id}")
+async def sync_agent_identity(
+    client_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Synchronize the existing Retell agent with the authenticated account holder identity."""
+    if current_user.id != client_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cannot modify another user's screening agent"
+        )
+
+    phone = db.query(PhoneNumber).filter(
+        PhoneNumber.user_id == client_id,
+        PhoneNumber.is_active == True
+    ).first()
+    if not phone:
+        raise HTTPException(status_code=404, detail="No active RootCall phone number")
+
+    config = db.query(RootCallConfig).filter(
+        RootCallConfig.phone_number_id == phone.id
+    ).first()
+    if not config or not config.retell_agent_id:
+        raise HTTPException(status_code=409, detail="No Retell screening agent is configured")
+
+    owner_name = (current_user.full_name or "").strip()
+    if not owner_name:
+        raise HTTPException(status_code=409, detail="Protected account holder name is not configured")
+
+    try:
+        retell = RetellService()
+        retell.update_screening_identity(config.retell_agent_id, owner_name)
+        config.client_name = owner_name
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        log.exception("Failed to synchronize protected identity for client %s", client_id)
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Retell could not be updated. The existing screening prompt was not confirmed as changed."
+        ) from exc
+
+    return {"success": True, "message": "Protected account identity rules synchronized."}
 
 
 @router.patch("/api/rootcall/config/{client_id}")
@@ -179,25 +285,68 @@ async def update_config(
     if not config:
         raise HTTPException(status_code=404, detail="No config")
     
+    if updates.full_name is not None:
+        owner_name = updates.full_name.strip()
+        if len(owner_name) < 2 or len(owner_name) > 120 or len(owner_name.split()) < 2:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Enter the account holder's first and last name."
+            )
+        current_user.full_name = owner_name
+        config.client_name = owner_name
+
     if updates.client_cell is not None:
-        # Configure Retell agent to transfer calls to client_cell
+        transfer_number = (
+            normalize_transfer_number(updates.client_cell)
+            if updates.client_cell.strip()
+            else None
+        )
+        if transfer_number == phone.phone_number:
+            raise HTTPException(status_code=422, detail="Forwarding number cannot be your Shield number.")
+
+        if transfer_number:
+            if not phone.telnyx_connection_id:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="This RootCall number is missing its Telnyx SIP connection link. Contact support before enabling transfers."
+                )
+            try:
+                telnyx = TelnyxService()
+                telnyx.ensure_outbound_voice_profile(phone.telnyx_connection_id)
+            except (RuntimeError, ValueError, requests.RequestException) as exc:
+                db.rollback()
+                log.exception("Failed to ensure Telnyx outbound profile for client %s", client_id)
+                raise HTTPException(
+                    status_code=status.HTTP_502_BAD_GATEWAY,
+                    detail="Your transfer number was not saved because Telnyx outbound calling is not configured. Please try again or contact support."
+                ) from exc
+
         if config.retell_agent_id:
             try:
                 retell = RetellService()
                 retell.configure_transfer_tool(
                     agent_id=config.retell_agent_id,
-                    transfer_number=updates.client_cell if updates.client_cell else None
+                    transfer_number=transfer_number
                 )
-                log.info(f"✅ Updated Retell transfer to {updates.client_cell or 'NONE'}")
-            except ValueError as e:
-                raise HTTPException(status_code=422, detail=str(e))
-            except (RuntimeError, requests.RequestException):
-                log.exception("Failed to update Retell transfer")
+            except (RuntimeError, ValueError, requests.RequestException) as exc:
+                db.rollback()
+                log.exception("Failed to update Retell transfer for client %s", client_id)
                 raise HTTPException(
-                    status_code=502,
-                    detail="Forwarding setup failed. Your saved number was not changed. Check Retell before retrying.",
-                )
-        config.client_cell = updates.client_cell
+                    status_code=status.HTTP_502_BAD_GATEWAY,
+                    detail="Your transfer number was not saved because Retell could not be updated. Please try again."
+                ) from exc
+        elif transfer_number:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="This RootCall number is not connected to a Retell screening agent yet."
+            )
+
+        config.client_cell = transfer_number or ""
+        log.info(
+            "Updated customer transfer destination for client %s: %s",
+            client_id,
+            "configured" if transfer_number else "cleared"
+        )
     if updates.sms_alerts_enabled is not None:
         config.sms_alerts_enabled = updates.sms_alerts_enabled
     if updates.alert_on_spam is not None:
@@ -206,9 +355,48 @@ async def update_config(
         config.alert_on_unknown = updates.alert_on_unknown
     if updates.auto_block_spam is not None:
         config.auto_block_spam = updates.auto_block_spam
+    if updates.voice_id is not None:
+        try:
+            available_voices = RetellService().list_voices()
+        except Exception as exc:
+            log.exception("Could not validate Retell voice for client %s", client_id)
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="Could not load available voices from Retell. Please try again."
+            ) from exc
+        if not any(
+            isinstance(item, dict) and item.get("voice_id") == updates.voice_id
+            for item in available_voices
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Choose a voice returned by your connected Retell workspace."
+            )
+        if not config.retell_agent_id:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="This RootCall number is not connected to a screening agent yet."
+            )
+        try:
+            RetellService().update_voice(config.retell_agent_id, updates.voice_id)
+        except Exception as exc:
+            db.rollback()
+            log.exception("Failed to update Retell voice for client %s", client_id)
+            # Include Retell's sanitized API error so the dashboard can show
+            # the actual rejection instead of masking every failure as publish-related.
+            retell_error = str(exc).replace("\\n", " ").strip()[:600]
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail=(
+                    "Retell voice update failed: "
+                    + (retell_error or "Retell returned an empty error.")
+                    + " Your saved voice was not changed."
+                )
+            ) from exc
+        config.voice_id = updates.voice_id
     
     db.commit()
-    return {"success": True}
+    return {"success": True, "voice_id": config.voice_id or "11labs-Adrian", "full_name": current_user.full_name}
 
 
 # ============================================
@@ -580,29 +768,9 @@ async def provision_rootcall(
         
         agent_name = f"ScamShield-{current_user.email.split('@')[0]}"
         
-        # Create LLM with scam screening prompt
-        scam_prompt = """You are an AI scam screening assistant protecting the user from fraud and scams.
-
-Your job is to:
-1. Greet callers professionally
-2. Ask for their name and reason for calling
-3. Detect scam indicators and block suspicious calls
-4. Use the transfer_call tool to connect legitimate callers to the user
-
-SCAM INDICATORS TO BLOCK:
-- Requests for money, gift cards, wire transfers, cryptocurrency
-- Claims to be IRS, Social Security, government agencies demanding payment
-- Threats, urgency, or pressure tactics
-- Requests for personal info (SSN, bank details, passwords)
-- Tech support scams (fake Microsoft, Apple, antivirus)
-- Prize/lottery winnings requiring payment
-- Robocalls or clearly automated voices
-
-If SCAM detected: Say "This call appears to be fraudulent and will not be connected. Goodbye." Then use the end_call tool.
-
-For LEGITIMATE calls (doctors, family, friends, appointments): Say "Thank you, let me connect you now." Then use the transfer_call tool.
-
-Be polite but firm with scammers. Protect the user at all costs."""
+        # Bind the agent to the protected account holder from the authenticated account.
+        owner_name = (current_user.full_name or "").strip()
+        scam_prompt = build_scam_screening_prompt(owner_name)
 
         llm_id = retell.create_llm(
             general_prompt=scam_prompt,

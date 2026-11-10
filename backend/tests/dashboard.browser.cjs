@@ -24,6 +24,8 @@ const baseURL = process.env.ROOTCALL_PREVIEW_URL || 'http://127.0.0.1:8765';
             let billingUnavailable = false;
             let billingIssue = true;
             let cancellationScheduled = false;
+            let selectedVoice = 'voice-one';
+            let failVoice = true;
             let contacts = [];
             const unsafeName = '<img src=x onerror="window.unsafeExecuted=true"> Mom';
             const csv = "Timestamp,From,Caller Name,Action,Status\n2026-11-09,'+12025550101,Mom,trusted_bypass,failed\n";
@@ -34,6 +36,9 @@ const baseURL = process.env.ROOTCALL_PREVIEW_URL || 'http://127.0.0.1:8765';
                 let result = {};
                 if (path === '/api/auth/me') {
                     result = { id: 1, email: 'owner@example.com', full_name: 'Jordan Green', next_url: '/static/client-portal.html' };
+                } else if (path === '/api/rootcall/voice-options') {
+                    result = { voices: [{ voice_id: 'voice-one', voice_name: 'Avery', provider: 'Test' },
+                        { voice_id: 'voice-two', voice_name: 'Jordan', provider: 'Test' }] };
                 } else if (path === '/api/rootcall/my-number') {
                     result = { has_number: hasNumber, number: '+12025550100', purchased_at: '2026-11-09T12:00:00Z' };
                 } else if (path === '/api/rootcall/stats/1') {
@@ -41,10 +46,18 @@ const baseURL = process.env.ROOTCALL_PREVIEW_URL || 'http://127.0.0.1:8765';
                     if (failStats) return route.fulfill({ status: 503, json: { detail: 'Stats unavailable' } });
                     result = { spam_blocked: 0, calls_screened: 1, trusted_forwarded: 0, trusted_calls: 1, total_calls: 2 };
                 } else if (path === '/api/rootcall/config/1') {
+                    if (request.method() === 'PATCH') {
+                        const body = request.postDataJSON();
+                        assert.ok(body.voice_id);
+                        if (failVoice) return route.fulfill({ status: 502, json: { detail: 'Voice update rejected by provider' } });
+                        selectedVoice = body.voice_id;
+                        return route.fulfill({ json: { success: true, voice_id: selectedVoice } });
+                    }
                     if (!hasNumber) return route.fulfill({ status: 404, json: { detail: 'No phone number' } });
                     result = {
                         line_configured: true, client_cell: '+12025550102', setup_guide_available: true,
                         trusted_contacts: contacts, trusted_routing_enabled: true,
+                        voice_id: selectedVoice,
                     };
                 } else if (path === '/api/rootcall/calls/1') {
                     result = hasNumber ? [{
@@ -86,6 +99,14 @@ const baseURL = process.env.ROOTCALL_PREVIEW_URL || 'http://127.0.0.1:8765';
             await page.locator('#billing-notice').waitFor({ state: 'visible' });
             assert.match(await page.locator('#billing-notice-text').textContent(), /past due.*needs attention/);
             await page.evaluate(() => showPage('settings'));
+            assert.equal(await page.locator('#retell-voice-select').inputValue(), 'voice-one');
+            await page.locator('#retell-voice-select').selectOption('voice-two');
+            await page.locator('.toast').filter({ hasText: 'Voice update rejected by provider' }).waitFor();
+            await page.waitForFunction(() => document.getElementById('retell-voice-select').value === 'voice-one');
+            failVoice = false;
+            await page.locator('#retell-voice-select').selectOption('voice-two');
+            await page.locator('.toast').filter({ hasText: 'Your agent voice has been updated' }).waitFor();
+            await page.waitForFunction(() => document.getElementById('retell-voice-select').value === 'voice-two');
             await page.locator('#setup-guide-link').waitFor({ state: 'visible' });
             assert.equal(await page.locator('#setup-guide-link').getAttribute('href'), '/static/onboarding.html');
             billingUnavailable = true;

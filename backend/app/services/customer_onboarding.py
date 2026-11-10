@@ -12,7 +12,7 @@ from app.models.onboarding import CustomerOnboarding
 from app.models.phone_number import PhoneNumber
 from app.models.rootcall_config import RootCallConfig
 from app.models.user import User
-from app.services.retell_service import RetellService
+from app.services.retell_service import RetellService, build_scam_screening_prompt
 from app.services.telnyx_service import TelnyxService
 from app.services.trusted_routing import enable_trusted_routing
 from app.services.activation_recovery import ActivationPending, activation_lock, resource_creation
@@ -172,8 +172,8 @@ def _provision_customer(db: Session, user: User):
         if not onboarding.llm_id:
             with resource_creation(db, onboarding, "screening_llm"):
                 onboarding.llm_id = retell.create_llm(
-                    SCREENING_PROMPT,
-                    begin_message="Hello, this is RootCall. May I ask who's calling and the reason for your call?",
+                    build_scam_screening_prompt(user.full_name, SCREENING_PROMPT),
+                    begin_message="Hello, you've reached RootCall AI Assistant. Who would you like to speak with?",
                 )
                 if not onboarding.llm_id:
                     raise RuntimeError("Retell did not return an LLM ID")
@@ -238,6 +238,7 @@ def _provision_customer(db: Session, user: User):
                 phone_number_id=existing.id, user_id=user.id,
                 client_name=user.full_name, client_cell=onboarding.forwarding_number,
                 retell_agent_id=onboarding.agent_id, retell_did=number,
+                voice_id=onboarding.voice_id,
                 trusted_contacts=list(onboarding.trusted_contacts or []), sms_alerts_enabled=False,
                 alert_on_spam=True, alert_on_unknown=False, auto_block_spam=True,
                 is_active=True,

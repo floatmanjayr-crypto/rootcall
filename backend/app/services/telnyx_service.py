@@ -49,6 +49,110 @@ class TelnyxService:
             raise RuntimeError(r.text)
         return r.json()
 
+    def ensure_outbound_voice_profile(
+        self,
+        connection_id: str,
+        profile_name: str = "RootCall US Outbound",
+        profile_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        Ensure a dedicated US outbound voice profile exists and is attached
+        to this RootCall FQDN SIP connection. Safe to call repeatedly.
+        """
+        if not connection_id:
+            raise ValueError("A Telnyx FQDN connection ID is required")
+
+        connection_response = self._get(f"/fqdn_connections/{connection_id}")
+        connection = connection_response.get("data", connection_response)
+        outbound = connection.get("outbound") or {}
+        attached_profile_id = outbound.get("outbound_voice_profile_id")
+
+        configured_profile_id = os.getenv("TELNYX_OUTBOUND_VOICE_PROFILE_ID", "").strip()
+        profile_id = profile_id or configured_profile_id or attached_profile_id
+
+        profile = None
+        if profile_id:
+            profile_response = self._get(f"/outbound_voice_profiles/{profile_id}")
+            profile = profile_response.get("data", profile_response)
+        else:
+            profiles_response = self._get(
+                "/outbound_voice_profiles",
+                params={"page[size]": 100},
+            )
+            profiles = profiles_response.get("data", [])
+            profile = next(
+                (item for item in profiles if item.get("name") == profile_name),
+                None,
+            )
+
+        if not profile:
+            created = self._post(
+                "/outbound_voice_profiles",
+                json={
+                    "name": profile_name,
+                    "traffic_type": "conversational",
+                    "enabled": True,
+                    "whitelisted_destinations": ["US"],
+                },
+            )
+            profile = created.get("data", created)
+
+        profile_id = profile.get("id")
+        if not profile_id:
+            raise RuntimeError("Telnyx did not return an outbound voice profile ID")
+
+        # Keep existing allowed destinations and ensure US is permitted.
+        destinations = list(profile.get("whitelisted_destinations") or [])
+        profile_updates: Dict[str, Any] = {
+            "name": profile.get("name") or profile_name,
+        }
+        if "US" not in destinations:
+            destinations.append("US")
+            profile_updates["whitelisted_destinations"] = destinations
+        if profile.get("enabled") is False:
+            profile_updates["enabled"] = True
+        if len(profile_updates) > 1:
+            self._patch(
+                f"/outbound_voice_profiles/{profile_id}",
+                json=profile_updates,
+            )
+
+        if attached_profile_id != profile_id:
+            updated = self._patch(
+                f"/fqdn_connections/{connection_id}",
+                json={
+                    "outbound": {
+                        "outbound_voice_profile_id": profile_id,
+                    }
+                },
+            )
+            updated_connection = updated.get("data", updated)
+            updated_profile_id = (
+                (updated_connection.get("outbound") or {}).get("outbound_voice_profile_id")
+            )
+            if updated_profile_id and updated_profile_id != profile_id:
+                raise RuntimeError("Telnyx did not attach the requested outbound voice profile")
+
+            # Verify with a fresh read instead of assuming a successful PATCH.
+            verified_response = self._get(f"/fqdn_connections/{connection_id}")
+            verified = verified_response.get("data", verified_response)
+            verified_profile_id = (
+                (verified.get("outbound") or {}).get("outbound_voice_profile_id")
+            )
+            if verified_profile_id != profile_id:
+                raise RuntimeError("Telnyx outbound voice profile assignment could not be verified")
+            connection = verified
+
+        log.info(
+            "Telnyx outbound profile ready: connection=%s profile=%s",
+            connection_id,
+            profile_id,
+        )
+        return {
+            "connection": connection,
+            "outbound_voice_profile_id": profile_id,
+        }
+
     def search_available_numbers(
         self,
         area_code: Optional[str] = None,
@@ -89,6 +193,7 @@ class TelnyxService:
                                  "ip_authentication_method": "credential-authentication"},
                 })
                 self._ensure_retell_fqdn(conn["id"])
+            self.ensure_outbound_voice_profile(conn.get("id"), profile_id=outbound_voice_profile_id)
             log.info(f"Using existing trunk: {conn.get('id')}")
             return conn, sip_username, sip_password
         
@@ -122,6 +227,7 @@ class TelnyxService:
         trunk_data = trunk_response.get("data", {})
         trunk_id = trunk_data.get("id")
         log.info(f"Created trunk: {trunk_id}")
+        self.ensure_outbound_voice_profile(trunk_id, profile_id=outbound_voice_profile_id)
         
         self._ensure_retell_fqdn(trunk_id)
         return trunk_data, sip_username, sip_password

@@ -36,7 +36,8 @@ class TrustedInboundTest(unittest.TestCase):
         self.db = sessionmaker(bind=self.engine)()
         self.addCleanup(self.db.close)
         self.user = User(id=1, email="owner@example.com", hashed_password="unused")
-        self.phone = PhoneNumber(id=1, user_id=1, phone_number="+12025550100", is_active=True)
+        self.phone = PhoneNumber(id=1, user_id=1, phone_number="+12025550100", is_active=True,
+                                 telnyx_connection_id="connection-test")
         self.config = RootCallConfig(
             id=1, user_id=1, phone_number_id=1, client_name="Owner", client_cell="+12025550102",
             retell_agent_id="agent-screen", retell_did="+12025550100",
@@ -112,7 +113,8 @@ class TrustedInboundTest(unittest.TestCase):
         self.assertEqual(self.inbound().json()["call_inbound"]["override_agent_id"], "agent-trusted")
 
     def test_forwarding_updates_are_used_on_next_inbound_call(self):
-        with patch.object(rootcall_portal, "RetellService") as provider:
+        with patch.object(rootcall_portal, "RetellService") as provider, \
+                patch.object(rootcall_portal, "TelnyxService"):
             response = self.client.patch("/api/rootcall/config/1", json={"client_cell": "+12025550109"})
         self.assertEqual(response.status_code, 200, response.text)
         self.assertEqual(self.inbound().json()["call_inbound"]["dynamic_variables"],

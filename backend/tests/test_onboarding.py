@@ -504,6 +504,12 @@ class OnboardingTest(unittest.TestCase):
         self.db.expire_all()
         config = self.db.query(RootCallConfig).one()
         self.assertEqual(config.client_cell, "+12025550123")
+        self.assertEqual(config.voice_id, "voice-test")
+        llm_call = self.retell.create_llm.call_args
+        self.assertIn("Jordan Green", llm_call.args[0])
+        self.assertIn("ROOTCALL ORIGINAL HANDBOOK BEGIN", llm_call.args[0])
+        self.assertEqual(llm_call.kwargs["begin_message"],
+                         "Hello, you've reached RootCall AI Assistant. Who would you like to speak with?")
         self.assertEqual(config.trusted_contacts, ["+12025550145"])
         self.assertTrue(config.trusted_routing_enabled)
         self.assertEqual(config.trusted_agent_id, "agent-trusted")
@@ -903,6 +909,7 @@ class ProvisioningContractTest(unittest.TestCase):
     def test_fqdn_trunk_configures_actual_outbound_authentication(self):
         service = TelnyxService(api_key="test-key")
         with patch.object(service, "_get", side_effect=[{"data": []}, {"data": []}]), \
+                patch.object(service, "ensure_outbound_voice_profile") as ensure, \
                 patch.object(service, "_post", side_effect=[{"data": {"id": "connection"}}, {}]) as post:
             service.get_or_create_retell_trunk("customer", "sip-user", "sip-pass", "voice-profile")
         payload = post.call_args_list[0].kwargs["json"]
@@ -911,6 +918,7 @@ class ProvisioningContractTest(unittest.TestCase):
         self.assertEqual(payload["outbound"]["ip_authentication_method"], "credential-authentication")
         self.assertEqual(payload["outbound"]["outbound_voice_profile_id"], "voice-profile")
         self.assertEqual(post.call_args_list[1].kwargs["json"]["fqdn"], "sip.retellai.com")
+        ensure.assert_called_once_with("connection", profile_id="voice-profile")
 
     def test_number_assignment_requires_an_exact_match(self):
         service = TelnyxService(api_key="test-key")

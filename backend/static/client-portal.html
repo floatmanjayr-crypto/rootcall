@@ -1579,7 +1579,8 @@
                         <div style="display: flex; flex-direction: column; gap: 1rem;">
                             <div>
                                 <label class="field-label" for="user-fullname">Name</label>
-                                <input type="text" id="user-fullname" disabled />
+                                <input type="text" id="user-fullname" placeholder="Enter first and last name" autocomplete="name" />
+                                <button onclick="saveAccountName()" class="btn btn-primary" style="margin-top:.5rem;">Save name</button>
                             </div>
                             <div>
                                 <label class="field-label" for="user-email">Email</label>
@@ -1604,6 +1605,26 @@
                             <button type="button" class="btn btn-outline" id="manage-billing" onclick="manageBilling()">Manage billing</button>
                         </div>
                     </div>
+                </div>
+
+                <div class="card" style="margin-top: 1.5rem;">
+                    <div class="card-header-row">
+                        <h3 class="card-title"><i class="fas fa-microphone-alt"></i> Your RootCall Agent</h3>
+                        <span class="info-badge" style="margin:0;">Retell voice catalog</span>
+                    </div>
+                    <p class="field-hint" style="margin-bottom:1rem;">Choose how your AI screening assistant sounds. Both voices use the same scam-detection and transfer-safety rules.</p>
+                    <div style="display:grid;gap:.75rem;">
+                        <label for="retell-voice-select"><strong>Choose an available Retell voice</strong></label>
+                        <select id="retell-voice-select" class="form-control" style="width:100%;min-height:48px;">
+                            <option value="">Loading voices from Retell...</option>
+                        </select>
+                        <div id="retell-voice-details" class="field-hint">Voice choices are loaded from your connected Retell workspace.</div>
+                        <audio id="retell-voice-preview" controls preload="none" style="width:100%;display:none;">Your browser does not support audio.</audio>
+                    </div>
+                    <div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-top:1.25rem;">
+                        <button onclick="syncAgentIdentity()" class="btn btn-primary" id="sync-agent-identity-btn"><i class="fas fa-sync-alt"></i> Sync Agent Identity</button>
+                    </div>
+                    <p class="field-hint" style="margin-top:.75rem;">Identity sync uses the name on your account and keeps it private from callers. Voice changes are published to your existing Retell agent.</p>
                 </div>
             </div>
         </div>
@@ -2011,6 +2032,7 @@
                     document.getElementById('alert-spam').checked = config.alert_on_spam || false;
                     document.getElementById('alert-unknown').checked = config.alert_on_unknown || false;
                     document.getElementById('auto-block-spam').checked = config.auto_block_spam || false;
+                    CURRENT_VOICE_ID = config.voice_id || '11labs-Adrian';
                     const list = document.getElementById('contacts-list');
                     if (config.trusted_contacts && config.trusted_contacts.length > 0) {
                         list.innerHTML = config.trusted_contacts.map(c => {
@@ -2040,6 +2062,7 @@
                     document.getElementById('connect-trusted-routing').hidden = true;
                     document.getElementById('contacts-list').textContent = 'No Shield line configured yet.';
                 }
+                if (!background) await loadVoicePreviews();
                 const callsResponse = await authFetch(`${API}/api/rootcall/calls/${CLIENT_ID}`);
                 if (!callsResponse.ok) throw new Error('Unable to load call history. Retry to refresh your dashboard.');
                 if (callsResponse.ok) {
@@ -2515,6 +2538,134 @@
                 showToast('Error removing contact: ' + err.message, 'error');
             } finally {
                 showLoading(false);
+            }
+        }
+
+        let CURRENT_VOICE_ID = null;
+
+        async function loadVoicePreviews() {
+            const select = document.getElementById('retell-voice-select');
+            const details = document.getElementById('retell-voice-details');
+            const preview = document.getElementById('retell-voice-preview');
+            if (!select) return;
+            select.innerHTML = '<option value="">Loading voices from Retell...</option>';
+            try {
+                const response = await authFetch(`${API}/api/rootcall/voice-options`);
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.detail || 'Could not load Retell voices');
+                const voices = data.voices || [];
+                select.innerHTML = '';
+                if (!voices.length) {
+                    select.innerHTML = '<option value="">No voices returned by Retell</option>';
+                    details.textContent = 'No voices were returned by the connected Retell workspace.';
+                    return;
+                }
+                voices.forEach(voice => {
+                    const option = document.createElement('option');
+                    option.value = voice.voice_id;
+                    const meta = [voice.provider, voice.gender, voice.accent].filter(Boolean).join(' · ');
+                    option.textContent = meta ? `${voice.voice_name} — ${meta}` : voice.voice_name;
+                    option.dataset.preview = voice.preview_audio_url || '';
+                    option.dataset.details = meta;
+                    select.appendChild(option);
+                });
+                if (CURRENT_VOICE_ID && voices.some(v => v.voice_id === CURRENT_VOICE_ID)) {
+                    select.value = CURRENT_VOICE_ID;
+                } else {
+                    select.selectedIndex = 0;
+                }
+                const selected = select.options[select.selectedIndex];
+                details.textContent = selected.dataset.details || 'Available in your Retell workspace';
+                if (selected.dataset.preview) {
+                    preview.src = selected.dataset.preview;
+                    preview.style.display = 'block';
+                } else {
+                    preview.removeAttribute('src');
+                    preview.style.display = 'none';
+                }
+                select.onchange = function () {
+                    const option = this.options[this.selectedIndex];
+                    details.textContent = option.dataset.details || 'Available in your Retell workspace';
+                    if (option.dataset.preview) {
+                        preview.src = option.dataset.preview;
+                        preview.style.display = 'block';
+                    } else {
+                        preview.removeAttribute('src');
+                        preview.style.display = 'none';
+                    }
+                    if (this.value && this.value !== CURRENT_VOICE_ID) {
+                        saveAgentVoice(this.value);
+                    }
+                };
+            } catch (error) {
+                select.innerHTML = '<option value="">Unable to load Retell voices</option>';
+                details.textContent = error.message;
+                console.error('Retell voice catalog error:', error);
+            }
+        }
+
+        async function saveAgentVoice(voiceId) {
+            try {
+                showLoading(true);
+                const response = await authFetch(`${API}/api/rootcall/config/${CLIENT_ID}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({ voice_id: voiceId })
+                });
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Could not update agent voice');
+                }
+                CURRENT_VOICE_ID = voiceId;
+                showToast('Your agent voice has been updated!', 'success');
+                await loadVoicePreviews();
+            } catch (error) {
+                showToast('Voice update failed: ' + error.message, 'error');
+                const select = document.getElementById('retell-voice-select');
+                if (select) select.value = CURRENT_VOICE_ID || '';
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function saveAccountName() {
+            const input = document.getElementById('user-fullname');
+            const fullName = input.value.trim();
+            if (fullName.split(/\s+/).length < 2) {
+                showToast('Please enter your first and last name.', 'error');
+                return;
+            }
+            try {
+                showLoading(true);
+                const response = await authFetch(`${API}/api/rootcall/config/${CLIENT_ID}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({ full_name: fullName })
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.detail || 'Could not save account name');
+                showToast('Account holder name saved.', 'success');
+            } catch (error) {
+                showToast('Name update failed: ' + error.message, 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function syncAgentIdentity() {
+            const button = document.getElementById('sync-agent-identity-btn');
+            try {
+                button.disabled = true;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Syncing...';
+                const response = await authFetch(`${API}/api/rootcall/sync-agent-identity/${CLIENT_ID}`, {
+                    method: 'POST'
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.detail || 'Identity sync failed');
+                showToast('Agent identity synchronized successfully!', 'success');
+            } catch (error) {
+                showToast('Identity sync failed: ' + error.message, 'error');
+            } finally {
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-sync-alt"></i> Sync Agent Identity';
             }
         }
 

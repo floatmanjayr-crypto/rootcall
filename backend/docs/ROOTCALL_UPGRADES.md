@@ -610,3 +610,24 @@ forwarding, two-way audio, live captions and browser takeover.
 - Removed the unreferenced legacy pages (`shield-dashboard`, `rootcall-portal`, `james-portal`, `test`) and the tracked `.backup`/`.old` copies. The login page no longer shows unverified "99.8% block rate" or "<1s response" figures; only claim numbers you can measure.
 - Browser tests (`backend/tests/*.browser.cjs`) need Playwright and a static preview: from `backend/` run `python -m http.server 8765 --bind 127.0.0.1 --directory .`, then `PLAYWRIGHT_MODULE=<path to @playwright/test> node tests/design.browser.cjs` (also `dashboard`, `live_calls`, `onboarding`, `account_access`).
 - Not yet done: moving login/forgot/reset/portal onto the shared tokens (each still defines its own copy), replacing the portal's remaining inline `onclick` handlers, and a dark theme.
+
+## Customer Journey Fixes and Production Checklist
+
+Reported symptom: after registering and choosing a plan, Stripe did not open, no success page appeared, and the onboarding page asked for a name but nothing could be pressed.
+
+Fixed in code:
+
+- **Signup button did nothing.** The plan field was a required dropdown that started on "Choose your plan…". The hero "Get Protected Now" button opens the form without choosing a plan, so the browser silently blocked submit. Essential is the only launch plan, so the form now shows it as a fixed summary. The earlier mocked browser test hid this by calling `selectPlan('essential')` directly.
+- **Landing page failed on non-JSON replies.** A server error produced "Unexpected token…". Signup and checkout now show plain-language messages and a "Continue to payment step" link.
+- **Activation depended on a second Render service.** Jobs were only processed by the `rootcall-activation` worker, so customers waited forever if that service did not exist (Render creates new blueprint services only after a blueprint sync). The web service now also runs the same polling loop in a background thread. PostgreSQL advisory locks stop two runners activating the same account. Set `ACTIVATION_EMBEDDED_WORKER=false` to turn this off once the dedicated worker is confirmed running.
+- **Database schema errors surface as clear JSON 503s** on every endpoint, and the web service logs `Database is missing tables ... run alembic upgrade head` at startup.
+- **`APP_BASE_URL` falls back to Render's `RENDER_EXTERNAL_URL`** when unset, and startup logs a warning if `APP_BASE_URL` is empty, not https, or on a different host than the Render service.
+- Each onboarding step now has its own heading and subtitle (the success page no longer shows the first step's subtitle).
+
+Check in the Render dashboard (cannot be verified from the repository):
+
+1. `getrootcall.com` currently serves a Hostinger "Your domain is expired" page and has no backend. Renew it, or do not use it as `APP_BASE_URL` or in Stripe settings. Stripe return links, password-reset emails and the Retell webhook are all built from `APP_BASE_URL`; if it points at a dead domain, customers pay but never see the success page. The working URL is `https://rootcall.onrender.com`.
+2. Set `STRIPE_SECRET_KEY`, `STRIPE_ESSENTIAL_PRICE_ID`, `STRIPE_WEBHOOK_SECRET`, `TELNYX_SIP_USERNAME`, `TELNYX_SIP_PASSWORD`, `TELNYX_OUTBOUND_VOICE_PROFILE_ID`, `RETELL_API_KEY`, and `TELNYX_API_KEY` on the web service. A missing value produces a clear 503 at the step that needs it.
+3. Confirm the deploy log shows the `alembic upgrade head` pre-deploy step succeeded.
+
+Regression test: `backend/tests/journey.browser.cjs` drives the real app (only Stripe, Retell and Telnyx faked by `backend/tests/e2e_journey_server.py`) from the landing page through activation and the success screen at 1280px and 390px. Start `python backend/tests/e2e_journey_server.py`, then run `PLAYWRIGHT_MODULE=<path> node backend/tests/journey.browser.cjs`.

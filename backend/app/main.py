@@ -5,6 +5,9 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.database import engine, Base
+from app.deployment_checks import log_deployment_readiness, register_error_handlers
+from app.activation_worker import embedded_enabled, start_embedded
+from threading import Event
 from app.core.deps import require_operator
 from sqlalchemy import inspect, text
 from app.routers import rootcall_portal
@@ -36,6 +39,27 @@ app = FastAPI(
     description="Complete VoIP platform with conversational AI",
     version="1.0.0"
 )
+register_error_handlers(app)
+
+@app.on_event("startup")
+def report_deployment_readiness():
+    log_deployment_readiness(engine, settings.APP_BASE_URL)
+
+
+_activation_stop = Event()
+
+
+@app.on_event("startup")
+def start_embedded_activation():
+    if embedded_enabled() and engine.dialect.name in {"postgresql", "sqlite"}:
+        _activation_stop.clear()
+        start_embedded(_activation_stop)
+
+
+@app.on_event("shutdown")
+def stop_embedded_activation():
+    _activation_stop.set()
+
 
 @app.on_event("startup")
 def ensure_rootcall_voice_column():

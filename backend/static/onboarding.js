@@ -55,18 +55,19 @@ async function run(action) {
 
 function show(step) {
     const copy = {
-        confirmation: ['Confirming your payment', 'A secure check before setup'],
-        'load-error': ['Let’s get your setup back', 'Your saved details are still yours'],
-        payment: ['Start with your subscription', 'Simple, secure billing before setup'],
-        profile: ['Let’s set up your call shield', 'Personalize where approved calls go'],
-        number: ['Choose your Shield number', 'Find a number callers can use to reach your assistant'],
-        contacts: ['Choose who can reach you', 'Trusted callers can skip screening and go straight to you'],
-        review: ['Ready to connect your Shield?', 'Review your choices before automatic activation'],
-        done: ['Your RootCall line is ready', 'Run a quick call test before relying on your service'],
+        confirmation: ['Confirming your payment', 'Secure check', 'We’re confirming your payment with Stripe. This usually takes a few seconds.'],
+        'load-error': ['Let’s get your setup back', 'Setup paused', 'Your saved details have not changed.'],
+        payment: ['Start with your subscription', 'Step 1 · Payment', 'RootCall Essential protects one line. Pay securely with Stripe, then personalize your setup.'],
+        profile: ['Let’s set up your call shield', 'Step 2 · Your details', 'Tell us where approved calls should reach you and choose a voice for your AI assistant.'],
+        number: ['Choose your Shield number', 'Step 3 · Shield number', 'Pick the number your callers will dial to reach your assistant.'],
+        contacts: ['Choose who can reach you', 'Step 4 · Trusted contacts', 'Trusted callers skip screening and ring straight through. You can change this any time.'],
+        review: ['Ready to connect your Shield?', 'Step 5 · Review & activate', 'Check your choices. Activation runs automatically and continues if you close this page.'],
+        done: ['Your RootCall line is ready', 'Step 6 · Connect & test', 'Your number and assistant are connected. Finish the quick checks below before relying on the service.'],
     };
-    const [title, eyebrow] = copy[step] || copy.profile;
+    const [title, eyebrow, intro] = copy[step] || copy.profile;
     byId('page-title').textContent = title;
     byId('page-eyebrow').textContent = eyebrow;
+    byId('page-intro').textContent = intro;
     if (step === 'number') {
         byId('keep-number').hidden = !saved.shield_number;
         byId('keep-number').textContent = `Keep ${saved.shield_number}`;

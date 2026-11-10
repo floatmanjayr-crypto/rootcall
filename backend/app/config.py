@@ -51,8 +51,9 @@ class Settings:
     SENDGRID_API_KEY: str = os.getenv("SENDGRID_API_KEY", "")
     SENDER_EMAIL: str = os.getenv("SENDER_EMAIL", "no-reply@rootcall.ai")
 
-    # Public base URL used to build links in emails (e.g. https://app.rootcall.ai)
-    APP_BASE_URL: str = os.getenv("APP_BASE_URL", "")
+    # Public base URL used to build links in emails (e.g. https://app.rootcall.ai).
+    # Falls back to Render's own public URL so checkout returns never point at a stale domain.
+    APP_BASE_URL: str = os.getenv("APP_BASE_URL") or os.getenv("RENDER_EXTERNAL_URL", "")
     STRIPE_WEBHOOK_SECRET: str = os.getenv("STRIPE_WEBHOOK_SECRET", "")
 
     

@@ -299,10 +299,12 @@ const baseURL = process.env.ROOTCALL_PREVIEW_URL || 'http://127.0.0.1:8765';
             await route.fulfill({ json: result });
         });
         await page.goto(`${baseURL}/static/index.html`);
-        assert.equal(await page.locator('#signup-plan option').count(), 2);
+        assert.equal(await page.locator('#signup-plan').inputValue(), 'essential');
+        assert.equal(await page.locator('select#signup-plan').count(), 0);
         assert.equal(await page.locator('[aria-label="Family plan"] button').isDisabled(), true);
         assert.equal(await page.locator('[aria-label="Guardian plan"] button').isDisabled(), true);
-        await page.evaluate(() => window.selectPlan('essential'));
+        // The hero button opens the form without choosing a plan; submitting must still work.
+        await page.locator('.hero a.btn-primary').click();
         await page.locator('#signup-email').fill('new@example.com');
         await page.locator('#signup-password').fill('test-password');
         await page.locator('#signup-modal button[type="submit"]').click();

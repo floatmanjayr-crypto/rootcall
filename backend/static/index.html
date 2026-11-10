@@ -213,6 +213,12 @@
     }
     .modal-content h3{color:var(--green);margin-top:0}
     .form-group{margin-bottom:20px}
+    .plan-summary{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 18px;padding:14px 16px;border:1px solid #cfe3d8;border-radius:12px;background:#f1f8f4}
+    .plan-summary strong{display:block;color:var(--green)}
+    .plan-summary span{color:var(--muted);font-size:.85rem}
+    .plan-summary b{color:var(--green);font-size:1.4rem;white-space:nowrap}
+    .plan-summary small{font-size:.8rem;font-weight:600}
+    .fine-print{margin:10px 0 0;color:var(--muted);font-size:.8rem;text-align:center}
     .form-group label{
       display:block;
       font-weight:600;
@@ -467,16 +473,18 @@
           <label>Password</label>
           <input type="password" id="signup-password" required minlength="8" autocomplete="new-password">
         </div>
-        <div class="form-group">
-          <label>Select Plan</label>
-          <select id="signup-plan" required>
-            <option value="">Choose your plan...</option>
-            <option value="essential">Essential - $14.99/mo</option>
-          </select>
+        <div class="plan-summary" role="group" aria-label="Your plan">
+          <div>
+            <strong>RootCall Essential</strong>
+            <span>One protected line &middot; cancel anytime</span>
+          </div>
+          <b>$14.99<small>/mo</small></b>
+          <input type="hidden" id="signup-plan" value="essential">
         </div>
         <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">
-          Create Account &amp; Subscribe
+          Continue to secure payment
         </button>
+        <p class="fine-print">You’ll pay securely with Stripe next. Setup starts as soon as payment is confirmed.</p>
       </form>
       <p style="text-align:center;margin-top:15px;color:var(--muted);font-size:14px">
         Already have an account?
@@ -532,6 +540,22 @@
       msg.style.display = 'block';
     }
 
+    async function readJson(response) {
+      try {
+        return await response.json();
+      } catch (err) {
+        return {};
+      }
+    }
+
+    function errorDetail(data, response, fallback) {
+      const detail = Array.isArray(data.detail) ? data.detail.map(item => item.msg).join(' ') : data.detail;
+      if (detail) return detail;
+      return response.status >= 500
+        ? 'RootCall is temporarily unavailable. Please try again in a minute.'
+        : fallback;
+    }
+
     async function handleSignup(e) {
       e.preventDefault();
       
@@ -540,6 +564,7 @@
       const plan = document.getElementById('signup-plan').value;
       const button = e.target.querySelector('button[type="submit"]');
       button.disabled = true;
+      let redirecting = false;
 
       try {
         if (localStorage.getItem('access_token') || localStorage.getItem('token')) {
@@ -556,11 +581,10 @@
           })
         });
 
-        const signupData = await signupResponse.json();
+        const signupData = await readJson(signupResponse);
         
         if (!signupResponse.ok) {
-          const detail = Array.isArray(signupData.detail) ? signupData.detail.map(item => item.msg).join(' ') : signupData.detail;
-          showMessage(detail || 'Signup failed', true);
+          showMessage(errorDetail(signupData, signupResponse, 'Signup failed'), true);
           return;
         }
 
@@ -570,24 +594,31 @@
         localStorage.setItem('user', JSON.stringify(signupData.user));
         localStorage.setItem('selected_plan', plan);
 
-        showMessage('Account created! Redirecting to payment...');
+        showMessage('Account created! Taking you to secure checkout...');
         
         const checkoutResponse = await fetch(API + '/api/payments/create-checkout', {
           method: 'POST',
           headers: {'Content-Type': 'application/json', Authorization: `Bearer ${signupData.access_token}`},
           body: JSON.stringify({tier: plan})
         });
-        const checkoutData = await checkoutResponse.json();
-        if (checkoutResponse.ok) location.assign(checkoutData.checkout_url);
-        else {
-          showMessage('Account saved. ' + (checkoutData.detail || 'Payment setup failed.') + ' Use Sign in to resume setup without registering again.', true);
-          e.target.querySelector('button[type="submit"]').textContent = 'Resume setup';
+        const checkoutData = await readJson(checkoutResponse);
+        if (checkoutResponse.ok && checkoutData.checkout_url) {
+          redirecting = true;
+          location.assign(checkoutData.checkout_url);
+        } else {
+          showMessage('Your account is saved. ' + errorDetail(checkoutData, checkoutResponse, 'Checkout could not start.') + ' You can continue from the payment step.', true);
+          const continueLink = document.createElement('a');
+          continueLink.href = '/static/onboarding.html';
+          continueLink.className = 'btn btn-primary';
+          continueLink.style.marginTop = '10px';
+          continueLink.textContent = 'Continue to payment step';
+          document.getElementById('modal-message').append(document.createElement('br'), continueLink);
         }
 
       } catch (err) {
-        showMessage('Error: ' + err.message, true);
+        showMessage('We could not reach RootCall. Check your connection and try again.', true);
       } finally {
-        button.disabled = false;
+        if (!redirecting) button.disabled = false;
       }
     }
 

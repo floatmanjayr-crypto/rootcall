@@ -7,6 +7,7 @@ from app.config import settings
 from app.database import engine, Base
 from app.deployment_checks import log_deployment_readiness, register_error_handlers
 from app.activation_worker import embedded_enabled, start_embedded
+from app.schema_upgrade import auto_migrate_enabled, upgrade_schema
 from threading import Event
 from app.core.deps import require_operator
 from sqlalchemy import inspect, text
@@ -40,6 +41,14 @@ app = FastAPI(
     version="1.0.0"
 )
 register_error_handlers(app)
+
+
+@app.on_event("startup")
+def apply_pending_schema_upgrades():
+    # Runs first so the readiness check and activation runner see the upgraded schema.
+    if auto_migrate_enabled() and engine.dialect.name == "postgresql":
+        upgrade_schema(engine)
+
 
 @app.on_event("startup")
 def report_deployment_readiness():

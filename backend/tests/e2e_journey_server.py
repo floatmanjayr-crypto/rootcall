@@ -14,9 +14,11 @@ from unittest.mock import MagicMock, patch
 PORT = int(os.environ.get("E2E_PORT", "8770"))
 BACKEND = Path(__file__).resolve().parents[1]
 DB = os.environ.get("E2E_DB") or str(Path(tempfile.mkdtemp(prefix="rootcall-e2e-")) / "e2e.db")
+# With E2E_DATABASE_URL (a prepared PostgreSQL) the app's own startup must bring the schema up to date.
+DATABASE_URL = os.environ.get("E2E_DATABASE_URL")
 
 os.environ.update({
-    "DATABASE_URL": f"sqlite:///{DB}", "JWT_SECRET_KEY": "e2e-only-signing-key-0123456789",
+    "DATABASE_URL": DATABASE_URL or f"sqlite:///{DB}", "JWT_SECRET_KEY": "e2e-only-signing-key-0123456789",
     "OPENAI_API_KEY": "unused", "STRIPE_SECRET_KEY": "sk_test_fake", "STRIPE_ESSENTIAL_PRICE_ID": "price_fake",
     "APP_BASE_URL": "https://rootcall.example", "RETELL_API_KEY": "unused", "TELNYX_API_KEY": "unused",
     "TELNYX_SIP_USERNAME": "e2e", "TELNYX_SIP_PASSWORD": "e2e-pass", "TELNYX_OUTBOUND_VOICE_PROFILE_ID": "profile1",
@@ -33,8 +35,8 @@ from app.main import app  # noqa: E402
 from app.routers import onboarding as onboarding_router  # noqa: E402
 from app.services import customer_onboarding  # noqa: E402
 
-Base.metadata.create_all(engine)
-created = {}
+if not DATABASE_URL:
+    Base.metadata.create_all(engine)
 owned = []
 sessions = {}
 

@@ -44,6 +44,13 @@ def run_migrations_offline() -> None:
 
 def run_migrations_online() -> None:
     """Run migrations with a DB connection (recommended)."""
+    shared = config.attributes.get("connection")
+    if shared is not None:
+        # Used by app.schema_upgrade so the whole upgrade shares one atomic transaction.
+        context.configure(connection=shared, target_metadata=target_metadata, compare_type=True)
+        with context.begin_transaction():
+            context.run_migrations()
+        return
     connectable = engine
     with connectable.connect() as connection:  # type: Connection
         context.configure(

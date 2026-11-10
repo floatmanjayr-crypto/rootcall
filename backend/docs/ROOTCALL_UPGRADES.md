@@ -68,17 +68,23 @@ reaches `e254ab76f430`, then restart the web and activation worker. Until then, 
 onboarding status endpoint returns a clear `503` and the page offers retry/support;
 it does not report a false success or initiate provider setup.
 
-`render.yaml` now sets `preDeployCommand: cd backend && alembic upgrade head` on the web service, so each
-deploy migrates the database before the new version starts. If the command fails, Render keeps the previous
-version running and the deploy log shows the error; nothing is partially served. The first migration
-(`f6236c21f2cd`) is an empty placeholder because the base tables predate Alembic, so a database with no
-`alembic_version` table cannot be migrated from scratch. In that case, check the live revision first
-(`alembic current`). If it reports nothing but the base tables exist, stamp the newest revision whose tables are
-already present (likely `40508a9fb685`, the one immediately before `a813bc21e902` creates `customer_onboarding`)
-with `alembic stamp <revision>` before the first deploy. Verify that choice against the tables actually in the
-database; a wrong stamp skips or repeats schema changes. If the web service is not Blueprint-managed, set the same Pre-Deploy Command in the
-Render dashboard (Settings > Build & Deploy); pre-deploy commands require a paid instance type. The activation
-worker has no pre-deploy step and may log missing-table errors until the web service finishes migrating.
+The web service applies pending migrations itself at startup (`app/schema_upgrade.py`), so no Render
+pre-deploy command or shell access is needed. It runs only on PostgreSQL, takes a database advisory lock so
+concurrent instances cannot race, and applies everything in a single transaction: either all migrations apply
+or none do. It never stops the app from booting; on failure it logs `Automatic schema upgrade failed and was
+rolled back` with the cause. Cases it handles:
+
+- Existing Alembic history: runs `upgrade head`.
+- Core tables exist but there is no Alembic history (how production was created, because the first migration
+  `f6236c21f2cd` is an empty placeholder): records baseline `40508a9fb685`, then runs `upgrade head`.
+- Empty database: creates the full schema and records the latest revision.
+- Anything else (for example a `users` table without the other core tables): logs an error and changes nothing.
+
+Set `AUTO_MIGRATE=false` to disable it and run `cd backend && alembic upgrade head` yourself. Do not use
+`alembic upgrade head` as a Render pre-deploy command on a database without Alembic history: the empty first
+migration means it fails from scratch and would block every deploy. Verified on PostgreSQL 15 with a
+database shaped like production (opt-in test: set `TEST_SCHEMA_POSTGRES_URL` for `test_schema_upgrade.py`).
+The activation worker may log missing-table errors until the web service finishes migrating.
 
 The merged dashboard supports live Retell voice selection, editable account-holder
 names and explicit identity sync. New activations save their selected voice into the
@@ -628,6 +634,6 @@ Check in the Render dashboard (cannot be verified from the repository):
 
 1. `getrootcall.com` currently serves a Hostinger "Your domain is expired" page and has no backend. Renew it, or do not use it as `APP_BASE_URL` or in Stripe settings. Stripe return links, password-reset emails and the Retell webhook are all built from `APP_BASE_URL`; if it points at a dead domain, customers pay but never see the success page. The working URL is `https://rootcall.onrender.com`.
 2. Set `STRIPE_SECRET_KEY`, `STRIPE_ESSENTIAL_PRICE_ID`, `STRIPE_WEBHOOK_SECRET`, `TELNYX_SIP_USERNAME`, `TELNYX_SIP_PASSWORD`, `TELNYX_OUTBOUND_VOICE_PROFILE_ID`, `RETELL_API_KEY`, and `TELNYX_API_KEY` on the web service. A missing value produces a clear 503 at the step that needs it.
-3. Confirm the deploy log shows the `alembic upgrade head` pre-deploy step succeeded.
+3. Confirm the startup log shows `Database schema upgraded to revision e254ab76f430` (first deploy only). If it shows `Automatic schema upgrade failed`, send the error that follows.
 
 Regression test: `backend/tests/journey.browser.cjs` drives the real app (only Stripe, Retell and Telnyx faked by `backend/tests/e2e_journey_server.py`) from the landing page through activation and the success screen at 1280px and 390px. Start `python backend/tests/e2e_journey_server.py`, then run `PLAYWRIGHT_MODULE=<path> node backend/tests/journey.browser.cjs`.

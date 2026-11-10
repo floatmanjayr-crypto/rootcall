@@ -15,6 +15,13 @@ TLX_BASE = os.getenv("TELNYX_BASE", "https://api.telnyx.com/v2")
 client = Telnyx(api_key=TLX_API_KEY)
 
 
+class TelnyxNoResults(RuntimeError):
+    """Telnyx answers 400 / code 10031 when a number search matches nothing; that is an empty result."""
+
+
+NO_RESULTS_CODE = "10031"
+
+
 class TelnyxService:
     """Telnyx provisioning with Elastic SIP Trunk for Retell"""
 
@@ -30,6 +37,9 @@ class TelnyxService:
 
     def _get(self, path: str, params: Dict[str, Any] | None = None, ok=(200,)) -> Dict[str, Any]:
         r = requests.get(f"{self.base_url}{path}", headers=self.headers, params=params, timeout=30)
+        if r.status_code == 400 and f'"{NO_RESULTS_CODE}"' in r.text:
+            log.info("GET %s matched nothing", path)
+            raise TelnyxNoResults(r.text)
         if r.status_code not in ok:
             log.error("GET %s failed [%s]: %s", path, r.status_code, r.text)
             raise RuntimeError(r.text)
@@ -158,12 +168,18 @@ class TelnyxService:
         area_code: Optional[str] = None,
         country_code: str = "US",
         limit: int = 10,
+        best_effort: bool = False,
     ) -> List[Dict[str, Any]]:
-        """Search available DIDs"""
+        """Search available DIDs. Returns [] when nothing matches; best_effort also offers nearby numbers."""
         params = {"filter[country_code]": country_code, "limit": limit}
         if area_code:
             params["filter[national_destination_code]"] = area_code
-        data = self._get("/available_phone_numbers", params=params)
+        if best_effort:
+            params["filter[best_effort]"] = "true"
+        try:
+            data = self._get("/available_phone_numbers", params=params)
+        except TelnyxNoResults:
+            return []
         return data.get("data", [])
 
     def order_number(self, phone_number: str) -> Dict[str, Any]:

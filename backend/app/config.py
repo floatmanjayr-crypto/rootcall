@@ -18,7 +18,7 @@ class Settings:
     # Telnyx
     TELNYX_API_KEY: str = os.getenv("TELNYX_API_KEY", "")
     TELNYX_PUBLIC_KEY: str = os.getenv("TELNYX_PUBLIC_KEY", "")
-    TELNYX_SIP_USERNAME: str = os.getenv("TELNYX_SIP_USERNAME", "")
+    TELNYX_SIP_USERNAME: str = os.getenv("TELNYX_SIP_USERNAME") or "rootcall"
     TELNYX_SIP_PASSWORD: str = os.getenv("TELNYX_SIP_PASSWORD", "")
     TELNYX_OUTBOUND_VOICE_PROFILE_ID: str = os.getenv("TELNYX_OUTBOUND_VOICE_PROFILE_ID", "")
 

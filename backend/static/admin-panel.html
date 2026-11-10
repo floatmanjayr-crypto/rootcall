@@ -37,6 +37,12 @@
         td { color: var(--muted); }
         #error { border-color: #fcd34d; background: #fffbeb; }
         #error p { color: #92400e; }
+        .readiness { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+        .readiness li { padding: 12px 14px; border: 1px solid #e7e2db; border-radius: 12px; overflow-wrap: anywhere; }
+        .readiness li[data-ok="true"] { background: #f1f8f4; border-color: #cfe3d8; }
+        .readiness li[data-ok="false"] { background: #fffbeb; border-color: #fcd34d; }
+        .readiness strong { display: block; color: var(--green); }
+        .readiness code { background: #fff; border: 1px solid #e7e2db; border-radius: 6px; padding: 1px 6px; }
         [hidden] { display: none !important; }
         @media (max-width: 650px) {
             header { flex-wrap: wrap; }
@@ -64,6 +70,11 @@
                 <h2>Platform overview</h2>
                 <button type="button" id="refresh">Refresh</button>
             </div>
+            <section class="card" style="margin-bottom: 24px;" aria-labelledby="readiness-heading">
+                <h2 id="readiness-heading">Setup checks</h2>
+                <p id="readiness-summary" role="status"></p>
+                <ul id="readiness-list" class="readiness"></ul>
+            </section>
             <div class="stats">
                 <div class="card"><span class="label">Total users</span><strong class="value" id="total-users">--</strong></div>
                 <div class="card"><span class="label">Active Shield numbers</span><strong class="value" id="total-numbers">--</strong></div>
@@ -140,6 +151,33 @@
             return response.json();
         }
 
+        function renderReadiness(groups) {
+            const list = document.getElementById('readiness-list');
+            list.replaceChildren();
+            const incomplete = groups.filter(group => !group.ok);
+            document.getElementById('readiness-summary').textContent = incomplete.length
+                ? `${incomplete.length} of ${groups.length} areas need attention before customers can complete setup. Add the listed settings in the Render environment, then redeploy.`
+                : 'Everything customers need to pay and activate a line is configured.';
+            for (const group of groups) {
+                const item = document.createElement('li');
+                item.dataset.ok = String(group.ok);
+                const title = document.createElement('strong');
+                title.textContent = `${group.ok ? '✓' : '⚠'} ${group.name}`;
+                const detail = document.createElement('span');
+                detail.textContent = group.ok ? group.purpose : `${group.purpose}. Missing: `;
+                item.append(title, detail);
+                if (!group.ok) {
+                    group.missing.forEach((name, index) => {
+                        if (index) item.append(', ');
+                        const code = document.createElement('code');
+                        code.textContent = name;
+                        item.append(code);
+                    });
+                }
+                list.append(item);
+            }
+        }
+
         async function loadDashboard() {
             if (loading) return;
             loading = true;
@@ -154,6 +192,7 @@
                 document.getElementById('total-numbers').textContent = data.stats.total_shield_numbers;
                 document.getElementById('total-calls').textContent = data.stats.total_calls;
                 document.getElementById('spam-blocked').textContent = data.stats.spam_blocked;
+                renderReadiness(data.readiness || []);
                 const tbody = document.getElementById('users-table');
                 tbody.replaceChildren();
                 for (const user of data.recent_users) {

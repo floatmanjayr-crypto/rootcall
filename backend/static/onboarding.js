@@ -332,7 +332,7 @@ byId('number-search').onsubmit = (event) => {
         try {
             const data = await api(`/api/onboarding/numbers?area_code=${encodeURIComponent(byId('area-code').value)}`);
             const legend = document.createElement('legend');
-            legend.textContent = 'Available Shield numbers';
+            legend.textContent = data.nearby ? 'Nearby Shield numbers' : 'Available Shield numbers';
             byId('number-options').append(legend);
             for (const number of data.numbers) {
                 const label = document.createElement('label');
@@ -347,7 +347,9 @@ byId('number-search').onsubmit = (event) => {
             }
             byId('number-options').hidden = !data.numbers.length;
             byId('search-status').textContent = data.numbers.length
-                ? `${data.numbers.length} numbers available. Choose one to continue.`
+                ? (data.nearby
+                    ? `No numbers are available in ${byId('area-code').value} right now. Showing ${data.numbers.length} nearby numbers. Choose one to continue.`
+                    : `${data.numbers.length} numbers available. Choose one to continue.`)
                 : 'No numbers available. Try a nearby area code.';
         } catch (error) { byId('search-status').textContent = 'Search failed. Please try again.'; throw error; }
     });
@@ -355,7 +357,7 @@ byId('number-search').onsubmit = (event) => {
 byId('save-number').onclick = () => run(async () => {
     const choice = document.querySelector('input[name="shield-number"]:checked');
     if (!choice) throw new Error('Choose a Shield number.');
-    await api('/api/onboarding/number', 'PUT', {phone_number: choice.value});
+    await api('/api/onboarding/number', 'PUT', {phone_number: choice.value, search_area_code: byId('area-code').value});
     saved = await api('/api/onboarding/status');
     showContacts();
 });

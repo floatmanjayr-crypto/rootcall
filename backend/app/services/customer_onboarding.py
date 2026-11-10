@@ -85,8 +85,12 @@ def validate_activation(db: Session, user: User):
     if not all((onboarding.first_name, onboarding.last_name, onboarding.forwarding_number,
                 onboarding.voice_id, onboarding.shield_number)):
         raise HTTPException(status_code=422, detail="Complete your profile, voice, and Shield number first.")
-    if not all((settings.TELNYX_SIP_USERNAME, settings.TELNYX_SIP_PASSWORD,
-                settings.TELNYX_OUTBOUND_VOICE_PROFILE_ID)):
+    routing = {"TELNYX_SIP_USERNAME": settings.TELNYX_SIP_USERNAME, "TELNYX_SIP_PASSWORD": settings.TELNYX_SIP_PASSWORD,
+               "TELNYX_OUTBOUND_VOICE_PROFILE_ID": settings.TELNYX_OUTBOUND_VOICE_PROFILE_ID}
+    absent = [name for name, value in routing.items() if not (value or "").strip()]
+    if absent:
+        log.error("Activation blocked for user %s: set %s on the web service; no number was purchased.",
+                  user.id, ", ".join(absent))
         raise HTTPException(status_code=503, detail="Phone routing is not configured. Contact support; no number was purchased.")
     return onboarding
 

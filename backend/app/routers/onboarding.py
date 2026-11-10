@@ -163,17 +163,28 @@ def numbers(area_code: str, user: User = Depends(get_current_active_user), db: S
 def search_numbers(area_code: str):
     if not re.fullmatch(r"[2-9]\d{2}", area_code):
         raise HTTPException(status_code=422, detail="Enter a three-digit US area code.")
+    nearby = False
     try:
-        results = TelnyxService().search_available_numbers(area_code=area_code, limit=20)
+        service = TelnyxService()
+        results = service.search_available_numbers(area_code=area_code, limit=20)
+        if not results:
+            # No exact matches: offer nearby numbers, but never let this lookup fail the search.
+            try:
+                results = service.search_available_numbers(area_code=area_code, limit=20, best_effort=True)
+                nearby = bool(results)
+            except (RuntimeError, requests.RequestException, ValueError):
+                log.warning("Nearby number lookup for area code %s failed", area_code, exc_info=True)
+                results = []
     except (RuntimeError, requests.RequestException, ValueError):
         log.exception("Onboarding number search failed")
         raise HTTPException(status_code=502, detail="Number search is unavailable. Please retry.")
     return {"numbers": [{"phone_number": item["phone_number"], "locality": item.get("locality", "")}
-                        for item in results if item.get("phone_number")]}
+                        for item in results if item.get("phone_number")], "nearby": nearby}
 
 
 class NumberChoice(BaseModel):
     phone_number: str = Field(pattern=r"^\+1[2-9]\d{9}$")
+    search_area_code: str | None = Field(default=None, pattern=r"^[2-9]\d{2}$")
 
 
 @router.put("/number")
@@ -185,8 +196,14 @@ def select_number(body: NumberChoice, user: User = Depends(get_current_active_us
         raise HTTPException(status_code=409, detail="That number is already assigned. Choose another.")
     if body.phone_number in (onboarding.trusted_contacts or []):
         raise HTTPException(status_code=422, detail="Choose a Shield number different from your trusted contacts.")
-    results = search_numbers(body.phone_number[2:5])
-    if not any(item["phone_number"] == body.phone_number for item in results["numbers"]):
+    # A nearby number is listed under the area code that was searched, not its own.
+    candidates = [body.phone_number[2:5]]
+    if body.search_area_code and body.search_area_code not in candidates:
+        candidates.append(body.search_area_code)
+    if not any(
+        item["phone_number"] == body.phone_number
+        for code in candidates for item in search_numbers(code)["numbers"]
+    ):
         raise HTTPException(status_code=409, detail="That number is no longer available. Search again.")
     onboarding.shield_number = body.phone_number
     try:

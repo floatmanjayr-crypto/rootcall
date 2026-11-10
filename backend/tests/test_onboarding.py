@@ -484,6 +484,59 @@ class OnboardingTest(unittest.TestCase):
         self.assertEqual(self.state.shield_number, "+12025550100")
         self.telnyx.order_number.assert_not_called()
 
+    def test_area_code_without_inventory_offers_nearby_numbers_instead_of_failing(self):
+        self.paid()
+
+        def search(area_code=None, limit=10, best_effort=False):
+            if best_effort and area_code == "754":
+                return [{"phone_number": "+17865550142", "locality": "Miami"}]
+            return []  # Telnyx "No numbers found" (10031) is an empty result, not an outage
+
+        self.telnyx.search_available_numbers.side_effect = search
+        found = self.client.get("/api/onboarding/numbers?area_code=754", headers=self.headers)
+        self.assertEqual(found.status_code, 200, found.text)
+        self.assertEqual(found.json(), {"numbers": [{"phone_number": "+17865550142", "locality": "Miami"}], "nearby": True})
+
+        # A nearby number is only listed under the searched area code, so the choice must say which.
+        rejected = self.client.put("/api/onboarding/number", headers=self.headers,
+                                   json={"phone_number": "+17865550142"})
+        self.assertEqual(rejected.status_code, 409)
+        accepted = self.client.put("/api/onboarding/number", headers=self.headers,
+                                   json={"phone_number": "+17865550142", "search_area_code": "754"})
+        self.assertEqual(accepted.status_code, 200, accepted.text)
+        self.db.expire_all()
+        self.assertEqual(self.state.shield_number, "+17865550142")
+        self.telnyx.order_number.assert_not_called()
+
+    def test_exact_matches_are_not_marked_nearby_and_nothing_found_is_empty(self):
+        self.paid()
+        self.telnyx.search_available_numbers.side_effect = None
+        self.telnyx.search_available_numbers.return_value = [{"phone_number": "+12025550100"}]
+        self.assertFalse(self.client.get("/api/onboarding/numbers?area_code=202", headers=self.headers).json()["nearby"])
+        self.telnyx.search_available_numbers.return_value = []
+        empty = self.client.get("/api/onboarding/numbers?area_code=754", headers=self.headers)
+        self.assertEqual(empty.json(), {"numbers": [], "nearby": False})
+        # The nearby lookup failing must not turn "none found" into an outage.
+        self.telnyx.search_available_numbers.side_effect = lambda **kw: (
+            (_ for _ in ()).throw(RuntimeError("best effort unsupported")) if kw.get("best_effort") else [])
+        self.assertEqual(self.client.get("/api/onboarding/numbers?area_code=754", headers=self.headers).json()["numbers"], [])
+
+    def test_telnyx_no_numbers_found_is_an_empty_result_not_an_error(self):
+        from app.services.telnyx_service import TelnyxService
+
+        body = '{"errors": [{"code": "10031", "title": "Invalid request filter", "detail": "No numbers found"}]}'
+        service = TelnyxService(api_key="test-key")
+        with patch("app.services.telnyx_service.requests.get") as get:
+            get.return_value = SimpleNamespace(status_code=400, text=body)
+            self.assertEqual(service.search_available_numbers(area_code="754"), [])
+            service.search_available_numbers(area_code="754", best_effort=True)
+            self.assertEqual(get.call_args.kwargs["params"]["filter[best_effort]"], "true")
+            get.return_value = SimpleNamespace(status_code=400, text='{"errors": [{"code": "10015"}]}')
+            with self.assertRaises(RuntimeError):
+                service.search_available_numbers(area_code="754")
+            get.return_value = SimpleNamespace(status_code=200, text="", json=lambda: {"data": [{"phone_number": "+17865550142"}]})
+            self.assertEqual(service.search_available_numbers(area_code="786"), [{"phone_number": "+17865550142"}])
+
     def test_number_selection_rejects_loops_collisions_and_invalid_area(self):
         self.ready()
         self.assertEqual(self.client.get("/api/onboarding/numbers?area_code=abc", headers=self.headers).status_code, 422)
@@ -582,8 +635,11 @@ class OnboardingTest(unittest.TestCase):
         self.paid()
         self.assertEqual(self.post("/api/onboarding/complete").status_code, 422)
         self.ready()
-        with patch.object(settings, "TELNYX_SIP_PASSWORD", ""):
+        with patch.object(settings, "TELNYX_SIP_PASSWORD", ""), \
+                self.assertLogs("app.services.customer_onboarding", "ERROR") as logs:
             self.assertEqual(self.post("/api/onboarding/complete").status_code, 503)
+        self.assertIn("TELNYX_SIP_PASSWORD", logs.output[0])
+        self.assertNotIn("test-sip-password", logs.output[0])
         self.assertIsNone(self.db.get(ActivationJob, 1))
         self.telnyx.order_number.assert_not_called()
 

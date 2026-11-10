@@ -91,6 +91,34 @@ class DeploymentChecksTest(unittest.TestCase):
         for value in ("false", "0", "OFF", " no "):
             self.assertFalse(embedded_enabled({"ACTIVATION_EMBEDDED_WORKER": value}))
 
+    def test_readiness_names_missing_settings_without_exposing_values(self):
+        from types import SimpleNamespace
+
+        from app.deployment_checks import service_readiness
+
+        env = {"STRIPE_SECRET_KEY": "sk_live_SECRET", "STRIPE_ESSENTIAL_PRICE_ID": "price_1",
+               "STRIPE_WEBHOOK_SECRET": "whsec_SECRET", "TELNYX_API_KEY": "KEY_SECRET"}
+        settings = SimpleNamespace(APP_BASE_URL="https://rootcall.onrender.com", RETELL_API_KEY="retell_SECRET",
+                                   TELNYX_API_KEY="KEY_SECRET", TELNYX_SIP_PASSWORD="",
+                                   TELNYX_OUTBOUND_VOICE_PROFILE_ID="")
+        with patch.dict(os.environ, env, clear=False):
+            groups = {group["name"]: group for group in service_readiness(settings, self.engine)}
+        self.assertTrue(groups["Payments"]["ok"])
+        self.assertTrue(groups["AI assistant"]["ok"])
+        self.assertEqual(groups["Phone routing"]["missing"], ["TELNYX_SIP_PASSWORD", "TELNYX_OUTBOUND_VOICE_PROFILE_ID"])
+        self.assertEqual(groups["Database"]["missing"], ["customer_onboarding", "activation_jobs"])
+        rendered = str(list(groups.values()))
+        for secret in ("SECRET", "price_1"):
+            self.assertNotIn(secret, rendered)
+        settings.APP_BASE_URL = "http://insecure.example"
+        self.assertEqual(
+            [g["missing"] for g in service_readiness(settings) if g["name"] == "Public site address"],
+            [["APP_BASE_URL (must start with https://)"]],
+        )
+        with self.assertLogs("app.deployment_checks", "WARNING") as logs:
+            log_deployment_readiness(self.engine, "https://rootcall.onrender.com", settings)
+        self.assertTrue(any("TELNYX_SIP_PASSWORD" in line for line in logs.output))
+
     def test_render_url_is_the_base_url_fallback(self):
         script = "from app.config import settings; print(settings.APP_BASE_URL)"
         env = {key: value for key, value in os.environ.items() if key != "APP_BASE_URL"}

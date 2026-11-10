@@ -19,6 +19,42 @@ def missing_tables(engine, required=REQUIRED_TABLES):
     return [name for name in required if not inspector.has_table(name)]
 
 
+# (group, label, required environment variables). Names only are ever reported, never values.
+SETTING_GROUPS = (
+    ("Public site address", "Stripe returns, password-reset emails and webhooks", ("APP_BASE_URL",)),
+    ("Payments", "Stripe checkout and subscription checks",
+     ("STRIPE_SECRET_KEY", "STRIPE_ESSENTIAL_PRICE_ID", "STRIPE_WEBHOOK_SECRET")),
+    ("Phone routing", "Buying numbers and connecting them to the AI assistant",
+     ("TELNYX_API_KEY", "TELNYX_SIP_PASSWORD", "TELNYX_OUTBOUND_VOICE_PROFILE_ID")),
+    ("AI assistant", "Creating the screening assistant and listing voices", ("RETELL_API_KEY",)),
+)
+
+
+def _configured(settings, name):
+    return bool(str(getattr(settings, name, "") or os.getenv(name, "")).strip())
+
+
+def service_readiness(settings, engine=None):
+    """Report which settings and tables a customer activation needs but the service lacks."""
+    groups = []
+    for title, purpose, names in SETTING_GROUPS:
+        missing = [name for name in names if not _configured(settings, name)]
+        if names == ("APP_BASE_URL",) and not missing:
+            if not str(getattr(settings, "APP_BASE_URL", "")).strip().startswith("https://"):
+                missing = ["APP_BASE_URL (must start with https://)"]
+        groups.append({"name": title, "purpose": purpose, "ok": not missing, "missing": missing})
+    if engine is not None:
+        try:
+            absent = missing_tables(engine)
+        except Exception:
+            absent = ["could not inspect the database"]
+        groups.append({
+            "name": "Database", "purpose": "Saved setup progress and activation jobs",
+            "ok": not absent, "missing": absent,
+        })
+    return groups
+
+
 def base_url_warnings(base_url, render_url=None):
     """Explain APP_BASE_URL problems that break Stripe returns, emails and webhooks."""
     parsed = urlparse((base_url or "").strip())
@@ -33,7 +69,7 @@ def base_url_warnings(base_url, render_url=None):
     return []
 
 
-def log_deployment_readiness(engine, base_url):
+def log_deployment_readiness(engine, base_url, settings=None):
     """Log (never raise) so a misconfigured deploy is diagnosable from the Render log."""
     try:
         missing = missing_tables(engine)
@@ -46,6 +82,13 @@ def log_deployment_readiness(engine, base_url):
         log.exception("Could not verify database schema at startup")
     for warning in base_url_warnings(base_url, os.getenv("RENDER_EXTERNAL_URL")):
         log.warning(warning)
+    if settings is not None:
+        for group in service_readiness(settings):
+            if not group["ok"]:
+                log.warning(
+                    "Setup incomplete - %s (%s): set %s in the Render environment.",
+                    group["name"], group["purpose"], ", ".join(group["missing"]),
+                )
 
 
 def register_error_handlers(app: FastAPI):

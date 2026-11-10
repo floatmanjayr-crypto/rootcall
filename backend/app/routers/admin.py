@@ -5,6 +5,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy import or_
 from pydantic import BaseModel, Field
 from app.database import get_db
+from app.config import settings
+from app.deployment_checks import service_readiness
 from app.core.deps import require_operator
 from app.models.user import User
 from app.models.phone_number import PhoneNumber
@@ -110,6 +112,7 @@ async def admin_dashboard(
     recent_users = db.query(User).order_by(User.created_at.desc()).limit(10).all()
     
     return {
+        "readiness": service_readiness(settings, db.get_bind()),
         "stats": {
             "total_users": total_users,
             "total_shield_numbers": total_numbers,

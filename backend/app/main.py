@@ -52,7 +52,7 @@ def apply_pending_schema_upgrades():
 
 @app.on_event("startup")
 def report_deployment_readiness():
-    log_deployment_readiness(engine, settings.APP_BASE_URL)
+    log_deployment_readiness(engine, settings.APP_BASE_URL, settings)
 
 
 _activation_stop = Event()

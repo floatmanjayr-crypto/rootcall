@@ -24,8 +24,7 @@ SETTING_GROUPS = (
     ("Public site address", "Stripe returns, password-reset emails and webhooks", ("APP_BASE_URL",)),
     ("Payments", "Stripe checkout and subscription checks",
      ("STRIPE_SECRET_KEY", "STRIPE_ESSENTIAL_PRICE_ID", "STRIPE_WEBHOOK_SECRET")),
-    ("Phone routing", "Buying numbers and connecting them to the AI assistant",
-     ("TELNYX_API_KEY", "TELNYX_SIP_PASSWORD", "TELNYX_OUTBOUND_VOICE_PROFILE_ID")),
+    ("Phone routing", "Buying numbers and connecting them to the AI assistant", ("TELNYX_API_KEY",)),
     ("AI assistant", "Creating the screening assistant and listing voices", ("RETELL_API_KEY",)),
 )
 

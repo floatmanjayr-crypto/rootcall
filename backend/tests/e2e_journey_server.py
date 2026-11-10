@@ -17,11 +17,13 @@ DB = os.environ.get("E2E_DB") or str(Path(tempfile.mkdtemp(prefix="rootcall-e2e-
 # With E2E_DATABASE_URL (a prepared PostgreSQL) the app's own startup must bring the schema up to date.
 DATABASE_URL = os.environ.get("E2E_DATABASE_URL")
 
+os.environ.pop("APP_BASE_URL", None)
+# Mirrors the production environment: provider keys and Stripe only. No SIP or outbound-profile settings,
+# and no APP_BASE_URL (Render supplies RENDER_EXTERNAL_URL).
 os.environ.update({
     "DATABASE_URL": DATABASE_URL or f"sqlite:///{DB}", "JWT_SECRET_KEY": "e2e-only-signing-key-0123456789",
     "OPENAI_API_KEY": "unused", "STRIPE_SECRET_KEY": "sk_test_fake", "STRIPE_ESSENTIAL_PRICE_ID": "price_fake",
-    "APP_BASE_URL": "https://rootcall.example", "RETELL_API_KEY": "unused", "TELNYX_API_KEY": "unused",
-    "TELNYX_SIP_USERNAME": "e2e", "TELNYX_SIP_PASSWORD": "e2e-pass", "TELNYX_OUTBOUND_VOICE_PROFILE_ID": "profile1",
+    "RENDER_EXTERNAL_URL": "https://rootcall.example", "RETELL_API_KEY": "unused", "TELNYX_API_KEY": "unused",
 })
 sys.path.insert(0, str(BACKEND))
 os.chdir(BACKEND)
@@ -33,6 +35,7 @@ from fastapi.responses import HTMLResponse  # noqa: E402
 from app.database import Base, engine  # noqa: E402
 from app.main import app  # noqa: E402
 from app.routers import onboarding as onboarding_router  # noqa: E402
+from app.routers import rootcall_portal  # noqa: E402
 from app.services import customer_onboarding  # noqa: E402
 
 if not DATABASE_URL:
@@ -85,6 +88,8 @@ retell.create_trusted_transfer_agent.return_value = "agent2"
 
 with patch.object(customer_onboarding, "TelnyxService", return_value=telnyx), \
      patch.object(onboarding_router, "TelnyxService", return_value=telnyx), \
+     patch.object(rootcall_portal, "TelnyxService", return_value=telnyx), \
+     patch.object(rootcall_portal, "RetellService", return_value=retell), \
      patch.object(customer_onboarding, "RetellService", return_value=retell), \
      patch.object(stripe.checkout.Session, "create", side_effect=fake_create), \
      patch.object(stripe.checkout.Session, "retrieve", side_effect=fake_retrieve), \

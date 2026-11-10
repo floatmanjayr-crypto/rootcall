@@ -2070,7 +2070,12 @@
                 if (configResponse.ok) {
                     const config = await configResponse.json();
                     document.getElementById('setup-guide-link').hidden = !config.setup_guide_available;
-                    setLineStatus(config.line_configured ? 'Shield line configured' : 'Line setup needs attention', Boolean(config.line_configured));
+                    setLineStatus(
+                        config.line_configured
+                            ? 'Shield line configured'
+                            : (config.client_cell ? 'Line setup needs attention' : 'Add your forwarding phone in Settings to finish setup'),
+                        Boolean(config.line_configured)
+                    );
                     document.getElementById('trusted-routing-status').textContent = config.trusted_routing_enabled
                         ? 'Trusted caller routing is connected. Saved contacts skip screening and transfer to your forwarding phone.'
                         : 'Contacts are saved, but direct-to-Retell bypass is not connected for this line yet.';

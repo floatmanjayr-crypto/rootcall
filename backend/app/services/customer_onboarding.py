@@ -1,3 +1,6 @@
+import base64
+import hashlib
+import hmac
 import logging
 import secrets
 from datetime import datetime
@@ -85,14 +88,24 @@ def validate_activation(db: Session, user: User):
     if not all((onboarding.first_name, onboarding.last_name, onboarding.forwarding_number,
                 onboarding.voice_id, onboarding.shield_number)):
         raise HTTPException(status_code=422, detail="Complete your profile, voice, and Shield number first.")
-    routing = {"TELNYX_SIP_USERNAME": settings.TELNYX_SIP_USERNAME, "TELNYX_SIP_PASSWORD": settings.TELNYX_SIP_PASSWORD,
-               "TELNYX_OUTBOUND_VOICE_PROFILE_ID": settings.TELNYX_OUTBOUND_VOICE_PROFILE_ID}
-    absent = [name for name, value in routing.items() if not (value or "").strip()]
-    if absent:
-        log.error("Activation blocked for user %s: set %s on the web service; no number was purchased.",
-                  user.id, ", ".join(absent))
-        raise HTTPException(status_code=503, detail="Phone routing is not configured. Contact support; no number was purchased.")
     return onboarding
+
+
+def sip_credentials(user_id: int):
+    """Per-customer Telnyx/Retell SIP login, named exactly as the dashboard purchase always did.
+
+    No environment variables are required. The password is derived from the server's signing secret
+    so every activation retry produces the same value without storing another secret.
+    """
+    username = f"{(settings.TELNYX_SIP_USERNAME or 'rootcall').strip()}_{user_id}"
+    explicit = (settings.TELNYX_SIP_PASSWORD or "").strip()
+    if explicit:
+        return username, explicit
+    secret = (settings.JWT_SECRET_KEY or "").encode()
+    if not secret:
+        raise RuntimeError("JWT_SECRET_KEY must be configured")
+    digest = hmac.new(secret, f"telnyx-sip-password:{user_id}".encode(), hashlib.sha256).digest()
+    return username, "rc_" + base64.urlsafe_b64encode(digest).decode().rstrip("=")[:24]
 
 
 def _provision_customer(db: Session, user: User):
@@ -112,7 +125,7 @@ def _provision_customer(db: Session, user: User):
     stage = "connecting to phone providers"
     try:
         telnyx, retell = TelnyxService(), RetellService()
-        sip_username = f"{settings.TELNYX_SIP_USERNAME}_{user.id}"
+        sip_username, sip_password = sip_credentials(user.id)
         if not onboarding.order_attempted and onboarding.voice_id not in {
             voice["voice_id"] for voice in available_voices()
         }:
@@ -157,8 +170,8 @@ def _provision_customer(db: Session, user: User):
         if not onboarding.connection_id:
             connection, _, _ = telnyx.get_or_create_retell_trunk(
                 f"RootCall-Retell-{user.id}", sip_username,
-                settings.TELNYX_SIP_PASSWORD,
-                outbound_voice_profile_id=settings.TELNYX_OUTBOUND_VOICE_PROFILE_ID,
+                sip_password,
+                outbound_voice_profile_id=(settings.TELNYX_OUTBOUND_VOICE_PROFILE_ID or "").strip() or None,
             )
             if not connection.get("id"):
                 raise RuntimeError("Telnyx did not return a connection ID")
@@ -219,7 +232,7 @@ def _provision_customer(db: Session, user: User):
             else:
                 retell.import_phone_number(
                     number, "sip.telnyx.com",
-                    sip_username, settings.TELNYX_SIP_PASSWORD,
+                    sip_username, sip_password,
                     inbound_agent_id=onboarding.agent_id,
                 )
             onboarding.number_imported = True

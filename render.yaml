@@ -24,12 +24,6 @@ services:
         sync: false
       - key: APP_BASE_URL
         sync: false
-      - key: TELNYX_SIP_USERNAME
-        sync: false
-      - key: TELNYX_SIP_PASSWORD
-        sync: false
-      - key: TELNYX_OUTBOUND_VOICE_PROFILE_ID
-        sync: false
       - key: STRIPE_SECRET_KEY
         sync: false
       - key: STRIPE_ESSENTIAL_PRICE_ID
@@ -74,21 +68,6 @@ services:
           type: web
           name: rootcall-backend
           envVarKey: APP_BASE_URL
-      - key: TELNYX_SIP_USERNAME
-        fromService:
-          type: web
-          name: rootcall-backend
-          envVarKey: TELNYX_SIP_USERNAME
-      - key: TELNYX_SIP_PASSWORD
-        fromService:
-          type: web
-          name: rootcall-backend
-          envVarKey: TELNYX_SIP_PASSWORD
-      - key: TELNYX_OUTBOUND_VOICE_PROFILE_ID
-        fromService:
-          type: web
-          name: rootcall-backend
-          envVarKey: TELNYX_OUTBOUND_VOICE_PROFILE_ID
       - key: STRIPE_SECRET_KEY
         fromService:
           type: web

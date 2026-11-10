@@ -50,7 +50,7 @@ const baseURL = process.env.ROOTCALL_PREVIEW_URL || 'http://127.0.0.1:8765';
                         readiness: [
                             { name: 'Database', purpose: 'Saved setup progress', ok: true, missing: [] },
                             { name: 'Phone routing', purpose: 'Buying numbers', ok: false,
-                              missing: ['TELNYX_SIP_PASSWORD', 'TELNYX_OUTBOUND_VOICE_PROFILE_ID'] },
+                              missing: ['TELNYX_API_KEY'] },
                         ],
                         stats: { total_users: 3, total_shield_numbers: 1, total_calls: 2, spam_blocked: 0 },
                         recent_users: [{ id: 1, full_name: unsafeName, email: 'admin@example.com' }],
@@ -101,7 +101,7 @@ const baseURL = process.env.ROOTCALL_PREVIEW_URL || 'http://127.0.0.1:8765';
             await page.locator('#users-table').getByText(unsafeName, { exact: true }).waitFor();
             assert.equal(await page.locator('#readiness-list li').count(), 2);
             assert.equal(await page.locator('#readiness-list li[data-ok="false"] code').allTextContents().then((names) => names.join(',')),
-                'TELNYX_SIP_PASSWORD,TELNYX_OUTBOUND_VOICE_PROFILE_ID');
+                'TELNYX_API_KEY');
             assert.match(await page.locator('#readiness-summary').textContent(), /1 of 2 areas need attention/);
             await page.locator('#attention-list').getByText('setup@example.com - +12025550100', { exact: true }).waitFor();
             assert.equal(await page.locator('#attention-list img').count(), 0);

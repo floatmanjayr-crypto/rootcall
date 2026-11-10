@@ -631,15 +631,36 @@ class OnboardingTest(unittest.TestCase):
         self.assertEqual(self.post("/api/onboarding/complete").status_code, 202)
         self.telnyx.order_number.assert_called_once()
 
-    def test_job_submission_checks_payment_profile_and_configuration_without_purchasing(self):
+    def test_activation_needs_no_sip_or_outbound_profile_settings_and_names_the_trunk_like_before(self):
+        # Yesterday's dashboard purchase used rootcall_<id> and a generated password with no extra settings.
+        self.ready()
+        self.telnyx.list_phone_numbers.side_effect = [[], [self.owned_number()]]
+        with patch.object(settings, "TELNYX_SIP_USERNAME", ""), patch.object(settings, "TELNYX_SIP_PASSWORD", ""), \
+                patch.object(settings, "TELNYX_OUTBOUND_VOICE_PROFILE_ID", ""):
+            self.assertEqual(self.post("/api/onboarding/complete").status_code, 202)
+            self.assertTrue(activation_jobs.process_job(self.db, 1))
+            username, password = customer_onboarding.sip_credentials(1)
+            again = customer_onboarding.sip_credentials(1)
+            other_password = customer_onboarding.sip_credentials(2)[1]
+        self.assertEqual(username, "rootcall_1")
+        self.assertTrue(password.startswith("rc_") and len(password) >= 20)
+        self.assertEqual(again, (username, password))
+        self.assertNotEqual(other_password, password)
+        trunk = self.telnyx.get_or_create_retell_trunk.call_args
+        self.assertEqual(trunk.args[:3], ("RootCall-Retell-1", "rootcall_1", password))
+        self.assertIsNone(trunk.kwargs["outbound_voice_profile_id"])
+        self.telnyx.order_number.assert_called_once()
+        self.retell.import_phone_number.assert_called_once()
+        self.assertEqual(self.retell.import_phone_number.call_args.args[:4],
+                         ("+12025550100", "sip.telnyx.com", "rootcall_1", password))
+
+    def test_explicit_sip_settings_still_win_when_configured(self):
+        with patch.object(settings, "TELNYX_SIP_USERNAME", "custom"), patch.object(settings, "TELNYX_SIP_PASSWORD", "chosen"):
+            self.assertEqual(customer_onboarding.sip_credentials(7), ("custom_7", "chosen"))
+
+    def test_job_submission_checks_payment_and_profile_without_purchasing(self):
         self.paid()
         self.assertEqual(self.post("/api/onboarding/complete").status_code, 422)
-        self.ready()
-        with patch.object(settings, "TELNYX_SIP_PASSWORD", ""), \
-                self.assertLogs("app.services.customer_onboarding", "ERROR") as logs:
-            self.assertEqual(self.post("/api/onboarding/complete").status_code, 503)
-        self.assertIn("TELNYX_SIP_PASSWORD", logs.output[0])
-        self.assertNotIn("test-sip-password", logs.output[0])
         self.assertIsNone(self.db.get(ActivationJob, 1))
         self.telnyx.order_number.assert_not_called()
 
@@ -961,13 +982,6 @@ class OnboardingTest(unittest.TestCase):
         response = self.activate()
         self.assertEqual(response.status_code, 409)
         self.telnyx.assign_number_to_connection.assert_not_called()
-        self.telnyx.order_number.assert_not_called()
-
-    def test_missing_routing_configuration_fails_before_any_purchase(self):
-        self.ready()
-        with patch.object(settings, "TELNYX_SIP_PASSWORD", ""):
-            response = self.activate()
-        self.assertEqual(response.status_code, 503)
         self.telnyx.order_number.assert_not_called()
 
     def test_legacy_provision_and_import_cannot_bypass_paid_setup(self):

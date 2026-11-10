@@ -99,13 +99,12 @@ class DeploymentChecksTest(unittest.TestCase):
         env = {"STRIPE_SECRET_KEY": "sk_live_SECRET", "STRIPE_ESSENTIAL_PRICE_ID": "price_1",
                "STRIPE_WEBHOOK_SECRET": "whsec_SECRET", "TELNYX_API_KEY": "KEY_SECRET"}
         settings = SimpleNamespace(APP_BASE_URL="https://rootcall.onrender.com", RETELL_API_KEY="retell_SECRET",
-                                   TELNYX_API_KEY="KEY_SECRET", TELNYX_SIP_PASSWORD="",
-                                   TELNYX_OUTBOUND_VOICE_PROFILE_ID="")
-        with patch.dict(os.environ, env, clear=False):
+                                   TELNYX_API_KEY="")
+        with patch.dict(os.environ, {**env, "TELNYX_API_KEY": ""}, clear=False):
             groups = {group["name"]: group for group in service_readiness(settings, self.engine)}
         self.assertTrue(groups["Payments"]["ok"])
         self.assertTrue(groups["AI assistant"]["ok"])
-        self.assertEqual(groups["Phone routing"]["missing"], ["TELNYX_SIP_PASSWORD", "TELNYX_OUTBOUND_VOICE_PROFILE_ID"])
+        self.assertEqual(groups["Phone routing"]["missing"], ["TELNYX_API_KEY"])
         self.assertEqual(groups["Database"]["missing"], ["customer_onboarding", "activation_jobs"])
         rendered = str(list(groups.values()))
         for secret in ("SECRET", "price_1"):
@@ -117,7 +116,7 @@ class DeploymentChecksTest(unittest.TestCase):
         )
         with self.assertLogs("app.deployment_checks", "WARNING") as logs:
             log_deployment_readiness(self.engine, "https://rootcall.onrender.com", settings)
-        self.assertTrue(any("TELNYX_SIP_PASSWORD" in line for line in logs.output))
+        self.assertTrue(any("TELNYX_API_KEY" in line for line in logs.output))
 
     def test_render_url_is_the_base_url_fallback(self):
         script = "from app.config import settings; print(settings.APP_BASE_URL)"

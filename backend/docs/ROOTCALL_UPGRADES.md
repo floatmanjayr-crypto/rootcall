@@ -530,9 +530,11 @@ out clears both token keys, cached user information and the selected plan.
   customer ownership from the signed-in account, never browser-supplied customer IDs.
   Settings offers **Manage billing**. Unpaid setup with an existing verified customer
   also exposes billing recovery rather than asking for a second subscription.
-- Set `TELNYX_API_KEY`, `RETELL_API_KEY`, `TELNYX_SIP_USERNAME` (a username prefix),
-  `TELNYX_SIP_PASSWORD`, and `TELNYX_OUTBOUND_VOICE_PROFILE_ID`. Generated SIP usernames
-  append `_<user_id>` to the prefix. The voice profile must permit the destination
+- Set `TELNYX_API_KEY` and `RETELL_API_KEY` (the same keys the dashboard purchase has always used).
+  `TELNYX_SIP_USERNAME`, `TELNYX_SIP_PASSWORD` and `TELNYX_OUTBOUND_VOICE_PROFILE_ID` are
+  **optional overrides**: by default each customer's trunk is named `rootcall_<user_id>` with a
+  password derived from the server signing secret, and the outbound voice profile is found or
+  created automatically, exactly as the dashboard purchase does. If you set a voice profile ID it must permit the destination
   countries you intend to support; set fraud/spend limits before enabling transfers.
 - Configure `OPENAI_API_KEY` and `DEEPGRAM_API_KEY` for existing module-level clients,
   even though the new onboarding flow uses Retell. Configure SendGrid and a verified
@@ -633,10 +635,7 @@ Fixed in code:
 Check in the Render dashboard (cannot be verified from the repository):
 
 1. `getrootcall.com` currently serves a Hostinger "Your domain is expired" page and has no backend. Renew it, or do not use it as `APP_BASE_URL` or in Stripe settings. Stripe return links, password-reset emails and the Retell webhook are all built from `APP_BASE_URL`; if it points at a dead domain, customers pay but never see the success page. The working URL is `https://rootcall.onrender.com`.
-2. Set these on the web service (the dashboard's Setup checks card on the admin page lists exactly which are missing; names only, never values): `STRIPE_SECRET_KEY`, `STRIPE_ESSENTIAL_PRICE_ID`, `STRIPE_WEBHOOK_SECRET`, `TELNYX_API_KEY`, `RETELL_API_KEY`, `TELNYX_SIP_PASSWORD` and `TELNYX_OUTBOUND_VOICE_PROFILE_ID`. A missing value gives customers "Phone routing is not configured… no number was purchased" and logs `Activation blocked … set <names>`. These were introduced by automated onboarding and are not in the older `render_env_vars.txt` list.
-   - `TELNYX_SIP_PASSWORD`: any long random secret you choose (for example `openssl rand -base64 24`). The app sets the same password on each customer's Telnyx SIP connection and on the matching Retell trunk, so no existing credential has to match it.
-   - `TELNYX_OUTBOUND_VOICE_PROFILE_ID`: the ID of your Telnyx Outbound Voice Profile (Telnyx portal > Voice > Outbound Voice Profiles; the automation's default profile is named "RootCall US Outbound"). It is required because it is what attaches the SIP credentials to the connection.
-   - `TELNYX_SIP_USERNAME` is optional and defaults to `rootcall` (each customer gets `rootcall_<id>`).
+2. Set these on the web service (the Setup checks card on the admin page lists exactly which are missing; names only, never values): `STRIPE_SECRET_KEY`, `STRIPE_ESSENTIAL_PRICE_ID`, `STRIPE_WEBHOOK_SECRET`, `TELNYX_API_KEY` and `RETELL_API_KEY`. Automatic activation needs no other phone-routing settings: it provisions with the same naming and credentials as the dashboard purchase. `TELNYX_SIP_USERNAME`, `TELNYX_SIP_PASSWORD` and `TELNYX_OUTBOUND_VOICE_PROFILE_ID` remain optional overrides.
 3. Confirm the startup log shows `Database schema upgraded to revision e254ab76f430` (first deploy only). If it shows `Automatic schema upgrade failed`, send the error that follows.
 
 Regression test: `backend/tests/journey.browser.cjs` drives the real app (only Stripe, Retell and Telnyx faked by `backend/tests/e2e_journey_server.py`) from the landing page through activation and the success screen at 1280px and 390px. Start `python backend/tests/e2e_journey_server.py`, then run `PLAYWRIGHT_MODULE=<path> node backend/tests/journey.browser.cjs`.

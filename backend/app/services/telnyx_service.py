@@ -217,7 +217,7 @@ class TelnyxService:
             "dtmf_type": "RFC 2833",
             "inbound": {
                 "ani_number_format": "+E.164",
-                "dnis_number_format": "+E.164",
+                "dnis_number_format": "+e164",
                 "codecs": ["G722", "PCMU", "PCMA"],
                 "sip_region": "US",
                 "timeout_1xx_secs": 5,

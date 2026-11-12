@@ -46,6 +46,8 @@ class OnboardingTest(unittest.TestCase):
         self.stack = ExitStack()
         self.addCleanup(self.stack.close)
         self.stack.enter_context(patch.object(settings, "JWT_SECRET_KEY", "test-only-onboarding-signing-key"))
+        # These tests cover the automated paid-onboarding flow, which is opt-in.
+        self.stack.enter_context(patch.object(settings, "AUTOMATED_ONBOARDING", True))
         self.engine = create_engine(
             "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool,
         )

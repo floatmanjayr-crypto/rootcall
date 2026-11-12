@@ -56,6 +56,11 @@ class Settings:
     APP_BASE_URL: str = os.getenv("APP_BASE_URL") or os.getenv("RENDER_EXTERNAL_URL", "")
     STRIPE_WEBHOOK_SECRET: str = os.getenv("STRIPE_WEBHOOK_SECRET", "")
 
+    # The automated paid-onboarding flow (setup wizard + background activation) is OFF unless this is
+    # "true". By default customers use the original flow: sign up, pay with Stripe, then buy a number
+    # from the dashboard.
+    AUTOMATED_ONBOARDING: bool = os.getenv("AUTOMATED_ONBOARDING", "false").strip().lower() in {"1", "true", "yes", "on"}
+
     
     # ✅ Backward compatibility alias
     @property

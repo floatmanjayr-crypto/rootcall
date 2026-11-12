@@ -14,7 +14,7 @@ from app.database import get_db
 from app.models.onboarding import CustomerOnboarding
 from app.models.phone_number import PhoneNumber
 from app.models.user import User
-from app.services.customer_onboarding import new_onboarding, next_url
+from app.services.customer_onboarding import automated_onboarding_enabled, new_onboarding, next_url
 from app.services.payment_verification import billing_summary, refresh_payment, stripe_data, verify_checkout
 
 log = logging.getLogger(__name__)
@@ -40,13 +40,42 @@ class CreateCheckout(BaseModel):
     user_id: int | None = None
 
 
+def classic_checkout(data: CreateCheckout, request: Request, user: User):
+    """The original checkout: any configured plan, returning to the success page. No onboarding record."""
+    if not stripe.api_key:
+        raise HTTPException(status_code=503, detail="Payments are not configured.")
+    price_id = PRICE_MAP.get(data.tier)
+    if not price_id:
+        raise HTTPException(status_code=400, detail="Invalid or misconfigured tier")
+    if not user.email:
+        raise HTTPException(status_code=400, detail="User has no email")
+    origin = (request.headers.get("origin") or "").rstrip("/")
+    if not origin.startswith(("https://", "http://")):
+        origin = settings.APP_BASE_URL.rstrip("/") or str(request.base_url).rstrip("/")
+    try:
+        session = stripe.checkout.Session.create(
+            customer_email=user.email,
+            line_items=[{"price": price_id, "quantity": 1}],
+            mode="subscription",
+            success_url=f"{origin}/static/success.html?session_id={{CHECKOUT_SESSION_ID}}",
+            cancel_url=f"{origin}/",
+            metadata={"user_id": str(user.id), "tier": data.tier},
+        )
+    except stripe.StripeError:
+        log.exception("Stripe checkout failed for user %s", user.id)
+        raise HTTPException(status_code=502, detail="Checkout could not start. Please retry.")
+    return {"checkout_url": session.url, "session_id": session.id}
+
+
 @router.post("/create-checkout")
 def create_checkout_session(
-    data: CreateCheckout, current_user: User = Depends(get_current_active_user),
+    data: CreateCheckout, request: Request, current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ):
     if data.user_id is not None and data.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Cannot create checkout for another account.")
+    if not automated_onboarding_enabled():
+        return classic_checkout(data, request, current_user)
     if data.tier != "essential":
         raise HTTPException(status_code=422, detail="Only the single-line Essential plan is available at launch.")
     if not stripe.api_key:
@@ -166,6 +195,13 @@ async def payment_webhook(request: Request, db: Session = Depends(get_db)):
     if event["type"] in ("checkout.session.completed", "checkout.session.async_payment_succeeded"):
         metadata = payload.get("metadata") or {}
         if metadata.get("flow") != "rootcall_onboarding_v1":
+            # Original-flow checkout: remember the Stripe customer so "Manage billing" works.
+            customer = payload.get("customer")
+            user_id = str(metadata.get("user_id", ""))
+            user = db.get(User, int(user_id)) if user_id.isdigit() else None
+            if user and customer and payload.get("payment_status") == "paid" and not user.stripe_customer_id:
+                user.stripe_customer_id = customer
+                db.commit()
             return {"received": True}
         user_id = metadata.get("user_id", "")
         user = db.get(User, int(user_id)) if str(user_id).isdigit() else None

@@ -24,6 +24,7 @@ from app.models.user import User
 from app.models.phone_number import PhoneNumber
 from app.models.rootcall_config import RootCallConfig, TrustedContact
 from app.models.onboarding import CustomerOnboarding
+from app.services.customer_onboarding import automated_onboarding_enabled
 
 # Services
 from app.services.telnyx_service import TelnyxService
@@ -410,7 +411,7 @@ def connect_trusted_routing(
 ):
     if current_user.id != client_id or not current_user.is_active:
         raise HTTPException(status_code=403, detail="Cannot modify this account's routing.")
-    setup = db.get(CustomerOnboarding, client_id)
+    setup = db.get(CustomerOnboarding, client_id) if automated_onboarding_enabled() else None
     if setup and setup.status != "completed":
         raise HTTPException(status_code=409, detail="Resume onboarding or contact support before changing trusted routing.")
     phone = db.query(PhoneNumber).filter(
@@ -579,7 +580,7 @@ async def get_available_numbers(
     Search for available phone numbers from Telnyx
     Query params: area_code (optional, e.g., "813")
     """
-    if db.get(CustomerOnboarding, current_user.id):
+    if automated_onboarding_enabled() and db.get(CustomerOnboarding, current_user.id):
         from app.services.customer_onboarding import require_paid
         require_paid(db, current_user)
     try:
@@ -638,7 +639,7 @@ async def provision_rootcall(
     - Import to Retell
     - Configure for scam screening
     """
-    if db.get(CustomerOnboarding, current_user.id):
+    if automated_onboarding_enabled() and db.get(CustomerOnboarding, current_user.id):
         from app.services.activation_jobs import enqueue_activation
         from app.routers.payments import public_url
         public_url()
@@ -960,7 +961,7 @@ async def import_existing_number(
     db: Session = Depends(get_db)
 ):
     """Import existing Telnyx number into RootCall"""
-    if db.get(CustomerOnboarding, current_user.id):
+    if automated_onboarding_enabled() and db.get(CustomerOnboarding, current_user.id):
         raise HTTPException(status_code=409, detail="Use paid onboarding to activate your Shield number.")
     from urllib.parse import unquote
     

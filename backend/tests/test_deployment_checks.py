@@ -56,10 +56,20 @@ class DeploymentChecksTest(unittest.TestCase):
         app.dependency_overrides[get_db] = lambda: session
         client = TestClient(app, raise_server_exceptions=False)
         self.addCleanup(client.close)
-        with patch.object(settings, "JWT_SECRET_KEY", "test-only-deployment-signing-key"):
+        with patch.object(settings, "JWT_SECRET_KEY", "test-only-deployment-signing-key"), \
+                patch.object(settings, "AUTOMATED_ONBOARDING", True):
             response = client.post("/api/auth/signup", json={"email": "new@example.com", "password": "long-enough-password"})
         self.assertEqual(response.status_code, 503)
         self.assertEqual(response.json(), {"detail": UNAVAILABLE_MESSAGE})
+
+        # The original flow never touches the onboarding tables, so a missing table cannot break signup.
+        # (A real request gets a fresh session; this test shares one, so clear the failed transaction first.)
+        session.rollback()
+        with patch.object(settings, "JWT_SECRET_KEY", "test-only-deployment-signing-key"), \
+                patch.object(settings, "AUTOMATED_ONBOARDING", False):
+            response = client.post("/api/auth/signup", json={"email": "classic@example.com", "password": "long-enough-password"})
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertEqual(response.json()["next_url"], "/static/client-portal.html")
 
     def test_embedded_activation_runner_survives_errors_and_stops(self):
         from threading import Event
@@ -77,11 +87,28 @@ class DeploymentChecksTest(unittest.TestCase):
                 stopping.set()
             return 0
 
-        with patch.object(activation_worker, "run_once", side_effect=fake_run_once):
+        with patch.object(activation_worker, "run_once", side_effect=fake_run_once), \
+                patch.object(settings, "AUTOMATED_ONBOARDING", True):
             thread = activation_worker.start_embedded(stopping, session_factory=object(), interval=0)
             thread.join(timeout=5)
         self.assertFalse(thread.is_alive())
         self.assertGreaterEqual(len(calls), 3)
+
+    def test_activation_runner_stays_idle_in_the_original_flow(self):
+        from threading import Event
+
+        from app import activation_worker
+
+        stopping = Event()
+        with patch.object(activation_worker, "run_once") as run_once, \
+                patch.object(settings, "AUTOMATED_ONBOARDING", False), \
+                self.assertLogs("app.activation_worker", "INFO") as logs:
+            thread = activation_worker.start_embedded(stopping, session_factory=object(), interval=0.01)
+            stopping.wait(0.2)
+            stopping.set()
+            thread.join(timeout=5)
+        run_once.assert_not_called()
+        self.assertTrue(any("idle" in line for line in logs.output))
 
     def test_embedded_runner_can_be_disabled(self):
         from app.activation_worker import embedded_enabled
@@ -114,7 +141,8 @@ class DeploymentChecksTest(unittest.TestCase):
             [g["missing"] for g in service_readiness(settings) if g["name"] == "Public site address"],
             [["APP_BASE_URL (must start with https://)"]],
         )
-        with self.assertLogs("app.deployment_checks", "WARNING") as logs:
+        with patch.dict(os.environ, {"TELNYX_API_KEY": ""}), \
+                self.assertLogs("app.deployment_checks", "WARNING") as logs:
             log_deployment_readiness(self.engine, "https://rootcall.onrender.com", settings)
         self.assertTrue(any("TELNYX_API_KEY" in line for line in logs.output))
 

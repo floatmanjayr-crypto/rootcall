@@ -378,8 +378,8 @@
   </section>
 
   <section class="container section" id="pricing" aria-label="Pricing">
-    <h2 class="section-title">One line. One simple plan.</h2>
-    <p style="color:var(--muted);margin-top:0">Start with Essential. Multi-line and caregiver plans are not available at launch.</p>
+    <h2 class="section-title">Simple plans — priceless protection</h2>
+    <p style="color:var(--muted);margin-top:0">You're not buying minutes. You're buying peace of mind.</p>
 
     <div class="grid grid-3 price-wrap">
       <div class="price" aria-label="Essential plan">
@@ -388,8 +388,8 @@
         <p class="muted">Solo protection for one line</p>
         <ul class="list">
           <li><span class="tick">•</span> AI answers & screens</li>
-          <li><span class="tick">•</span> AI scam screening</li>
-          <li><span class="tick">•</span> Forward legitimate calls to your phone</li>
+          <li><span class="tick">•</span> Spoof & scam blocking</li>
+          <li><span class="tick">•</span> Verified call forwarding</li>
         </ul>
         <div style="margin-top:14px">
           <button onclick="selectPlan('essential')" class="btn btn-primary" style="width:100%;justify-content:center">
@@ -399,30 +399,34 @@
       </div>
 
       <div class="price" style="border-color:#1c6b53" aria-label="Family plan">
-        <span class="ribbon">Coming later</span>
+        <span class="ribbon">Most Popular</span>
         <h4>Family</h4>
-        <p class="muted">Multi-line protection is not available yet.</p>
+        <div class="amt">$24.99<span style="font-size:.9rem">/mo</span></div>
+        <p class="muted">Protect up to 3 lines</p>
         <ul class="list">
-          <li><span class="tick">•</span> Planned: multiple Shield lines</li>
-          <li><span class="tick">•</span> Planned: family account management</li>
+          <li><span class="tick">•</span> Everything in Essential</li>
+          <li><span class="tick">•</span> Caregiver SMS alerts</li>
+          <li><span class="tick">•</span> Priority screening queue</li>
         </ul>
         <div style="margin-top:14px">
-          <button disabled class="btn btn-primary" style="width:100%;justify-content:center">
-            Not available yet
+          <button onclick="selectPlan('family')" class="btn btn-primary" style="width:100%;justify-content:center">
+            Secure My Family
           </button>
         </div>
       </div>
 
       <div class="price" style="border-color:#0b3629" aria-label="Guardian plan">
         <h4>Guardian</h4>
-        <p class="muted">Caregiver features are planned for a later release.</p>
+        <div class="amt">$34.99<span style="font-size:.9rem">/mo</span></div>
+        <p class="muted">Maximum protection + white-glove setup</p>
         <ul class="list">
-          <li><span class="tick">•</span> Planned: consent-based caregiver access</li>
-          <li><span class="tick">•</span> Planned: caregiver notifications</li>
+          <li><span class="tick">•</span> Dedicated onboarding</li>
+          <li><span class="tick">•</span> Expanded allow/deny lists</li>
+          <li><span class="tick">•</span> Priority support</li>
         </ul>
         <div style="margin-top:14px">
-          <button disabled class="btn btn-primary" style="width:100%;justify-content:center">
-            Not available yet
+          <button onclick="selectPlan('guardian')" class="btn btn-primary" style="width:100%;justify-content:center">
+            Get Guardian
           </button>
         </div>
       </div>
@@ -464,27 +468,31 @@
       <h3>Get Protected with RootCall</h3>
       <div id="modal-message" class="message"></div>
       <form onsubmit="handleSignup(event)">
-        <p style="color:var(--muted);font-size:14px">Create your account, complete secure payment, then personalize your protection.</p>
+        <p style="color:var(--muted);font-size:14px">Create your account, then complete secure payment with Stripe.</p>
         <div class="form-group">
-          <label>Email</label>
-          <input type="email" id="signup-email" required>
+          <label for="signup-name">Full Name</label>
+          <input type="text" id="signup-name" required autocomplete="name">
         </div>
         <div class="form-group">
-          <label>Password</label>
+          <label for="signup-email">Email</label>
+          <input type="email" id="signup-email" required autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label for="signup-password">Password</label>
           <input type="password" id="signup-password" required minlength="8" autocomplete="new-password">
         </div>
-        <div class="plan-summary" role="group" aria-label="Your plan">
-          <div>
-            <strong>RootCall Essential</strong>
-            <span>One protected line &middot; cancel anytime</span>
-          </div>
-          <b>$14.99<small>/mo</small></b>
-          <input type="hidden" id="signup-plan" value="essential">
+        <div class="form-group">
+          <label for="signup-plan">Select Plan</label>
+          <select id="signup-plan" required>
+            <option value="essential" selected>Essential - $14.99/mo</option>
+            <option value="family">Family - $24.99/mo (Most Popular)</option>
+            <option value="guardian">Guardian - $34.99/mo</option>
+          </select>
         </div>
         <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">
-          Continue to secure payment
+          Create Account &amp; Subscribe
         </button>
-        <p class="fine-print">You’ll pay securely with Stripe next. Setup starts as soon as payment is confirmed.</p>
+        <p class="fine-print">You’ll pay securely with Stripe next.</p>
       </form>
       <p style="text-align:center;margin-top:15px;color:var(--muted);font-size:14px">
         Already have an account?
@@ -529,7 +537,7 @@
     }
 
     function selectPlan(plan) {
-      document.getElementById('signup-plan').value = 'essential';
+      document.getElementById('signup-plan').value = plan;
       openSignup();
     }
 
@@ -559,6 +567,7 @@
     async function handleSignup(e) {
       e.preventDefault();
       
+      const name = document.getElementById('signup-name').value;
       const email = document.getElementById('signup-email').value;
       const password = document.getElementById('signup-password').value;
       const plan = document.getElementById('signup-plan').value;
@@ -567,15 +576,11 @@
       let redirecting = false;
 
       try {
-        if (localStorage.getItem('access_token') || localStorage.getItem('token')) {
-          localStorage.setItem('selected_plan', plan);
-          location.assign('/static/onboarding.html');
-          return;
-        }
         const signupResponse = await fetch(API + '/api/auth/signup', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({
+            full_name: name,
             email: email,
             password: password
           })
@@ -599,19 +604,19 @@
         const checkoutResponse = await fetch(API + '/api/payments/create-checkout', {
           method: 'POST',
           headers: {'Content-Type': 'application/json', Authorization: `Bearer ${signupData.access_token}`},
-          body: JSON.stringify({tier: plan})
+          body: JSON.stringify({tier: plan, user_id: signupData.user.id})
         });
         const checkoutData = await readJson(checkoutResponse);
         if (checkoutResponse.ok && checkoutData.checkout_url) {
           redirecting = true;
           location.assign(checkoutData.checkout_url);
         } else {
-          showMessage('Your account is saved. ' + errorDetail(checkoutData, checkoutResponse, 'Checkout could not start.') + ' You can continue from the payment step.', true);
+          showMessage('Your account is saved. ' + errorDetail(checkoutData, checkoutResponse, 'Checkout could not start.') + ' Sign in to try again.', true);
           const continueLink = document.createElement('a');
-          continueLink.href = '/static/onboarding.html';
+          continueLink.href = '/static/login.html';
           continueLink.className = 'btn btn-primary';
           continueLink.style.marginTop = '10px';
-          continueLink.textContent = 'Continue to payment step';
+          continueLink.textContent = 'Sign in';
           document.getElementById('modal-message').append(document.createElement('br'), continueLink);
         }
 

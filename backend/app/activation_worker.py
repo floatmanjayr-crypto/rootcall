@@ -13,6 +13,7 @@ import stripe
 
 from app.database import SessionLocal, engine
 from app.services.activation_jobs import run_once
+from app.services.customer_onboarding import automated_onboarding_enabled
 
 log = logging.getLogger(__name__)
 POLL_SECONDS = 5
@@ -20,7 +21,15 @@ POLL_SECONDS = 5
 
 def poll(stopping: Event, session_factory=SessionLocal, interval=POLL_SECONDS):
     last_failure = None
+    announced_idle = False
     while not stopping.is_set():
+        if not automated_onboarding_enabled():
+            # Original flow: customers buy their own number in the dashboard, so nothing may be bought automatically.
+            if not announced_idle:
+                log.info("Automated onboarding is off (AUTOMATED_ONBOARDING is not true); activation runner is idle")
+                announced_idle = True
+            stopping.wait(interval)
+            continue
         try:
             run_once(session_factory, stopping=stopping)
             last_failure = None

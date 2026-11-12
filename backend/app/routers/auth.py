@@ -15,7 +15,7 @@ import logging
 from app.config import settings
 from app.core.deps import get_current_active_user
 from app.core.security import create_access_token, get_password_hash, verify_password, signing_key, token_user_id
-from app.services.customer_onboarding import new_onboarding, next_url
+from app.services.customer_onboarding import automated_onboarding_enabled, new_onboarding, next_url
 from app.services.email_service import EmailService
 router = APIRouter(tags=["Auth"])
 
@@ -191,7 +191,8 @@ async def signup(data: UserSignup, db: Session = Depends(get_db)):
     )
     db.add(user)
     db.flush()
-    db.add(new_onboarding(user.id))
+    if automated_onboarding_enabled():
+        db.add(new_onboarding(user.id))
     db.commit()
     
     token = create_token(user.id)

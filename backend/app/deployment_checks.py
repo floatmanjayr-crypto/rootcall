@@ -37,6 +37,9 @@ def service_readiness(settings, engine=None):
     """Report which settings and tables a customer activation needs but the service lacks."""
     groups = []
     for title, purpose, names in SETTING_GROUPS:
+        if not getattr(settings, "AUTOMATED_ONBOARDING", False):
+            # The webhook only finalizes automated onboarding payments.
+            names = tuple(name for name in names if name != "STRIPE_WEBHOOK_SECRET")
         missing = [name for name in names if not _configured(settings, name)]
         if names == ("APP_BASE_URL",) and not missing:
             if not str(getattr(settings, "APP_BASE_URL", "")).strip().startswith("https://"):

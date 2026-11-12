@@ -30,11 +30,17 @@ For legitimate callers, say "Thank you, let me connect you now" and use transfer
 Do not claim a call was connected if the tool fails. Be polite and concise."""
 
 
+def automated_onboarding_enabled() -> bool:
+    return bool(settings.AUTOMATED_ONBOARDING)
+
+
 def new_onboarding(user_id: int) -> CustomerOnboarding:
     return CustomerOnboarding(user_id=user_id, checkout_key=secrets.token_urlsafe(24))
 
 
 def next_url(db: Session, user_id: int) -> str:
+    if not automated_onboarding_enabled():
+        return "/static/client-portal.html"
     onboarding = db.get(CustomerOnboarding, user_id)
     if onboarding and onboarding.status != "completed":
         return "/static/onboarding.html"

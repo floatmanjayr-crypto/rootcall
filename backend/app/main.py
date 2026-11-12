@@ -7,6 +7,7 @@ from app.config import settings
 from app.database import engine, Base
 from app.deployment_checks import log_deployment_readiness, register_error_handlers
 from app.activation_worker import embedded_enabled, start_embedded
+from app.services.customer_onboarding import automated_onboarding_enabled
 from app.schema_upgrade import auto_migrate_enabled, upgrade_schema
 from threading import Event
 from app.core.deps import require_operator
@@ -150,7 +151,8 @@ def portal_redirect():
 @app.get("/success.html", include_in_schema=False)
 def success_redirect(request: Request):
     query = f"?{request.url.query}" if request.url.query else ""
-    return RedirectResponse(url=f"/static/onboarding.html{query}")
+    page = "onboarding" if automated_onboarding_enabled() else "success"
+    return RedirectResponse(url=f"/static/{page}.html{query}")
 
 @app.get("/forgot-password.html", include_in_schema=False)
 def forgot_password_redirect():

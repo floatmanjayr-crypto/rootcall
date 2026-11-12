@@ -202,17 +202,12 @@ class TelnyxService:
                        if item.get("connection_name") == connection_name]
         if connections:
             conn = connections[0]
-            if outbound_voice_profile_id:
-                self._patch(f"/fqdn_connections/{conn['id']}", {
-                    "user_name": sip_username, "password": sip_password,
-                    "outbound": {"outbound_voice_profile_id": outbound_voice_profile_id,
-                                 "ip_authentication_method": "credential-authentication"},
-                })
-                self._ensure_retell_fqdn(conn["id"])
-            self.ensure_outbound_voice_profile(conn.get("id"), profile_id=outbound_voice_profile_id)
-            log.info(f"Using existing trunk: {conn.get('id')}")
+            # Never rewrite auth, credentials, or the voice profile on an existing trunk.
+            # Retell holds the credentials it was imported with, and changing the trunk
+            # breaks Retell -> Telnyx legs (transfers, outbound calls).
+            log.info(f"Using existing trunk unchanged: {conn.get('id')}")
             return conn, sip_username, sip_password
-        
+
         log.info(f"Creating Elastic SIP Trunk: {connection_name}")
         
         payload = {

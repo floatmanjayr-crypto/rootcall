@@ -252,8 +252,7 @@ class TelnyxService:
         fqdn_payload = {
             "connection_id": connection_id,
             "fqdn": "sip.retellai.com",
-            "dns_record_type": "srv",
-            "port": 5060
+            "dns_record_type": "srv"
         }
         
         self._post("/fqdns", json=fqdn_payload)

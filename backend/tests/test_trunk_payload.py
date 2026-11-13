@@ -36,3 +36,14 @@ def test_retell_address_is_added_before_outbound_profile_is_attached():
                       side_effect=lambda *a, **k: calls.append("fqdn")):
         svc.get_or_create_retell_trunk("RootCall-Retell-1", "u", "p")
     assert calls == ["fqdn", "profile"]
+
+
+def test_retell_srv_record_is_sent_without_a_port():
+    svc = TelnyxService()
+    with patch.object(TelnyxService, "_get", return_value={"data": []}), \
+         patch.object(TelnyxService, "_post", return_value={"data": {}}) as post_call:
+        svc._ensure_retell_fqdn("c1")
+    payload = post_call.call_args.kwargs["json"]
+    assert payload["fqdn"] == "sip.retellai.com"
+    assert payload["dns_record_type"] == "srv"
+    assert "port" not in payload

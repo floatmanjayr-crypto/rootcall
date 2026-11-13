@@ -748,14 +748,19 @@ async def provision_rootcall(
         connection_id = connection.get("id")
         log.info(f"SUCCESS - SIP Connection: {connection_id}")
 
-        if existing_telnyx_number and existing_telnyx_number.get("connection_id") != connection_id:
+        number_is_assigned = bool(existing_telnyx_number and existing_telnyx_number.get("connection_id"))
+        if number_is_assigned and existing_telnyx_number.get("connection_id") != connection_id:
+            log.error(
+                "Number %s is on connection %s, not this user's trunk %s",
+                phone_number, existing_telnyx_number.get("connection_id"), connection_id,
+            )
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="This Telnyx number is not assigned to your RootCall SIP connection. Contact support before retrying.",
             )
         
         # STEP 3: Assign number to connection
-        if not existing_telnyx_number:
+        if not number_is_assigned:
             log.info("STEP 3: Assigning number to SIP trunk...")
             provision_step = "connecting the number to the Telnyx SIP trunk"
             telnyx.assign_number_to_connection(phone_number, connection_id)

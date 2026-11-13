@@ -228,11 +228,11 @@ class TelnyxService:
                 "localization": "US"
             }
         }
+        payload["user_name"] = sip_username
+        payload["password"] = sip_password
         if outbound_voice_profile_id:
             payload["outbound"]["outbound_voice_profile_id"] = outbound_voice_profile_id
             payload["outbound"]["ip_authentication_method"] = "credential-authentication"
-            payload["user_name"] = sip_username
-            payload["password"] = sip_password
         
         trunk_response = self._post("/fqdn_connections", json=payload)
         trunk_data = trunk_response.get("data", {})
@@ -252,6 +252,18 @@ class TelnyxService:
             except Exception as exc:
                 log.warning("Outbound voice profile not attached yet for %s: %s", trunk_id, exc)
         return trunk_data, sip_username, sip_password
+
+    def trunk_needs_credentials(self, connection_id: str) -> bool:
+        """True when the trunk has no SIP login set (Telnyx then rejects an outbound profile)."""
+        data = self._get(f"/fqdn_connections/{connection_id}")
+        conn = data.get("data", data)
+        return not conn.get("user_name")
+
+    def set_trunk_credentials(self, connection_id: str, username: str, password: str) -> Dict[str, Any]:
+        return self._patch(
+            f"/fqdn_connections/{connection_id}",
+            json={"user_name": username, "password": password},
+        )
 
     def _ensure_retell_fqdn(self, connection_id: str):
         existing = self._get("/fqdns", params={"filter[connection_id]": connection_id})

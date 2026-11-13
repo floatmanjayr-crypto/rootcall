@@ -60,3 +60,26 @@ def test_classic_trunk_survives_profile_attach_failure():
                       side_effect=RuntimeError("must be fully configured")):
         trunk, _, _ = TelnyxService().get_or_create_retell_trunk("n", "u", "p")
     assert trunk["id"] == "t1"
+
+
+def test_new_trunk_is_created_with_a_sip_login():
+    svc = TelnyxService()
+    with patch.object(TelnyxService, "_get", return_value={"data": []}), \
+         patch.object(TelnyxService, "_post", return_value={"data": {"id": "c9"}}) as post_call, \
+         patch.object(TelnyxService, "ensure_outbound_voice_profile"), \
+         patch.object(TelnyxService, "_ensure_retell_fqdn"):
+        svc.get_or_create_retell_trunk("RootCall-Retell-1", "user_1", "pw_1")
+    payload = post_call.call_args.kwargs["json"]
+    assert payload["user_name"] == "user_1"
+    assert payload["password"] == "pw_1"
+
+
+def test_trunk_without_login_is_detected_and_login_can_be_set():
+    svc = TelnyxService()
+    with patch.object(TelnyxService, "_get", return_value={"data": {"user_name": None}}):
+        assert svc.trunk_needs_credentials("c1") is True
+    with patch.object(TelnyxService, "_get", return_value={"data": {"user_name": "rootcall_1"}}):
+        assert svc.trunk_needs_credentials("c1") is False
+    with patch.object(TelnyxService, "_patch", return_value={}) as patch_call:
+        svc.set_trunk_credentials("c1", "u", "p")
+    assert patch_call.call_args.kwargs["json"] == {"user_name": "u", "password": "p"}

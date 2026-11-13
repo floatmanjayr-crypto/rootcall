@@ -472,8 +472,14 @@ class RetellService:
         phone_number: str,
         inbound_agent_id: Optional[str] = None,
         outbound_agent_id: Optional[str] = None,
+        auth_username: Optional[str] = None,
+        auth_password: Optional[str] = None,
     ) -> Dict[str, Any]:
         patch: Dict[str, Any] = {}
+        if auth_username is not None:
+            patch["auth_username"] = auth_username
+        if auth_password is not None:
+            patch["auth_password"] = auth_password
         if inbound_agent_id is not None:
             patch["inbound_agents"] = [{"agent_id": inbound_agent_id, "weight": 1.0}]
         if outbound_agent_id is not None:

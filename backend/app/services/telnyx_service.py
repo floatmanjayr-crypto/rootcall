@@ -218,7 +218,7 @@ class TelnyxService:
             "inbound": {
                 "ani_number_format": "+E.164",
                 "dnis_number_format": "+e164",
-                "codecs": ["G722", "PCMU", "PCMA"],
+                "codecs": ["G722", "G711U", "G711A"],
                 "sip_region": "US",
                 "timeout_1xx_secs": 5,
                 "timeout_2xx_secs": 90

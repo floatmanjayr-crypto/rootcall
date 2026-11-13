@@ -1,5 +1,6 @@
 import logging
 import os
+from datetime import datetime
 import secrets
 from urllib.parse import urlparse
 
@@ -142,12 +143,20 @@ def payment_status(
     user: User = Depends(get_current_active_user), db: Session = Depends(get_db),
 ):
     onboarding = db.get(CustomerOnboarding, user.id)
-    if onboarding and onboarding.stripe_subscription_id:
+    if onboarding and onboarding.stripe_subscription_id and not _billing_snapshot_is_fresh(onboarding):
         refresh_payment(db, onboarding)
     result = billing_summary(onboarding)
     if not onboarding:
         result["billing_available"] = bool(user.stripe_customer_id)
     return result
+
+
+def _billing_snapshot_is_fresh(onboarding: CustomerOnboarding) -> bool:
+    ttl = settings.PAYMENT_STATUS_CACHE_SECONDS
+    checked = onboarding.billing_checked_at
+    if ttl <= 0 or checked is None or onboarding.subscription_status != "active":
+        return False
+    return (datetime.utcnow() - checked).total_seconds() < ttl
 
 
 @router.post("/billing-portal")

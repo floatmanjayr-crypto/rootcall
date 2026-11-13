@@ -123,7 +123,6 @@ Required:
 - `TELNYX_SIP_PASSWORD` - Strong SIP trunk password
 - `TELNYX_OUTBOUND_VOICE_PROFILE_ID` - Telnyx profile permitted to transfer calls
 - `OPENAI_API_KEY` - Required by the existing services-package initialization
-- `DEEPGRAM_API_KEY` - Existing transcription integration
 - `SENDGRID_API_KEY` - Transactional email provider key
 - `SENDER_EMAIL` - Verified sender for password reset email
 

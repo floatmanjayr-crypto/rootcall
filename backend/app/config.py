@@ -31,9 +31,6 @@ class Settings:
     # Retell.ai
     RETELL_API_KEY: str = os.getenv("RETELL_API_KEY", "")
 
-    # Deepgram
-    DEEPGRAM_API_KEY: str = os.getenv("DEEPGRAM_API_KEY", "")
-
     # Cloudflare R2 (optional)
     CLOUDFLARE_ACCOUNT_ID: str = os.getenv("CLOUDFLARE_ACCOUNT_ID", "")
     CLOUDFLARE_R2_ACCESS_KEY_ID: str = os.getenv("CLOUDFLARE_R2_ACCESS_KEY_ID", "")
@@ -59,6 +56,9 @@ class Settings:
     # The automated paid-onboarding flow (setup wizard + background activation) is OFF unless this is
     # "true". By default customers use the original flow: sign up, pay with Stripe, then buy a number
     # from the dashboard.
+    # Seconds a healthy Stripe snapshot may be reused by /api/payments/status (0 = always ask Stripe).
+    PAYMENT_STATUS_CACHE_SECONDS: int = int(os.getenv("PAYMENT_STATUS_CACHE_SECONDS", "0") or 0)
+
     AUTOMATED_ONBOARDING: bool = os.getenv("AUTOMATED_ONBOARDING", "false").strip().lower() in {"1", "true", "yes", "on"}
 
     

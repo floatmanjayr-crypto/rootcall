@@ -140,6 +140,10 @@ async def health():
 def login_redirect():
     return RedirectResponse(url="/static/login.html")
 
+@app.get("/favicon.ico", include_in_schema=False)
+def favicon_redirect():
+    return RedirectResponse(url="/static/favicon.svg", status_code=301)
+
 @app.get("/onboarding.html", include_in_schema=False)
 def onboarding_redirect():
     return RedirectResponse(url="/static/onboarding.html")

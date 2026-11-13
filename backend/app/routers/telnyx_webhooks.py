@@ -4,7 +4,6 @@ from datetime import datetime
 import logging
 import httpx
 import asyncio
-from deepgram import DeepgramClient
 from openai import OpenAI
 from app.config import settings
 from app.database import get_db
@@ -22,7 +21,6 @@ HEADERS_JSON = {
     "Content-Type": "application/json",
 }
 
-deepgram = DeepgramClient(api_key=settings.DEEPGRAM_API_KEY)
 openai_client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
 # Cache agent data as dict (not SQLAlchemy objects)
@@ -38,17 +36,10 @@ async def _post(url: str, json_data: dict):
         raise HTTPException(r.status_code, f"Telnyx error: {r.text}")
     return r
 
-async def transcribe_with_deepgram(audio_url: str) -> str:
-    try:
-        response = deepgram.listen.v1.media.transcribe_url(
-            url=audio_url,
-            model="nova-2",
-            smart_format=True
-        )
-        return response.results.channels[0].alternatives[0].transcript
-    except Exception as e:
-        log.error("STT failed: %s", e)
-        return ""
+async def transcribe_recording(audio_url: str) -> str:
+    """Legacy Telnyx call-control transcription is disabled; Retell answers live calls."""
+    log.warning("Legacy Telnyx call-control transcription is disabled; ignoring recording")
+    return ""
 
 async def speak_text(text: str, call_control_id: str):
     try:
@@ -171,7 +162,7 @@ async def telnyx_voice_webhook(request: Request, db: Session = Depends(get_db)):
             
             agent_data = agent_cache.get(call_control_id, {})
             
-            transcript = await transcribe_with_deepgram(recording_url)
+            transcript = await transcribe_recording(recording_url)
             
             if transcript and len(transcript.strip()) > 3 and agent_data:
                 system_prompt = agent_data.get("system_prompt") or "You are a helpful, concise phone assistant."

@@ -47,3 +47,16 @@ def test_retell_srv_record_is_sent_without_a_port():
     assert payload["fqdn"] == "sip.retellai.com"
     assert payload["dns_record_type"] == "srv"
     assert "port" not in payload
+
+
+def test_classic_trunk_survives_profile_attach_failure():
+    from unittest.mock import patch
+    from app.services.telnyx_service import TelnyxService
+    with patch.object(TelnyxService, "__init__", lambda self: None), \
+         patch.object(TelnyxService, "_get", return_value={"data": []}), \
+         patch.object(TelnyxService, "_post", return_value={"data": {"id": "t1"}}), \
+         patch.object(TelnyxService, "_ensure_retell_fqdn"), \
+         patch.object(TelnyxService, "ensure_outbound_voice_profile",
+                      side_effect=RuntimeError("must be fully configured")):
+        trunk, _, _ = TelnyxService().get_or_create_retell_trunk("n", "u", "p")
+    assert trunk["id"] == "t1"

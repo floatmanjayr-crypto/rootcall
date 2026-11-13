@@ -240,7 +240,17 @@ class TelnyxService:
         log.info(f"Created trunk: {trunk_id}")
         self._ensure_retell_fqdn(trunk_id)
         
-        self.ensure_outbound_voice_profile(trunk_id, profile_id=outbound_voice_profile_id)
+        if outbound_voice_profile_id:
+            # Automated onboarding: the profile is required, fail loudly.
+            self.ensure_outbound_voice_profile(trunk_id, profile_id=outbound_voice_profile_id)
+        else:
+            # Classic dashboard purchase (Nov 7 behaviour): never lose a paid number
+            # because Telnyx rejects a profile on a brand-new trunk. It is retried
+            # when the transfer number is saved in Settings.
+            try:
+                self.ensure_outbound_voice_profile(trunk_id)
+            except Exception as exc:
+                log.warning("Outbound voice profile not attached yet for %s: %s", trunk_id, exc)
         return trunk_data, sip_username, sip_password
 
     def _ensure_retell_fqdn(self, connection_id: str):

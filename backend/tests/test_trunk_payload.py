@@ -23,3 +23,16 @@ def test_new_trunk_payload_uses_codec_names_telnyx_accepts():
         svc.get_or_create_retell_trunk("RootCall-Retell-1", "u", "p")
     codecs = post_call.call_args.kwargs["json"]["inbound"]["codecs"]
     assert codecs == ["G722", "G711U", "G711A"]
+
+
+def test_retell_address_is_added_before_outbound_profile_is_attached():
+    svc = TelnyxService()
+    calls = []
+    with patch.object(TelnyxService, "_get", return_value={"data": []}), \
+         patch.object(TelnyxService, "_post", return_value={"data": {"id": "c9"}}), \
+         patch.object(TelnyxService, "ensure_outbound_voice_profile",
+                      side_effect=lambda *a, **k: calls.append("profile")), \
+         patch.object(TelnyxService, "_ensure_retell_fqdn",
+                      side_effect=lambda *a, **k: calls.append("fqdn")):
+        svc.get_or_create_retell_trunk("RootCall-Retell-1", "u", "p")
+    assert calls == ["fqdn", "profile"]

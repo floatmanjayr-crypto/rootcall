@@ -238,9 +238,9 @@ class TelnyxService:
         trunk_data = trunk_response.get("data", {})
         trunk_id = trunk_data.get("id")
         log.info(f"Created trunk: {trunk_id}")
-        self.ensure_outbound_voice_profile(trunk_id, profile_id=outbound_voice_profile_id)
-        
         self._ensure_retell_fqdn(trunk_id)
+        
+        self.ensure_outbound_voice_profile(trunk_id, profile_id=outbound_voice_profile_id)
         return trunk_data, sip_username, sip_password
 
     def _ensure_retell_fqdn(self, connection_id: str):

@@ -564,13 +564,13 @@ class OnboardingTest(unittest.TestCase):
             "RootCall-1", "llm-test", voice_id="voice-test", publish=False,
         )
         self.retell.configure_transfer_tool.assert_called_once_with(
-            "agent-test", "+12025550123", custom_sip_headers={"X-Telnyx-Username": "test-rootcall_1"},
+            "agent-test", "+12025550123", custom_sip_headers={"X-Telnyx-Username": "testrootcall1"},
         )
         self.retell.configure_call_webhook.assert_called_once_with(
             "agent-test", "https://rootcall.example/retell/webhook",
         )
         self.retell.import_phone_number.assert_called_once_with(
-            "+12025550100", "sip.telnyx.com", "test-rootcall_1", "test-sip-password",
+            "+12025550100", "sip.telnyx.com", "testrootcall1", "testsippassword",
             inbound_agent_id="agent-test",
         )
         self.db.expire_all()
@@ -641,20 +641,20 @@ class OnboardingTest(unittest.TestCase):
                 patch.object(settings, "TELNYX_OUTBOUND_VOICE_PROFILE_ID", ""):
             self.assertEqual(self.post("/api/onboarding/complete").status_code, 202)
             self.assertTrue(activation_jobs.process_job(self.db, 1))
-            username, password = customer_onboarding.sip_credentials(1)
-            again = customer_onboarding.sip_credentials(1)
-            other_password = customer_onboarding.sip_credentials(2)[1]
-        self.assertEqual(username, "rootcall_1")
-        self.assertTrue(password.startswith("rc_") and len(password) >= 20)
+            username, password = customer_onboarding.telnyx_sip_login(1)
+            again = customer_onboarding.telnyx_sip_login(1)
+            other_password = customer_onboarding.telnyx_sip_login(2)[1]
+        self.assertEqual(username, "rootcall1")
+        self.assertTrue(password.startswith("rc") and password.isalnum() and len(password) >= 20)
         self.assertEqual(again, (username, password))
         self.assertNotEqual(other_password, password)
         trunk = self.telnyx.get_or_create_retell_trunk.call_args
-        self.assertEqual(trunk.args[:3], ("RootCall-Retell-1", "rootcall_1", password))
+        self.assertEqual(trunk.args[:3], ("RootCall-Retell-1", "rootcall1", password))
         self.assertIsNone(trunk.kwargs["outbound_voice_profile_id"])
         self.telnyx.order_number.assert_called_once()
         self.retell.import_phone_number.assert_called_once()
         self.assertEqual(self.retell.import_phone_number.call_args.args[:4],
-                         ("+12025550100", "sip.telnyx.com", "rootcall_1", password))
+                         ("+12025550100", "sip.telnyx.com", "rootcall1", password))
 
     def test_explicit_sip_settings_still_win_when_configured(self):
         with patch.object(settings, "TELNYX_SIP_USERNAME", "custom"), patch.object(settings, "TELNYX_SIP_PASSWORD", "chosen"):

@@ -79,6 +79,35 @@ class CallRoutingTest(unittest.TestCase):
         self.assertEqual(self.config.client_cell, "+12025550102")
         telnyx.return_value.ensure_outbound_voice_profile.assert_called_once_with("connection-test")
 
+    def test_trunk_without_login_is_repaired_and_transfer_names_the_login(self):
+        with patch.object(rootcall_portal, "RetellService") as retell, \
+                patch.object(rootcall_portal, "TelnyxService") as telnyx:
+            telnyx.return_value.trunk_username.return_value = None
+            response = self.client.patch("/api/rootcall/config/1", json={"client_cell": "+12025550103"})
+        self.assertEqual(response.status_code, 200, response.text)
+        login = retell.return_value.update_phone_number.call_args.kwargs
+        self.assertTrue(login["auth_username"].isalnum() and login["auth_password"].isalnum())
+        telnyx.return_value.set_trunk_credentials.assert_called_once_with(
+            "connection-test", login["auth_username"], login["auth_password"]
+        )
+        self.assertEqual(
+            retell.return_value.configure_transfer_tool.call_args.kwargs["custom_sip_headers"],
+            {"X-Telnyx-Username": login["auth_username"]},
+        )
+
+    def test_trunk_with_login_is_not_changed_and_its_login_is_sent(self):
+        with patch.object(rootcall_portal, "RetellService") as retell, \
+                patch.object(rootcall_portal, "TelnyxService") as telnyx:
+            telnyx.return_value.trunk_username.return_value = "existinglogin"
+            response = self.client.patch("/api/rootcall/config/1", json={"client_cell": "+12025550103"})
+        self.assertEqual(response.status_code, 200, response.text)
+        retell.return_value.update_phone_number.assert_not_called()
+        telnyx.return_value.set_trunk_credentials.assert_not_called()
+        self.assertEqual(
+            retell.return_value.configure_transfer_tool.call_args.kwargs["custom_sip_headers"],
+            {"X-Telnyx-Username": "existinglogin"},
+        )
+
     def test_shared_contact_helpers_persist_after_reload(self):
         self.assertTrue(client_config.add_trusted_contact(
             "+12025550100", "+12025550103", self.db

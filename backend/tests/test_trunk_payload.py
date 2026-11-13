@@ -91,3 +91,11 @@ def test_telnyx_login_is_letters_and_numbers_only():
     assert username.isalnum() and password.isalnum()
     assert username.endswith("82") and len(password) >= 16
     assert telnyx_sip_login(82) == (username, password)
+
+
+def test_trunk_username_reads_the_login_or_none():
+    svc = TelnyxService()
+    with patch.object(TelnyxService, "_get", return_value={"data": {"user_name": "rootcall82"}}):
+        assert svc.trunk_username("c1") == "rootcall82"
+    with patch.object(TelnyxService, "_get", return_value={"data": {"user_name": None}}):
+        assert svc.trunk_username("c1") is None

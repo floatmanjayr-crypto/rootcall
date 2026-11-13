@@ -156,6 +156,41 @@ class RetellPublishingTest(unittest.TestCase):
         }, expected=200)
         publish.assert_not_called()
 
+    def test_published_llm_is_copied_and_agent_moved_to_it(self):
+        agent = {"response_engine": {"type": "retell-llm", "llm_id": "llm-old"}, "version": 3, "is_published": True}
+        llm = {"general_prompt": "P", "begin_message": "B", "model": "gpt-4.1", "general_tools": [], "version": 3}
+        calls = []
+
+        def fake_post(path, payload, expected=None):
+            calls.append((path, payload))
+            if path == "/create-retell-llm":
+                return {"llm_id": "llm-new"}
+            return {"version": 4}
+
+        with patch.object(self.service, "_get", side_effect=[agent, llm]), \
+                patch.object(self.service, "_patch", side_effect=[RuntimeError("Cannot update published LLM"), {}]) as patched, \
+                patch.object(self.service, "_post", side_effect=fake_post), \
+                patch.object(self.service, "publish_agent") as publish:
+            self.service.configure_transfer_tool("agent-test", "+12025550102")
+        created = dict(calls)["/create-retell-llm"]
+        self.assertEqual(created["general_prompt"], "P")
+        self.assertEqual(created["begin_message"], "B")
+        self.assertTrue(any(t.get("name") == "transfer_call" for t in created["general_tools"]))
+        self.assertNotIn("version", created)
+        self.assertEqual(dict(calls)["/create-agent-version/agent-test"], {"base_version": 3})
+        self.assertEqual(patched.call_args.args[0], "/update-agent/agent-test")
+        self.assertEqual(patched.call_args.args[1]["response_engine"], {"type": "retell-llm", "llm_id": "llm-new"})
+        publish.assert_called_once_with("agent-test", version=4)
+
+    def test_other_llm_update_errors_are_not_swallowed(self):
+        agent = {"response_engine": {"type": "retell-llm", "llm_id": "llm-old"}}
+        with patch.object(self.service, "_get", side_effect=[agent, {"general_tools": []}]), \
+                patch.object(self.service, "_patch", side_effect=RuntimeError("rate limited")), \
+                patch.object(self.service, "_post") as post:
+            with self.assertRaises(RuntimeError):
+                self.service.configure_transfer_tool("agent-test", "+12025550102")
+        post.assert_not_called()
+
     def test_removing_transfer_preserves_other_tools(self):
         tools = [
             {"type": "end_call", "name": "end_call"},

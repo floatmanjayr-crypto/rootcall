@@ -253,6 +253,11 @@ class TelnyxService:
                 log.warning("Outbound voice profile not attached yet for %s: %s", trunk_id, exc)
         return trunk_data, sip_username, sip_password
 
+    def trunk_username(self, connection_id: str) -> Optional[str]:
+        data = self._get(f"/fqdn_connections/{connection_id}")
+        conn = data.get("data", data)
+        return conn.get("user_name") or None
+
     def trunk_needs_credentials(self, connection_id: str) -> bool:
         """True when the trunk has no SIP login set (Telnyx then rejects an outbound profile)."""
         data = self._get(f"/fqdn_connections/{connection_id}")

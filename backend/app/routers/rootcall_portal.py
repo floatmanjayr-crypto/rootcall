@@ -305,6 +305,7 @@ async def update_config(
         if transfer_number == phone.phone_number:
             raise HTTPException(status_code=422, detail="Forwarding number cannot be your Shield number.")
 
+        transfer_login = None
         if transfer_number:
             if not phone.telnyx_connection_id:
                 raise HTTPException(
@@ -313,7 +314,8 @@ async def update_config(
                 )
             try:
                 telnyx = TelnyxService()
-                if telnyx.trunk_needs_credentials(phone.telnyx_connection_id):
+                transfer_login = telnyx.trunk_username(phone.telnyx_connection_id)
+                if not transfer_login:
                     # Older trunks have no SIP login on Telnyx and Retell holds a password we
                     # never stored. Set one known login on both sides (Retell first).
                     sip_user, sip_pass = telnyx_sip_login(current_user.id)
@@ -321,6 +323,7 @@ async def update_config(
                         phone.phone_number, auth_username=sip_user, auth_password=sip_pass
                     )
                     telnyx.set_trunk_credentials(phone.telnyx_connection_id, sip_user, sip_pass)
+                    transfer_login = sip_user
                     log.info("Repaired SIP login for trunk %s", phone.telnyx_connection_id)
                 telnyx.ensure_outbound_voice_profile(phone.telnyx_connection_id)
             except (RuntimeError, ValueError, requests.RequestException) as exc:
@@ -336,7 +339,11 @@ async def update_config(
                 retell = RetellService()
                 retell.configure_transfer_tool(
                     agent_id=config.retell_agent_id,
-                    transfer_number=transfer_number
+                    transfer_number=transfer_number,
+                    # With credential login Telnyx needs this header to find the trunk.
+                    custom_sip_headers=(
+                        {"X-Telnyx-Username": transfer_login} if transfer_login else None
+                    ),
                 )
             except (RuntimeError, ValueError, requests.RequestException) as exc:
                 db.rollback()

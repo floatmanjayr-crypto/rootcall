@@ -382,7 +382,53 @@ class RetellService:
             log.info("Removed transfer tool from agent %s because no customer number is configured", agent_id)
 
         # general_tools is an LLM response-engine setting, not an agent setting.
-        return self.update_llm(llm_id=llm_id, general_tools=general_tools)
+        try:
+            return self.update_llm(llm_id=llm_id, general_tools=general_tools)
+        except RuntimeError as exc:
+            if "published" not in str(exc).lower():
+                raise
+            # Retell refuses edits to a published LLM. Copy it with the new tools, point a new
+            # agent draft at the copy, and publish that draft.
+            log.warning("LLM %s is published; moving agent %s to an updated copy", llm_id, agent_id)
+            return self._move_agent_to_new_llm(agent_id, agent, llm, general_tools)
+
+    _LLM_COPY_FIELDS = (
+        "model", "s2s_model", "model_temperature", "model_high_priority", "tool_call_strict_mode",
+        "general_prompt", "begin_message", "start_speaker", "starting_state", "states",
+        "default_dynamic_variables", "knowledge_base_ids", "kb_config", "begin_after_user_silence_ms",
+    )
+
+    def _move_agent_to_new_llm(
+        self, agent_id: str, agent: Dict[str, Any], llm: Dict[str, Any], general_tools: List[Dict[str, Any]]
+    ) -> Dict[str, Any]:
+        payload = {key: llm[key] for key in self._LLM_COPY_FIELDS if llm.get(key) is not None}
+        payload["general_tools"] = general_tools
+        created = self._post("/create-retell-llm", payload, expected=(200, 201))
+        new_llm_id = created.get("llm_id")
+        if not new_llm_id:
+            raise RuntimeError("Retell did not return the new LLM ID")
+
+        version = agent.get("version")
+        if isinstance(version, bool) or not isinstance(version, int):
+            raise RuntimeError("Retell did not return a valid agent version.")
+        if agent.get("is_published") is True:
+            draft = self._post(
+                f"/create-agent-version/{agent_id}", {"base_version": version}, expected=(200, 201)
+            )
+            draft_version = draft.get("version")
+            if isinstance(draft_version, bool) or not isinstance(draft_version, int):
+                raise RuntimeError("Retell did not return the new draft version.")
+        else:
+            draft_version = version
+
+        self._patch(
+            f"/update-agent/{agent_id}",
+            {"version": draft_version, "response_engine": {"type": "retell-llm", "llm_id": new_llm_id}},
+            expected=200,
+        )
+        self.publish_agent(agent_id, version=draft_version)
+        log.info("Agent %s now uses LLM %s (version %s)", agent_id, new_llm_id, draft_version)
+        return created
 
     # ---------- Phone numbers / inbound & outbound binding ----------
 

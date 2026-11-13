@@ -138,7 +138,7 @@ def _provision_customer(db: Session, user: User):
     stage = "connecting to phone providers"
     try:
         telnyx, retell = TelnyxService(), RetellService()
-        sip_username, sip_password = sip_credentials(user.id)
+        sip_username, sip_password = telnyx_sip_login(user.id)
         if not onboarding.order_attempted and onboarding.voice_id not in {
             voice["voice_id"] for voice in available_voices()
         }:

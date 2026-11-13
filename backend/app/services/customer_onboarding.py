@@ -97,6 +97,13 @@ def validate_activation(db: Session, user: User):
     return onboarding
 
 
+def telnyx_sip_login(user_id: int):
+    """sip_credentials() reduced to letters and numbers, the only characters Telnyx accepts."""
+    username, password = sip_credentials(user_id)
+    clean = lambda value: "".join(ch for ch in value if ch.isascii() and ch.isalnum())
+    return clean(username), clean(password)
+
+
 def sip_credentials(user_id: int):
     """Per-customer Telnyx/Retell SIP login, named exactly as the dashboard purchase always did.
 

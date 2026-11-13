@@ -83,3 +83,11 @@ def test_trunk_without_login_is_detected_and_login_can_be_set():
     with patch.object(TelnyxService, "_patch", return_value={}) as patch_call:
         svc.set_trunk_credentials("c1", "u", "p")
     assert patch_call.call_args.kwargs["json"] == {"user_name": "u", "password": "p"}
+
+
+def test_telnyx_login_is_letters_and_numbers_only():
+    from app.services.customer_onboarding import telnyx_sip_login
+    username, password = telnyx_sip_login(82)
+    assert username.isalnum() and password.isalnum()
+    assert username.endswith("82") and len(password) >= 16
+    assert telnyx_sip_login(82) == (username, password)

@@ -24,7 +24,7 @@ from app.models.user import User
 from app.models.phone_number import PhoneNumber
 from app.models.rootcall_config import RootCallConfig, TrustedContact
 from app.models.onboarding import CustomerOnboarding
-from app.services.customer_onboarding import automated_onboarding_enabled, sip_credentials
+from app.services.customer_onboarding import automated_onboarding_enabled, telnyx_sip_login
 
 # Services
 from app.services.telnyx_service import TelnyxService
@@ -316,7 +316,7 @@ async def update_config(
                 if telnyx.trunk_needs_credentials(phone.telnyx_connection_id):
                     # Older trunks have no SIP login on Telnyx and Retell holds a password we
                     # never stored. Set one known login on both sides (Retell first).
-                    sip_user, sip_pass = sip_credentials(current_user.id)
+                    sip_user, sip_pass = telnyx_sip_login(current_user.id)
                     RetellService().update_phone_number(
                         phone.phone_number, auth_username=sip_user, auth_password=sip_pass
                     )
@@ -742,7 +742,7 @@ async def provision_rootcall(
         # SIP trunk setup moved above
         
         connection_name = f"RootCall-Retell-{current_user.id}"
-        sip_username, sip_password = sip_credentials(current_user.id)
+        sip_username, sip_password = telnyx_sip_login(current_user.id)
         
         # Create Elastic SIP Trunk pointing to Retell (sip.retellai.com)
         log.info("STEP 2: Creating Elastic SIP Trunk for Retell...")

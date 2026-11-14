@@ -70,7 +70,7 @@ class CallRoutingTest(unittest.TestCase):
     def test_failed_transfer_configuration_does_not_save_forwarding_number(self):
         with patch.object(rootcall_portal, "RetellService") as service, \
                 patch.object(rootcall_portal, "TelnyxService") as telnyx:
-            service.return_value.configure_transfer_tool.side_effect = RuntimeError("Provider rejected")
+            service.return_value.ensure_forwarding_tool.side_effect = RuntimeError("Provider rejected")
             response = self.client.patch("/api/rootcall/config/1", json={
                 "client_cell": "+12025550103",
             })
@@ -79,7 +79,21 @@ class CallRoutingTest(unittest.TestCase):
         self.assertEqual(self.config.client_cell, "+12025550102")
         telnyx.return_value.ensure_outbound_voice_profile.assert_called_once_with("connection-test")
 
-    def test_trunk_without_login_is_repaired_and_transfer_names_the_login(self):
+    def test_saving_a_number_checks_the_tool_and_webhook_but_never_edits_the_llm(self):
+        with patch.object(rootcall_portal, "RetellService") as retell, \
+                patch.object(rootcall_portal, "TelnyxService") as telnyx:
+            telnyx.return_value.trunk_username.return_value = "existinglogin"
+            response = self.client.patch("/api/rootcall/config/1", json={"client_cell": "+12025550103"})
+        self.assertEqual(response.status_code, 200, response.text)
+        retell.return_value.ensure_forwarding_tool.assert_called_once_with("agent-test")
+        retell.return_value.configure_transfer_tool.assert_not_called()
+        number, url = retell.return_value.ensure_inbound_webhook.call_args.args
+        self.assertEqual(number, "+12025550100")
+        self.assertTrue(url.endswith("/retell/rootcall-inbound"))
+        self.db.expire_all()
+        self.assertEqual(self.config.client_cell, "+12025550103")
+
+    def test_trunk_without_login_is_repaired_before_the_profile_is_attached(self):
         with patch.object(rootcall_portal, "RetellService") as retell, \
                 patch.object(rootcall_portal, "TelnyxService") as telnyx:
             telnyx.return_value.trunk_username.return_value = None
@@ -89,23 +103,6 @@ class CallRoutingTest(unittest.TestCase):
         self.assertTrue(login["auth_username"].isalnum() and login["auth_password"].isalnum())
         telnyx.return_value.set_trunk_credentials.assert_called_once_with(
             "connection-test", login["auth_username"], login["auth_password"]
-        )
-        self.assertEqual(
-            retell.return_value.configure_transfer_tool.call_args.kwargs["custom_sip_headers"],
-            {"X-Telnyx-Username": login["auth_username"]},
-        )
-
-    def test_trunk_with_login_is_not_changed_and_its_login_is_sent(self):
-        with patch.object(rootcall_portal, "RetellService") as retell, \
-                patch.object(rootcall_portal, "TelnyxService") as telnyx:
-            telnyx.return_value.trunk_username.return_value = "existinglogin"
-            response = self.client.patch("/api/rootcall/config/1", json={"client_cell": "+12025550103"})
-        self.assertEqual(response.status_code, 200, response.text)
-        retell.return_value.update_phone_number.assert_not_called()
-        telnyx.return_value.set_trunk_credentials.assert_not_called()
-        self.assertEqual(
-            retell.return_value.configure_transfer_tool.call_args.kwargs["custom_sip_headers"],
-            {"X-Telnyx-Username": "existinglogin"},
         )
 
     def test_shared_contact_helpers_persist_after_reload(self):

@@ -403,12 +403,9 @@ async def health_check():
 
 @router.get("/debug")
 async def debug_info():
-    """Debug info - no auth required"""
-    from app.services.client_config import CLIENT_LINES
+    """Public status check. Never list customer numbers or counts here."""
     return {
         "dry_run": DRY_RUN,
         "has_telnyx_key": bool(TELNYX_API_KEY),
         "has_sms_from": bool(TELNYX_SMS_FROM),
-        "client_count": len(CLIENT_LINES),
-        "telnyx_numbers": list(CLIENT_LINES.keys())
     }

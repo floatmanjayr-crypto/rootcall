@@ -24,6 +24,7 @@ from app.models.user import User
 from app.models.phone_number import PhoneNumber
 from app.models.rootcall_config import RootCallConfig, TrustedContact
 from app.models.onboarding import CustomerOnboarding
+from app.config import settings
 from app.services.customer_onboarding import automated_onboarding_enabled, telnyx_sip_login
 
 # Services
@@ -337,14 +338,14 @@ async def update_config(
         if config.retell_agent_id:
             try:
                 retell = RetellService()
-                retell.configure_transfer_tool(
-                    agent_id=config.retell_agent_id,
-                    transfer_number=transfer_number,
-                    # With credential login Telnyx needs this header to find the trunk.
-                    custom_sip_headers=(
-                        {"X-Telnyx-Username": transfer_login} if transfer_login else None
-                    ),
-                )
+                if transfer_number:
+                    # The number itself lives in our database and reaches Retell per call through
+                    # the inbound webhook, so saving it never edits the (possibly published) LLM.
+                    retell.ensure_forwarding_tool(config.retell_agent_id)
+                    retell.ensure_inbound_webhook(
+                        phone.phone_number,
+                        f"{settings.APP_BASE_URL.rstrip('/')}/retell/rootcall-inbound",
+                    )
             except (RuntimeError, ValueError, requests.RequestException) as exc:
                 db.rollback()
                 log.exception("Failed to update Retell transfer for client %s", client_id)
@@ -796,7 +797,8 @@ async def provision_rootcall(
         llm_id = retell.create_llm(
             general_prompt=scam_prompt,
             begin_message="Hello, this is the AI scam screening service. May I ask who's calling and the reason for your call?",
-            start_speaker="agent"
+            start_speaker="agent",
+            general_tools=RetellService.default_general_tools(),
         )
         
         agent_id = retell.create_agent(
@@ -819,7 +821,8 @@ async def provision_rootcall(
             sip_username=username,
             sip_password=password,
             inbound_agent_id=agent_id,
-            outbound_agent_id=agent_id
+            outbound_agent_id=agent_id,
+            inbound_webhook_url=f"{settings.APP_BASE_URL.rstrip('/')}/retell/rootcall-inbound",
         )
         
         log.info(f"SUCCESS - Imported to Retell")

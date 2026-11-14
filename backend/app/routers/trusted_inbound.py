@@ -55,7 +55,11 @@ async def route_inbound(request: Request, db: Session = Depends(get_db)):
         normalize_caller(value) for value in (config.trusted_contacts or []) if isinstance(value, str)
     }
     if not trusted or not config.trusted_routing_enabled:
-        return {"call_inbound": {"override_agent_id": config.retell_agent_id}}
+        screening = {"override_agent_id": config.retell_agent_id}
+        saved_forwarding = normalize_caller(config.client_cell)
+        if saved_forwarding and saved_forwarding != number:
+            screening["dynamic_variables"] = {"rootcall_forwarding": saved_forwarding}
+        return {"call_inbound": screening}
     forwarding = normalize_caller(config.client_cell)
     if not config.trusted_agent_id or not forwarding or forwarding == number:
         log.error("Trusted routing is enabled but incomplete for config %s", config.id)

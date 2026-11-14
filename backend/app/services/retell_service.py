@@ -140,6 +140,7 @@ class RetellService:
         model: str = "gpt-4.1",
         kb_top_k: int = 3,
         kb_filter_score: float = 0.6,
+        general_tools: Optional[List[Dict[str, Any]]] = None,
     ) -> str:
         """Create a Retell LLM and return llm_id."""
         payload = {
@@ -149,6 +150,8 @@ class RetellService:
             "begin_message": begin_message,
             "kb_config": {"top_k": kb_top_k, "filter_score": kb_filter_score},
         }
+        if general_tools:
+            payload["general_tools"] = general_tools
         log.info("Creating Retell LLM")
         data = self._post("/create-retell-llm", payload, expected=(201,))
         llm_id = data.get("llm_id")
@@ -326,11 +329,18 @@ class RetellService:
         # The screening instructions live on the Retell LLM, not the Agent.
         # Updating the attached LLM takes effect without changing voice or
         # publishing a new Agent version.
-        return self.update_llm(
-            llm_id=llm_id,
-            general_prompt=build_scam_screening_prompt(owner_name, existing_prompt),
-            begin_message="Hello, you've reached RootCall AI Assistant. Who would you like to speak with?",
-        )
+        fields = {
+            "general_prompt": build_scam_screening_prompt(owner_name, existing_prompt),
+            "begin_message": "Hello, you've reached RootCall AI Assistant. Who would you like to speak with?",
+        }
+        try:
+            return self.update_llm(llm_id=llm_id, **fields)
+        except RuntimeError as exc:
+            if "published" not in str(exc).lower():
+                raise
+            # A user changed their name on a locked LLM: edit it on a new agent draft and publish.
+            log.warning("LLM %s is published; syncing identity on a new agent draft", llm_id)
+            return self._update_llm_on_new_draft(agent_id, agent, llm_id, fields)
 
     def configure_transfer_tool(
         self, agent_id: str, transfer_number: Optional[str] = None,
@@ -387,27 +397,14 @@ class RetellService:
         except RuntimeError as exc:
             if "published" not in str(exc).lower():
                 raise
-            # Retell refuses edits to a published LLM. Copy it with the new tools, point a new
-            # agent draft at the copy, and publish that draft.
-            log.warning("LLM %s is published; moving agent %s to an updated copy", llm_id, agent_id)
-            return self._move_agent_to_new_llm(agent_id, agent, llm, general_tools)
+            # Retell refuses edits to a published LLM version. A new agent draft carries its own
+            # editable LLM version: edit that, then publish the draft.
+            log.warning("LLM %s is published; editing a new agent draft instead", llm_id)
+            return self._update_llm_on_new_draft(agent_id, agent, llm_id, {"general_tools": general_tools})
 
-    _LLM_COPY_FIELDS = (
-        "model", "s2s_model", "model_temperature", "model_high_priority", "tool_call_strict_mode",
-        "general_prompt", "begin_message", "start_speaker", "starting_state", "states",
-        "default_dynamic_variables", "knowledge_base_ids", "kb_config", "begin_after_user_silence_ms",
-    )
-
-    def _move_agent_to_new_llm(
-        self, agent_id: str, agent: Dict[str, Any], llm: Dict[str, Any], general_tools: List[Dict[str, Any]]
+    def _update_llm_on_new_draft(
+        self, agent_id: str, agent: Dict[str, Any], llm_id: str, fields: Dict[str, Any]
     ) -> Dict[str, Any]:
-        payload = {key: llm[key] for key in self._LLM_COPY_FIELDS if llm.get(key) is not None}
-        payload["general_tools"] = general_tools
-        created = self._post("/create-retell-llm", payload, expected=(200, 201))
-        new_llm_id = created.get("llm_id")
-        if not new_llm_id:
-            raise RuntimeError("Retell did not return the new LLM ID")
-
         version = agent.get("version")
         if isinstance(version, bool) or not isinstance(version, int):
             raise RuntimeError("Retell did not return a valid agent version.")
@@ -419,18 +416,85 @@ class RetellService:
             if isinstance(draft_version, bool) or not isinstance(draft_version, int):
                 raise RuntimeError("Retell did not return the new draft version.")
         else:
+            # An unpublished draft already exists (for example from an earlier attempt): reuse it.
             draft_version = version
 
-        self._patch(
-            f"/update-agent/{agent_id}",
-            {"version": draft_version, "response_engine": {"type": "retell-llm", "llm_id": new_llm_id}},
+        draft_agent = self._get(f"/get-agent/{agent_id}?version={draft_version}")
+        engine = draft_agent.get("response_engine") or {}
+        llm_version = engine.get("version")
+        if engine.get("llm_id") != llm_id or isinstance(llm_version, bool) or not isinstance(llm_version, int):
+            raise RuntimeError("Retell did not return the draft's LLM version.")
+
+        result = self._patch(
+            f"/update-retell-llm/{llm_id}?version={llm_version}",
+            fields,
             expected=200,
         )
         self.publish_agent(agent_id, version=draft_version)
-        log.info("Agent %s now uses LLM %s (version %s)", agent_id, new_llm_id, draft_version)
-        return created
+        log.info("Agent %s published draft %s with LLM version %s", agent_id, draft_version, llm_version)
+        return result
 
     # ---------- Phone numbers / inbound & outbound binding ----------
+
+    FORWARDING_VARIABLE = "{{rootcall_forwarding}}"
+
+    @classmethod
+    def forwarding_transfer_tool(cls) -> Dict[str, Any]:
+        """Transfer tool whose destination is filled in per call by the inbound webhook (SIP REFER)."""
+        return {
+            "type": "transfer_call",
+            "name": "transfer_call",
+            "description": "Transfer a screened legitimate caller to this RootCall customer's personal phone.",
+            "transfer_destination": {"type": "predefined", "number": cls.FORWARDING_VARIABLE},
+            "transfer_option": {"type": "cold_transfer", "cold_transfer_mode": "sip_refer"},
+        }
+
+    @classmethod
+    def default_general_tools(cls) -> List[Dict[str, Any]]:
+        return [
+            {
+                "type": "end_call",
+                "name": "end_call",
+                "description": "End calls that are identified as spam, scams, or unsafe.",
+            },
+            cls.forwarding_transfer_tool(),
+        ]
+
+    def ensure_forwarding_tool(self, agent_id: str) -> bool:
+        """Make the agent's LLM read its transfer number from {{rootcall_forwarding}}.
+
+        Does nothing (and never edits the LLM) when that is already the case. Returns True if edited.
+        """
+        agent = self._get(f"/get-agent/{agent_id}")
+        engine = agent.get("response_engine") or {}
+        llm_id = engine.get("llm_id")
+        if engine.get("type") != "retell-llm" or not llm_id:
+            raise RuntimeError(f"Agent {agent_id} is not connected to a Retell LLM")
+        llm = self._get(f"/get-retell-llm/{llm_id}")
+        tools = llm.get("general_tools") or []
+        current = next((t for t in tools if t.get("name") == "transfer_call"), None)
+        if current and (current.get("transfer_destination") or {}).get("number") == self.FORWARDING_VARIABLE:
+            return False
+        general_tools = [t for t in tools if t.get("name") != "transfer_call"]
+        if not any(t.get("type") == "end_call" for t in general_tools):
+            general_tools.append(self.default_general_tools()[0])
+        general_tools.append(self.forwarding_transfer_tool())
+        try:
+            self.update_llm(llm_id=llm_id, general_tools=general_tools)
+        except RuntimeError as exc:
+            if "published" not in str(exc).lower():
+                raise
+            log.warning("LLM %s is published; editing a new agent draft instead", llm_id)
+            self._update_llm_on_new_draft(agent_id, agent, llm_id, {"general_tools": general_tools})
+        return True
+
+    def ensure_inbound_webhook(self, phone_number: str, webhook_url: str) -> bool:
+        """Point the number at the per-call webhook that supplies the forwarding number."""
+        current = self.get_phone_number(phone_number)
+        if current.get("inbound_webhook_url") == webhook_url:
+            return False
+        self.update_phone_number(phone_number, inbound_webhook_url=webhook_url)
+        return True
 
     def create_trusted_transfer_flow(self, sip_username: Optional[str] = None) -> str:
         payload = {
@@ -495,6 +559,7 @@ class RetellService:
         sip_password: str,
         inbound_agent_id: Optional[str] = None,
         outbound_agent_id: Optional[str] = None,
+        inbound_webhook_url: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Import (bind) your Telnyx number into Retell so Retell can receive inbound calls
@@ -510,6 +575,8 @@ class RetellService:
             payload["inbound_agents"] = [{"agent_id": inbound_agent_id, "weight": 1.0}]
         if outbound_agent_id is not None:
             payload["outbound_agents"] = [{"agent_id": outbound_agent_id, "weight": 1.0}]
+        if inbound_webhook_url:
+            payload["inbound_webhook_url"] = inbound_webhook_url
         log.info("Importing phone number to Retell: %s", phone_number)
         return self._post("/import-phone-number", payload, expected=(200, 201))
 
@@ -520,12 +587,15 @@ class RetellService:
         outbound_agent_id: Optional[str] = None,
         auth_username: Optional[str] = None,
         auth_password: Optional[str] = None,
+        inbound_webhook_url: Optional[str] = None,
     ) -> Dict[str, Any]:
         patch: Dict[str, Any] = {}
         if auth_username is not None:
             patch["auth_username"] = auth_username
         if auth_password is not None:
             patch["auth_password"] = auth_password
+        if inbound_webhook_url is not None:
+            patch["inbound_webhook_url"] = inbound_webhook_url
         if inbound_agent_id is not None:
             patch["inbound_agents"] = [{"agent_id": inbound_agent_id, "weight": 1.0}]
         if outbound_agent_id is not None:

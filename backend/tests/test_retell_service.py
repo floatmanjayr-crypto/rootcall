@@ -156,30 +156,82 @@ class RetellPublishingTest(unittest.TestCase):
         }, expected=200)
         publish.assert_not_called()
 
-    def test_published_llm_is_copied_and_agent_moved_to_it(self):
-        agent = {"response_engine": {"type": "retell-llm", "llm_id": "llm-old"}, "version": 3, "is_published": True}
-        llm = {"general_prompt": "P", "begin_message": "B", "model": "gpt-4.1", "general_tools": [], "version": 3}
-        calls = []
+    def test_published_llm_is_edited_on_a_new_agent_draft(self):
+        agent = {"response_engine": {"type": "retell-llm", "llm_id": "llm-old", "version": 3},
+                 "version": 3, "is_published": True}
+        llm = {"general_tools": [], "version": 3}
+        draft_agent = {"response_engine": {"type": "retell-llm", "llm_id": "llm-old", "version": 4}, "version": 4}
+        patches = []
 
-        def fake_post(path, payload, expected=None):
-            calls.append((path, payload))
-            if path == "/create-retell-llm":
-                return {"llm_id": "llm-new"}
-            return {"version": 4}
+        def fake_patch(path, payload, expected=None):
+            patches.append((path, payload))
+            if len(patches) == 1:
+                raise RuntimeError("Cannot update published LLM")
+            return {"ok": True}
 
-        with patch.object(self.service, "_get", side_effect=[agent, llm]), \
-                patch.object(self.service, "_patch", side_effect=[RuntimeError("Cannot update published LLM"), {}]) as patched, \
-                patch.object(self.service, "_post", side_effect=fake_post), \
+        with patch.object(self.service, "_get", side_effect=[agent, llm, draft_agent]) as get, \
+                patch.object(self.service, "_patch", side_effect=fake_patch), \
+                patch.object(self.service, "_post", return_value={"version": 4}) as post, \
                 patch.object(self.service, "publish_agent") as publish:
             self.service.configure_transfer_tool("agent-test", "+12025550102")
-        created = dict(calls)["/create-retell-llm"]
-        self.assertEqual(created["general_prompt"], "P")
-        self.assertEqual(created["begin_message"], "B")
-        self.assertTrue(any(t.get("name") == "transfer_call" for t in created["general_tools"]))
-        self.assertNotIn("version", created)
-        self.assertEqual(dict(calls)["/create-agent-version/agent-test"], {"base_version": 3})
-        self.assertEqual(patched.call_args.args[0], "/update-agent/agent-test")
-        self.assertEqual(patched.call_args.args[1]["response_engine"], {"type": "retell-llm", "llm_id": "llm-new"})
+        post.assert_called_once_with("/create-agent-version/agent-test", {"base_version": 3}, expected=(200, 201))
+        get.assert_called_with("/get-agent/agent-test?version=4")
+        self.assertEqual(patches[1][0], "/update-retell-llm/llm-old?version=4")
+        self.assertTrue(any(t.get("name") == "transfer_call" for t in patches[1][1]["general_tools"]))
+        publish.assert_called_once_with("agent-test", version=4)
+
+    def test_forwarding_tool_reads_the_per_call_number_with_sip_refer(self):
+        tool = self.module.RetellService.forwarding_transfer_tool()
+        self.assertEqual(tool["transfer_destination"], {"type": "predefined", "number": "{{rootcall_forwarding}}"})
+        self.assertEqual(tool["transfer_option"]["cold_transfer_mode"], "sip_refer")
+        self.assertTrue(any(t["type"] == "end_call" for t in self.module.RetellService.default_general_tools()))
+
+    def test_ensure_forwarding_tool_does_not_touch_an_llm_that_already_has_it(self):
+        agent = {"response_engine": {"type": "retell-llm", "llm_id": "llm-1"}}
+        llm = {"general_tools": [self.module.RetellService.forwarding_transfer_tool()]}
+        with patch.object(self.service, "_get", side_effect=[agent, llm]), \
+                patch.object(self.service, "_patch") as patched, patch.object(self.service, "_post") as posted:
+            self.assertFalse(self.service.ensure_forwarding_tool("agent-1"))
+        patched.assert_not_called()
+        posted.assert_not_called()
+
+    def test_ensure_forwarding_tool_replaces_a_fixed_number_and_keeps_other_tools(self):
+        agent = {"response_engine": {"type": "retell-llm", "llm_id": "llm-1"}}
+        old = {"type": "transfer_call", "name": "transfer_call",
+               "transfer_destination": {"type": "predefined", "number": "+12025550100"}}
+        llm = {"general_tools": [{"type": "end_call", "name": "end_call"}, {"type": "custom", "name": "lookup"}, old]}
+        with patch.object(self.service, "_get", side_effect=[agent, llm]), \
+                patch.object(self.service, "_patch", return_value={}) as patched:
+            self.assertTrue(self.service.ensure_forwarding_tool("agent-1"))
+        sent = patched.call_args.args[1]["general_tools"]
+        self.assertEqual([t["name"] for t in sent], ["end_call", "lookup", "transfer_call"])
+        self.assertEqual(sent[-1]["transfer_destination"]["number"], "{{rootcall_forwarding}}")
+
+    def test_ensure_inbound_webhook_only_changes_a_different_url(self):
+        url = "https://app.example/retell/rootcall-inbound"
+        with patch.object(self.service, "get_phone_number", return_value={"inbound_webhook_url": url}), \
+                patch.object(self.service, "update_phone_number") as update:
+            self.assertFalse(self.service.ensure_inbound_webhook("+12025550100", url))
+        update.assert_not_called()
+        with patch.object(self.service, "get_phone_number", return_value={}), \
+                patch.object(self.service, "update_phone_number") as update:
+            self.assertTrue(self.service.ensure_inbound_webhook("+12025550100", url))
+        update.assert_called_once_with("+12025550100", inbound_webhook_url=url)
+
+    def test_identity_sync_on_a_published_llm_uses_a_new_agent_draft(self):
+        agent = {"response_engine": {"type": "retell-llm", "llm_id": "llm-old", "version": 3},
+                 "version": 3, "is_published": True}
+        draft_agent = {"response_engine": {"type": "retell-llm", "llm_id": "llm-old", "version": 4}, "version": 4}
+        with patch.object(self.service, "_get", side_effect=[agent, {"general_prompt": ""}, draft_agent]), \
+                patch.object(self.service, "update_llm", side_effect=RuntimeError("Cannot update published LLM")), \
+                patch.object(self.service, "_post", return_value={"version": 4}), \
+                patch.object(self.service, "_patch", return_value={}) as patched, \
+                patch.object(self.service, "publish_agent") as publish:
+            self.service.update_screening_identity("agent-test", "Jordan Example")
+        path, body = patched.call_args.args[0], patched.call_args.args[1]
+        self.assertEqual(path, "/update-retell-llm/llm-old?version=4")
+        self.assertIn("Jordan Example", body["general_prompt"])
+        self.assertIn("begin_message", body)
         publish.assert_called_once_with("agent-test", version=4)
 
     def test_other_llm_update_errors_are_not_swallowed(self):

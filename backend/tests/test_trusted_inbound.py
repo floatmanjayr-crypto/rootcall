@@ -89,7 +89,10 @@ class TrustedInboundTest(unittest.TestCase):
         for caller in ("+12025550199", "anonymous", "", "<script>trusted</script>"):
             with self.subTest(caller=caller):
                 self.assertEqual(self.inbound(caller).json(), {
-                    "call_inbound": {"override_agent_id": "agent-screen"},
+                    "call_inbound": {
+                        "override_agent_id": "agent-screen",
+                        "dynamic_variables": {"rootcall_forwarding": "+12025550102"},
+                    },
                 })
 
     def test_duplicate_inbound_deliveries_are_side_effect_free(self):
@@ -97,6 +100,13 @@ class TrustedInboundTest(unittest.TestCase):
             first = self.inbound().json()
             self.assertEqual(self.inbound().json(), first)
             provider.assert_not_called()
+
+    def test_unknown_caller_gets_the_forwarding_number_for_the_transfer_tool(self):
+        self.config.client_cell = "+12025550177"
+        self.db.commit()
+        routed = self.inbound("+12025550999").json()["call_inbound"]
+        self.assertEqual(routed["override_agent_id"], "agent-screen")
+        self.assertEqual(routed["dynamic_variables"], {"rootcall_forwarding": "+12025550177"})
 
     def test_normalizes_caller_and_legacy_saved_contact_formats(self):
         self.config.trusted_contacts = ["202-555-0101"]
@@ -119,7 +129,8 @@ class TrustedInboundTest(unittest.TestCase):
         self.assertEqual(response.status_code, 200, response.text)
         self.assertEqual(self.inbound().json()["call_inbound"]["dynamic_variables"],
                          {"rootcall_forwarding": "+12025550109"})
-        provider.return_value.configure_transfer_tool.assert_called_once()
+        provider.return_value.ensure_forwarding_tool.assert_called_once()
+        provider.return_value.configure_transfer_tool.assert_not_called()
 
     def test_other_accounts_contacts_do_not_grant_bypass(self):
         self.db.add(User(id=2, email="other@example.com", hashed_password="unused"))
@@ -131,7 +142,10 @@ class TrustedInboundTest(unittest.TestCase):
         ))
         self.db.commit()
         self.assertEqual(self.inbound(number="+12025550110").json(), {
-            "call_inbound": {"override_agent_id": "other-screen"},
+            "call_inbound": {
+                "override_agent_id": "other-screen",
+                "dynamic_variables": {"rootcall_forwarding": "+12025550112"},
+            },
         })
         self.assertEqual(self.client.post("/api/rootcall/trusted-routing/2").status_code, 403)
 

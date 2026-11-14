@@ -1267,6 +1267,20 @@
         .get-started li.done .step-title { text-decoration: line-through; opacity: 0.7; }
         .get-started .step-detail { font-size: 0.85rem; color: var(--muted); margin-top: 0.15rem; }
 
+        .line-hero { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1.25rem; background: linear-gradient(135deg, var(--green) 0%, #1f5a43 100%); color: #fff; border-radius: 18px; padding: 1.5rem 1.75rem; margin-bottom: 1.5rem; }
+        .line-hero .hero-label { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.8; }
+        .line-hero .hero-number { font-size: clamp(1.6rem, 4vw, 2.2rem); font-weight: 800; letter-spacing: 0.02em; margin: 0.2rem 0; overflow-wrap: anywhere; }
+        .line-hero .hero-sub { font-size: 0.9rem; opacity: 0.9; }
+        .hero-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+        .line-hero .btn { background: #fff; color: var(--green); border-color: #fff; }
+        .line-hero .btn.ghost { background: transparent; color: #fff; border-color: rgba(255,255,255,0.6); }
+        .recent-calls .recent-row { display: flex; justify-content: space-between; gap: 1rem; padding: 0.8rem 0; border-top: 1px solid var(--line); align-items: center; }
+        .recent-calls .recent-row:first-of-type { border-top: 0; }
+        .recent-calls .recent-who { min-width: 0; }
+        .recent-calls .recent-who strong { display: block; color: var(--green); overflow-wrap: anywhere; }
+        .recent-calls .recent-who span { font-size: 0.82rem; color: var(--muted); }
+        .tip-list { margin: 0; padding-left: 1.2rem; color: var(--muted); font-size: 0.9rem; line-height: 1.6; }
+        .settings-section-label { margin: 2rem 0 0.75rem; font-size: 0.78rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
         .activity-tools { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; margin-bottom: 0.75rem; }
         .activity-tools input[type="search"] { flex: 1 1 14rem; max-width: 22rem; width: auto; padding: 0.7rem 1rem; border: 1.5px solid var(--line); border-radius: 11px; font: inherit; font-size: 0.9rem; }
         .activity-tools input[type="search"]:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px rgba(45, 122, 95, 0.12); }
@@ -1387,20 +1401,17 @@
         <!-- ================= Dashboard ================= -->
         <div id="page-dashboard" class="page-content active">
             <div class="content-area">
-                <div class="dashboard-intro">
-                    <div class="page-head">
-                        <h2>Protection overview</h2>
-                        <p>Your shield activity and live calls, in one place.</p>
+                <section class="line-hero" id="line-hero" aria-label="Your Shield line">
+                    <div>
+                        <div class="hero-label">Your Shield number</div>
+                        <div class="hero-number" id="hero-number">Loading...</div>
+                        <div class="hero-sub" id="hero-sub" role="status"></div>
                     </div>
-                    <div class="dashboard-actions" aria-label="Quick actions">
-                        <button onclick="showPage('numbers', event)" class="btn btn-primary">
-                            <i class="fas fa-phone-alt" aria-hidden="true"></i> My Shield Number
-                        </button>
-                        <button onclick="showPage('contacts', event)" class="btn btn-outline">
-                            <i class="fas fa-user-plus" aria-hidden="true"></i> Add Trusted Contact
-                        </button>
+                    <div class="hero-actions" id="hero-actions">
+                        <button type="button" class="btn" id="copy-number" hidden><i class="fas fa-copy" aria-hidden="true"></i> Copy number</button>
+                        <button type="button" class="btn ghost" onclick="showPage('contacts', event)"><i class="fas fa-user-plus" aria-hidden="true"></i> Add trusted contact</button>
                     </div>
-                </div>
+                </section>
 
                 <section id="get-started" class="get-started" aria-labelledby="get-started-title" hidden>
                     <div class="get-started-head">
@@ -1435,6 +1446,13 @@
 
                 <div class="dashboard-main-grid">
                     <div class="dashboard-primary">
+                        <section class="card recent-calls" id="recent-calls" aria-labelledby="recent-calls-heading">
+                            <div class="card-header-row">
+                                <h3 class="card-title" id="recent-calls-heading"><i class="fas fa-clock-rotate-left" aria-hidden="true"></i> Recent calls</h3>
+                                <button type="button" class="btn btn-outline" onclick="showPage('activity')">View all</button>
+                            </div>
+                            <div id="recent-calls-list"><p class="field-hint">Loading recent calls...</p></div>
+                        </section>
                         <section class="live-calls" aria-labelledby="live-calls-heading">
                             <div class="live-heading">
                                 <h2 id="live-calls-heading"><i class="fas fa-wave-square" aria-hidden="true"></i> Live Calls</h2>
@@ -1457,7 +1475,16 @@
                         </section>
                     </div>
 
-                    <aside class="card" aria-labelledby="scam-patterns-heading">
+                    <aside class="dashboard-side">
+                    <div class="card" id="test-line-card" style="margin-bottom: 1.5rem;">
+                        <h3 class="card-title"><i class="fas fa-vial" aria-hidden="true"></i> Test your line</h3>
+                        <ol class="tip-list">
+                            <li>Call your Shield number from a phone that is not a trusted contact.</li>
+                            <li>When asked who you are calling for, say your name.</li>
+                            <li>You should hear the assistant connect you, and the call will show up under Recent calls.</li>
+                        </ol>
+                    </div>
+                    <div class="card" aria-labelledby="scam-patterns-heading">
                         <h3 class="card-title" id="scam-patterns-heading">
                             <i class="fas fa-shield-alt" aria-hidden="true"></i> Scam patterns to watch
                         </h3>
@@ -1475,6 +1502,7 @@
                                 <p>Legitimate agencies will not demand gift cards or cryptocurrency to resolve an identity or account issue.</p>
                             </li>
                         </ul>
+                    </div>
                     </aside>
                 </div>
             </div>
@@ -1614,6 +1642,28 @@
                     <p>Configure your AI scam protection preferences</p>
                 </div>
 
+                <p class="settings-section-label">Your assistant</p>
+                <div class="card">
+                    <div class="card-header-row">
+                        <h3 class="card-title"><i class="fas fa-microphone-alt"></i> Your RootCall Agent</h3>
+                        <span class="info-badge" style="margin:0;">Agent voice</span>
+                    </div>
+                    <p class="field-hint" style="margin-bottom:1rem;">Choose how your AI screening assistant sounds. Both voices use the same scam-detection and transfer-safety rules.</p>
+                    <div style="display:grid;gap:.75rem;">
+                        <label for="retell-voice-select"><strong>Choose a voice</strong></label>
+                        <select id="retell-voice-select" class="form-control" style="width:100%;min-height:48px;">
+                            <option value="">Loading voices...</option>
+                        </select>
+                        <div id="retell-voice-details" class="field-hint">Pick a voice to preview it. Your choice applies to new calls right away.</div>
+                        <audio id="retell-voice-preview" controls preload="none" style="width:100%;display:none;">Your browser does not support audio.</audio>
+                    </div>
+                    <div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-top:1.25rem;">
+                        <button onclick="syncAgentIdentity()" class="btn btn-primary" id="sync-agent-identity-btn"><i class="fas fa-sync-alt"></i> Update agent name</button>
+                    </div>
+                    <p class="field-hint" style="margin-top:.75rem;">Your agent only connects callers who ask for you by name, and never tells them your name. Changing your name above updates your agent automatically.</p>
+                </div>
+
+                <p class="settings-section-label">Call handling &amp; account</p>
                 <div class="grid-2">
                     <div class="card">
                         <h3 class="card-title">
@@ -1689,7 +1739,12 @@
                                 <a id="setup-guide-link" href="/static/onboarding.html" style="font-size: 0.8rem;" hidden>Open setup &amp; call-test guide</a>
                             </div>
                         </div>
-                        <div style="margin-top: 1.5rem;">
+                    </div>
+                </div>
+
+                <p class="settings-section-label">Subscription</p>
+                <div class="card">
+                        <div>
                             <h4 style="color: var(--green); margin-bottom: 0.5rem;">Subscription &amp; billing</h4>
                             <p class="field-hint">Use secure Stripe billing to view invoices, update your payment method, or manage cancellation.</p>
                             <p id="billing-status" class="field-hint" role="status">Checking subscription status...</p>
@@ -1697,27 +1752,6 @@
                             <button type="button" class="btn btn-outline" id="refresh-billing" onclick="loadBilling()">Refresh billing status</button>
                             <button type="button" class="btn btn-outline" id="manage-billing" onclick="manageBilling()">Manage billing</button>
                         </div>
-                    </div>
-                </div>
-
-                <div class="card" style="margin-top: 1.5rem;">
-                    <div class="card-header-row">
-                        <h3 class="card-title"><i class="fas fa-microphone-alt"></i> Your RootCall Agent</h3>
-                        <span class="info-badge" style="margin:0;">Agent voice</span>
-                    </div>
-                    <p class="field-hint" style="margin-bottom:1rem;">Choose how your AI screening assistant sounds. Both voices use the same scam-detection and transfer-safety rules.</p>
-                    <div style="display:grid;gap:.75rem;">
-                        <label for="retell-voice-select"><strong>Choose a voice</strong></label>
-                        <select id="retell-voice-select" class="form-control" style="width:100%;min-height:48px;">
-                            <option value="">Loading voices...</option>
-                        </select>
-                        <div id="retell-voice-details" class="field-hint">Pick a voice to preview it. Your choice applies to new calls right away.</div>
-                        <audio id="retell-voice-preview" controls preload="none" style="width:100%;display:none;">Your browser does not support audio.</audio>
-                    </div>
-                    <div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-top:1.25rem;">
-                        <button onclick="syncAgentIdentity()" class="btn btn-primary" id="sync-agent-identity-btn"><i class="fas fa-sync-alt"></i> Update agent name</button>
-                    </div>
-                    <p class="field-hint" style="margin-top:.75rem;">Your agent only connects callers who ask for you by name, and never tells them your name. Changing your name above updates your agent automatically.</p>
                 </div>
             </div>
         </div>
@@ -2112,6 +2146,61 @@
             }
         }
 
+        function renderHero(state) {
+            const numberEl = document.getElementById('hero-number');
+            const sub = document.getElementById('hero-sub');
+            const copy = document.getElementById('copy-number');
+            if (!numberEl) return;
+            if (state.hasNumber) {
+                numberEl.textContent = formatPhoneNumber(state.number);
+                sub.textContent = state.forwardingNumber
+                    ? `Screened calls ring ${formatPhoneNumber(state.forwardingNumber)}`
+                    : 'Add your phone in Settings so calls can reach you.';
+                copy.hidden = false;
+                copy.onclick = async () => {
+                    try { await navigator.clipboard.writeText(state.number); copy.textContent = 'Copied'; }
+                    catch (error) { copy.textContent = 'Copy failed'; }
+                    setTimeout(() => { copy.innerHTML = '<i class="fas fa-copy" aria-hidden="true"></i> Copy number'; }, 1800);
+                };
+            } else {
+                numberEl.textContent = 'No Shield number yet';
+                sub.textContent = 'Get your number to start screening calls.';
+                copy.hidden = false;
+                copy.textContent = 'Get Shield number';
+                copy.onclick = () => openProvisionModal();
+            }
+        }
+
+        function renderRecent() {
+            const box = document.getElementById('recent-calls-list');
+            if (!box) return;
+            box.textContent = '';
+            if (!ALL_CALLS.length) {
+                const p = document.createElement('p');
+                p.className = 'field-hint';
+                p.textContent = 'No calls yet. Use the test steps on the right to see your shield in action.';
+                box.append(p);
+                return;
+            }
+            ALL_CALLS.slice(0, 5).forEach(call => {
+                const info = describeCall(call);
+                const row = document.createElement('div');
+                row.className = 'recent-row';
+                const who = document.createElement('div');
+                who.className = 'recent-who';
+                const name = document.createElement('strong');
+                name.textContent = call.caller_name || (call.from_number ? formatPhoneNumber(call.from_number) : 'Unknown caller');
+                const what = document.createElement('span');
+                what.textContent = `${info.what} · ${formatCallTime(call.timestamp)}`;
+                who.append(name, what);
+                const badge = document.createElement('span');
+                badge.className = `call-badge ${info.tone}`;
+                badge.textContent = info.statusLabel;
+                row.append(who, badge);
+                box.append(row);
+            });
+        }
+
         function renderGetStarted(state) {
             const section = document.getElementById('get-started');
             const list = document.getElementById('get-started-steps');
@@ -2327,6 +2416,7 @@
                     document.getElementById('connect-trusted-routing').hidden = Boolean(config.trusted_routing_enabled);
                     document.getElementById('client-cell').value = config.client_cell || '';
                     setupState.hasForwarding = Boolean(config.client_cell);
+                    setupState.forwardingNumber = config.client_cell || '';
                     document.getElementById('sms-alerts').checked = config.sms_alerts_enabled || false;
                     document.getElementById('alert-spam').checked = config.alert_on_spam || false;
                     document.getElementById('alert-unknown').checked = config.alert_on_unknown || false;
@@ -2368,8 +2458,10 @@
                     const calls = await callsResponse.json();
                     ALL_CALLS = Array.isArray(calls) ? calls : [];
                     renderCalls();
+                    renderRecent();
                 }
                 renderGetStarted(setupState);
+                renderHero(setupState);
                 document.getElementById('dashboard-error').hidden = true;
                 await loadBilling();
             } catch (err) {

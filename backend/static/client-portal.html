@@ -1247,6 +1247,26 @@
             line-height: 1.55;
         }
 
+        .get-started {
+            background: #fff;
+            border: 1px solid #cfe1d8;
+            border-radius: 16px;
+            padding: 1.25rem 1.4rem;
+            margin-bottom: 1.5rem;
+        }
+        .get-started[hidden] { display: none; }
+        .get-started-head { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.9rem; }
+        .get-started-head h3 { margin: 0; color: var(--green); font-size: 1.05rem; }
+        .get-started-progress { font-size: 0.85rem; color: var(--muted); font-weight: 600; }
+        .get-started ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.6rem; }
+        .get-started li { display: flex; align-items: center; gap: 0.85rem; padding: 0.8rem 0.95rem; border-radius: 12px; background: var(--ivory); flex-wrap: wrap; }
+        .get-started .step-mark { width: 1.75rem; height: 1.75rem; border-radius: 50%; border: 2px solid #b8cbc2; display: grid; place-items: center; flex-shrink: 0; font-size: 0.8rem; font-weight: 700; color: var(--muted); background: #fff; }
+        .get-started li.done .step-mark { background: var(--green); border-color: var(--green); color: #fff; }
+        .get-started .step-text { flex: 1 1 14rem; min-width: 0; }
+        .get-started .step-title { font-weight: 700; color: var(--green); }
+        .get-started li.done .step-title { text-decoration: line-through; opacity: 0.7; }
+        .get-started .step-detail { font-size: 0.85rem; color: var(--muted); margin-top: 0.15rem; }
+
         @media (max-width: 1024px) {
             .dashboard-main-grid { grid-template-columns: 1fr; }
         }
@@ -1366,6 +1386,14 @@
                         </button>
                     </div>
                 </div>
+
+                <section id="get-started" class="get-started" aria-labelledby="get-started-title" hidden>
+                    <div class="get-started-head">
+                        <h3 id="get-started-title">Finish setting up your shield</h3>
+                        <span class="get-started-progress" id="get-started-progress" role="status"></span>
+                    </div>
+                    <ol id="get-started-steps"></ol>
+                </section>
 
                 <div class="grid-4 dashboard-stats">
                     <div class="stat-card">
@@ -1494,7 +1522,7 @@
                             </div>
                             <div>
                                 <label class="field-label" for="new-contact">Phone number</label>
-                                <input type="tel" id="new-contact" placeholder="+1234567890" />
+                                <input type="tel" id="new-contact" placeholder="(407) 555-0100" autocomplete="off" />
                             </div>
                             <button onclick="addContact()" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 0.95rem;">
                                 <i class="fas fa-save" aria-hidden="true"></i>
@@ -1564,18 +1592,18 @@
                 <div class="grid-2">
                     <div class="card">
                         <h3 class="card-title">
-                            <i class="fas fa-bell"></i> Alert Settings
+                            <i class="fas fa-bell"></i> Call forwarding &amp; alerts
                         </h3>
                         <div style="display: flex; flex-direction: column; gap: 1.1rem;">
                             <div>
-                                <label class="field-label" for="client-cell">Forwarding Number</label>
+                                <label class="field-label" for="client-cell">Your phone number</label>
                                 <div style="display: flex; gap: 0.5rem;">
-                                    <input type="tel" id="client-cell" placeholder="+1234567890" style="flex: 1;" />
+                                    <input type="tel" id="client-cell" placeholder="(407) 555-0100" autocomplete="tel" style="flex: 1;" />
                                     <button onclick="updatePhone()" class="btn btn-primary" aria-label="Save forwarding number">
-                                        <i class="fas fa-save"></i>
+                                        <i class="fas fa-save"></i> Save
                                     </button>
                                 </div>
-                                <p class="field-hint">Screened calls forward here. Connected trusted callers skip AI screening.</p>
+                                <p class="field-hint">Calls that pass screening, and calls from your trusted contacts, ring this phone.</p>
                             </div>
 
                             <label class="switch-row">
@@ -1650,21 +1678,21 @@
                 <div class="card" style="margin-top: 1.5rem;">
                     <div class="card-header-row">
                         <h3 class="card-title"><i class="fas fa-microphone-alt"></i> Your RootCall Agent</h3>
-                        <span class="info-badge" style="margin:0;">Retell voice catalog</span>
+                        <span class="info-badge" style="margin:0;">Agent voice</span>
                     </div>
                     <p class="field-hint" style="margin-bottom:1rem;">Choose how your AI screening assistant sounds. Both voices use the same scam-detection and transfer-safety rules.</p>
                     <div style="display:grid;gap:.75rem;">
-                        <label for="retell-voice-select"><strong>Choose an available Retell voice</strong></label>
+                        <label for="retell-voice-select"><strong>Choose a voice</strong></label>
                         <select id="retell-voice-select" class="form-control" style="width:100%;min-height:48px;">
-                            <option value="">Loading voices from Retell...</option>
+                            <option value="">Loading voices...</option>
                         </select>
-                        <div id="retell-voice-details" class="field-hint">Voice choices are loaded from your connected Retell workspace.</div>
+                        <div id="retell-voice-details" class="field-hint">Pick a voice to preview it. Your choice applies to new calls right away.</div>
                         <audio id="retell-voice-preview" controls preload="none" style="width:100%;display:none;">Your browser does not support audio.</audio>
                     </div>
                     <div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-top:1.25rem;">
-                        <button onclick="syncAgentIdentity()" class="btn btn-primary" id="sync-agent-identity-btn"><i class="fas fa-sync-alt"></i> Sync Agent Identity</button>
+                        <button onclick="syncAgentIdentity()" class="btn btn-primary" id="sync-agent-identity-btn"><i class="fas fa-sync-alt"></i> Update agent name</button>
                     </div>
-                    <p class="field-hint" style="margin-top:.75rem;">Identity sync uses the name on your account and keeps it private from callers. Voice changes are published to your existing Retell agent.</p>
+                    <p class="field-hint" style="margin-top:.75rem;">Your agent only connects callers who ask for you by name, and never tells them your name. Changing your name above updates your agent automatically.</p>
                 </div>
             </div>
         </div>
@@ -1680,7 +1708,7 @@
                         <h2 class="modal-title">
                             <i class="fas fa-shield-alt" style="color: var(--accent); margin-right: 0.4rem;"></i> Get Your Scam Shield Number
                         </h2>
-                        <p class="modal-sub">Powered by Telnyx &bull; AI scam screening included</p>
+                        <p class="modal-sub">AI scam screening included</p>
                     </div>
                     <button onclick="closeProvisionModal()" class="modal-close" aria-label="Close">
                         <i class="fas fa-times"></i>
@@ -1756,7 +1784,7 @@
                         <div class="step-dot"></div>
                     </div>
                     <div class="spinner" style="margin-bottom: 1.75rem;"></div>
-                    <h3 style="font-size: 1.3rem; font-weight: 800; margin-bottom: 0.6rem; color: var(--green);">Searching Telnyx Network...</h3>
+                    <h3 style="font-size: 1.3rem; font-weight: 800; margin-bottom: 0.6rem; color: var(--green);">Searching available numbers...</h3>
                     <p style="color: var(--muted); font-size: 0.95rem;">Finding available numbers in your area</p>
                 </div>
 
@@ -1846,6 +1874,17 @@
         let AVAILABLE_NUMBERS = [];
         let SELECTED_NUMBER = null;
         const PHONE_REGEX = /^\+[1-9]\d{1,14}$/;
+        const PHONE_HELP = 'Enter a full phone number, like (407) 555-0100.';
+
+        function normalizePhone(raw) {
+            const value = String(raw || '').trim();
+            if (!value) return '';
+            const digits = value.replace(/\D/g, '');
+            if (value.startsWith('+')) return '+' + digits;
+            if (digits.length === 10) return '+1' + digits;
+            if (digits.length === 11 && digits.startsWith('1')) return '+' + digits;
+            return value;
+        }
 
         const STATES_AREA_CODES = {
             "Alabama": ["205", "251", "256", "334"],
@@ -2047,6 +2086,69 @@
             }
         }
 
+        function renderGetStarted(state) {
+            const section = document.getElementById('get-started');
+            const list = document.getElementById('get-started-steps');
+            if (!section || !list) return;
+            const callNumber = state.number ? formatPhoneNumber(state.number) : 'your Shield number';
+            const steps = [
+                {
+                    done: state.hasNumber,
+                    title: 'Get your Shield number',
+                    detail: 'This is the number you give out. Callers reach your AI assistant first.',
+                    action: 'Get my number',
+                    run: () => { showPage('numbers'); openProvisionModal(); },
+                },
+                {
+                    done: state.hasForwarding,
+                    title: 'Add the phone that should ring',
+                    detail: 'Calls that pass screening, and calls from trusted contacts, ring this phone.',
+                    action: 'Add my phone',
+                    run: () => { showPage('settings'); const field = document.getElementById('client-cell'); if (field) field.focus(); },
+                },
+                {
+                    done: state.hasCalls,
+                    title: 'Make a test call',
+                    detail: state.hasNumber
+                        ? `From a different phone, call ${callNumber}. When asked who you're calling for, say your name.`
+                        : 'Get your Shield number first, then call it from a different phone.',
+                    action: null,
+                    run: null,
+                },
+            ];
+            const remaining = steps.filter(step => !step.done).length;
+            list.textContent = '';
+            steps.forEach((step, index) => {
+                const item = document.createElement('li');
+                if (step.done) item.className = 'done';
+                const mark = document.createElement('span');
+                mark.className = 'step-mark';
+                mark.setAttribute('aria-hidden', 'true');
+                mark.textContent = step.done ? '✓' : String(index + 1);
+                const text = document.createElement('div');
+                text.className = 'step-text';
+                const title = document.createElement('div');
+                title.className = 'step-title';
+                title.textContent = step.title + (step.done ? ' (done)' : '');
+                const detail = document.createElement('div');
+                detail.className = 'step-detail';
+                detail.textContent = step.detail;
+                text.append(title, detail);
+                item.append(mark, text);
+                if (!step.done && step.action && step.run) {
+                    const button = document.createElement('button');
+                    button.type = 'button';
+                    button.className = 'btn btn-outline';
+                    button.textContent = step.action;
+                    button.addEventListener('click', step.run);
+                    item.append(button);
+                }
+                list.append(item);
+            });
+            document.getElementById('get-started-progress').textContent = `${steps.length - remaining} of ${steps.length} done`;
+            section.hidden = remaining === 0;
+        }
+
         let dashboardLoading = false;
         async function loadData(background = false) {
             if (dashboardLoading || !CLIENT_ID) return;
@@ -2054,6 +2156,7 @@
             try {
                 if (!background) showLoading(true);
                 const number = await loadNumbers();
+                const setupState = { hasNumber: Boolean(number.has_number), number: number.number, hasForwarding: false, hasCalls: false };
                 const statsResponse = await authFetch(`${API}/api/rootcall/stats/${CLIENT_ID}`);
                 if (!statsResponse.ok) throw new Error('Unable to load call totals. Retry to refresh your dashboard.');
                 if (statsResponse.ok) {
@@ -2062,6 +2165,7 @@
                     document.getElementById('calls-screened').textContent = stats.calls_screened || 0;
                     document.getElementById('trusted-connected').textContent = stats.trusted_calls ?? stats.trusted_forwarded ?? 0;
                     document.getElementById('total-calls-summary').textContent = stats.total_calls || 0;
+                    setupState.hasCalls = (stats.total_calls || 0) > 0;
                 }
                 const configResponse = await authFetch(`${API}/api/rootcall/config/${CLIENT_ID}`);
                 if (!configResponse.ok && !(configResponse.status === 404 && !number.has_number)) {
@@ -2078,9 +2182,10 @@
                     );
                     document.getElementById('trusted-routing-status').textContent = config.trusted_routing_enabled
                         ? 'Trusted caller routing is connected. Saved contacts skip screening and transfer to your forwarding phone.'
-                        : 'Contacts are saved, but direct-to-Retell bypass is not connected for this line yet.';
+                        : 'Contacts are saved, but trusted caller routing is not connected for this line yet.';
                     document.getElementById('connect-trusted-routing').hidden = Boolean(config.trusted_routing_enabled);
                     document.getElementById('client-cell').value = config.client_cell || '';
+                    setupState.hasForwarding = Boolean(config.client_cell);
                     document.getElementById('sms-alerts').checked = config.sms_alerts_enabled || false;
                     document.getElementById('alert-spam').checked = config.alert_on_spam || false;
                     document.getElementById('alert-unknown').checked = config.alert_on_unknown || false;
@@ -2141,6 +2246,7 @@
                         tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><i class="fas fa-phone-volume" aria-hidden="true"></i><p class="empty-state-title">No saved call activity yet</p><p>Call your Shield number from a phone that is not in your trusted contacts to see how screening works.</p><button type="button" class="btn btn-outline" onclick="showPage(\'numbers\')">View my Shield number</button></div></td></tr>';
                     }
                 }
+                renderGetStarted(setupState);
                 document.getElementById('dashboard-error').hidden = true;
                 await loadBilling();
             } catch (err) {
@@ -2210,7 +2316,6 @@
                 if (!response.ok) throw new Error(data.detail || 'Unable to load your Shield number.');
                 const container = document.getElementById('numbers-list');
                 document.getElementById('get-shield-number').hidden = Boolean(data.has_number);
-                console.log('My number response:', data);
                 if (data.has_number) {
                     const pendingKey = pendingProvisionKey();
                     if (pendingKey) localStorage.removeItem(pendingKey);
@@ -2235,11 +2340,11 @@
                             <i class="fas fa-shield-alt" style="font-size: 5rem; color: #d1d5db; margin-bottom: 1.5rem;"></i>
                             <h4 style="font-size: 1.5rem; font-weight: 800; color: #666; margin-bottom: 0.75rem;">No Shield Number Yet</h4>
                             ${pendingNumber ? `<p style="color: #666; margin-bottom: 1rem;">Finish setup for ${escapeHTML(formatPhoneNumber(pendingNumber))}</p><button onclick="resumePendingProvisioning()" class="btn btn-primary" style="padding: 1rem 2rem; margin-bottom: 1rem;"><i class="fas fa-redo"></i> Resume Setup</button>` : ''}
-                            ${!pendingNumber ? `<p style="color: #666; margin-bottom: 0.75rem;">Already purchased a number? Enter it to finish setup.</p><input type="tel" id="recovery-number" placeholder="+14075550100" style="max-width: 320px; margin-bottom: 0.75rem;"><button onclick="resumePendingProvisioning()" class="btn btn-primary" style="display: block; margin: 0 auto 1.5rem; padding: 1rem 2rem;"><i class="fas fa-link"></i> Recover Purchased Number</button>` : ''}
-                            <p style="color: #999; margin-bottom: 2rem; font-size: 1.05rem;">Protect yourself from scams with an AI-powered Shield number</p>
+                                                        <p style="color: #999; margin-bottom: 2rem; font-size: 1.05rem;">Protect yourself from scams with an AI-powered Shield number</p>
                             <button onclick="openProvisionModal()" class="btn btn-primary" style="padding: 1.25rem 2.5rem; font-size: 1.1rem;">
                                 <i class="fas fa-plus"></i> Get Your Shield Number Now
                             </button>
+                            ${!pendingNumber ? `<details style="margin-top: 1.75rem;"><summary style="cursor: pointer; color: var(--green); font-weight: 600;">Already bought a number? Finish setup</summary><div style="margin-top: 1rem;"><input type="tel" id="recovery-number" placeholder="(407) 555-0100" style="max-width: 320px; margin-bottom: 0.75rem;"><button onclick="resumePendingProvisioning()" class="btn btn-outline" style="display: block; margin: 0 auto;"><i class="fas fa-link"></i> Recover Purchased Number</button></div></details>` : ''}
                         </div>
                     `;
                 }
@@ -2465,7 +2570,7 @@
                 const pendingKey = pendingProvisionKey();
                 if (pendingKey) localStorage.setItem(pendingKey, SELECTED_NUMBER);
                 document.getElementById('provision-status').textContent = recoverExisting
-                    ? 'Connecting your existing Telnyx number...'
+                    ? 'Connecting your existing number...'
                     : 'Checking and activating your number...';
                 const response = await authFetch(`${API}/api/rootcall/provision`, {
                     method: 'POST',
@@ -2526,14 +2631,14 @@
         }
 
         async function addContact() {
-            const phone = document.getElementById('new-contact').value.trim();
+            const phone = normalizePhone(document.getElementById('new-contact').value);
             const name = document.getElementById('new-contact-name').value.trim();
             if (!phone) {
                 showToast('Please enter a phone number', 'error');
                 return;
             }
             if (!PHONE_REGEX.test(phone)) {
-                showToast('Phone number must be in E.164 format (e.g., +1234567890)', 'error');
+                showToast(PHONE_HELP, 'error');
                 return;
             }
             try {
@@ -2601,16 +2706,16 @@
             const details = document.getElementById('retell-voice-details');
             const preview = document.getElementById('retell-voice-preview');
             if (!select) return;
-            select.innerHTML = '<option value="">Loading voices from Retell...</option>';
+            select.innerHTML = '<option value="">Loading voices...</option>';
             try {
                 const response = await authFetch(`${API}/api/rootcall/voice-options`);
                 const data = await response.json();
-                if (!response.ok) throw new Error(data.detail || 'Could not load Retell voices');
+                if (!response.ok) throw new Error(data.detail || 'Could not load voices');
                 const voices = data.voices || [];
                 select.innerHTML = '';
                 if (!voices.length) {
-                    select.innerHTML = '<option value="">No voices returned by Retell</option>';
-                    details.textContent = 'No voices were returned by the connected Retell workspace.';
+                    select.innerHTML = '<option value="">No voices available</option>';
+                    details.textContent = 'No voices are available right now. Please try again later.';
                     return;
                 }
                 voices.forEach(voice => {
@@ -2628,7 +2733,7 @@
                     select.selectedIndex = 0;
                 }
                 const selected = select.options[select.selectedIndex];
-                details.textContent = selected.dataset.details || 'Available in your Retell workspace';
+                details.textContent = selected.dataset.details || 'Available voice';
                 if (selected.dataset.preview) {
                     preview.src = selected.dataset.preview;
                     preview.style.display = 'block';
@@ -2638,7 +2743,7 @@
                 }
                 select.onchange = function () {
                     const option = this.options[this.selectedIndex];
-                    details.textContent = option.dataset.details || 'Available in your Retell workspace';
+                    details.textContent = option.dataset.details || 'Available voice';
                     if (option.dataset.preview) {
                         preview.src = option.dataset.preview;
                         preview.style.display = 'block';
@@ -2651,7 +2756,7 @@
                     }
                 };
             } catch (error) {
-                select.innerHTML = '<option value="">Unable to load Retell voices</option>';
+                select.innerHTML = '<option value="">Unable to load voices</option>';
                 details.textContent = error.message;
                 console.error('Retell voice catalog error:', error);
             }
@@ -2695,7 +2800,21 @@
                 });
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.detail || 'Could not save account name');
-                showToast('Account holder name saved.', 'success');
+                document.getElementById('user-name').textContent = fullName;
+                let agentMessage = 'Name saved. It will apply when your Shield line is set up.';
+                try {
+                    const syncResponse = await authFetch(`${API}/api/rootcall/sync-agent-identity/${CLIENT_ID}`, { method: 'POST' });
+                    if (syncResponse.ok) {
+                        agentMessage = 'Name saved. Your agent now recognizes it.';
+                    } else if (![404, 409].includes(syncResponse.status)) {
+                        agentMessage = 'Name saved, but your agent could not be updated yet. Use "Update agent name" to try again.';
+                    }
+                } catch (syncError) {
+                    if (syncError.message !== 'Session expired') {
+                        agentMessage = 'Name saved, but your agent could not be updated yet. Use "Update agent name" to try again.';
+                    }
+                }
+                showToast(agentMessage, agentMessage.startsWith('Name saved.') ? 'success' : 'error');
             } catch (error) {
                 showToast('Name update failed: ' + error.message, 'error');
             } finally {
@@ -2713,23 +2832,23 @@
                 });
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.detail || 'Identity sync failed');
-                showToast('Agent identity synchronized successfully!', 'success');
+                showToast('Your agent now recognizes your name.', 'success');
             } catch (error) {
-                showToast('Identity sync failed: ' + error.message, 'error');
+                showToast('Could not update your agent: ' + error.message, 'error');
             } finally {
                 button.disabled = false;
-                button.innerHTML = '<i class="fas fa-sync-alt"></i> Sync Agent Identity';
+                button.innerHTML = '<i class="fas fa-sync-alt"></i> Update agent name';
             }
         }
 
         async function updatePhone() {
-            const phone = document.getElementById('client-cell').value.trim();
+            const phone = normalizePhone(document.getElementById('client-cell').value);
             if (!phone) {
                 showToast('Please enter a phone number', 'error');
                 return;
             }
             if (!PHONE_REGEX.test(phone)) {
-                showToast('Phone number must be in E.164 format (e.g., +1234567890)', 'error');
+                showToast(PHONE_HELP, 'error');
                 return;
             }
             try {
@@ -2742,7 +2861,9 @@
                     const error = await response.json();
                     throw new Error(error.detail || 'Failed to update phone');
                 }
-                showToast('Forwarding number updated!', 'success');
+                document.getElementById('client-cell').value = phone;
+                showToast('Saved. Screened calls will ring this phone.', 'success');
+                loadData(true);
             } catch (err) {
                 showToast('Error: ' + err.message, 'error');
             } finally {

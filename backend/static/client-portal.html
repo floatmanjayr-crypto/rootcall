@@ -1267,6 +1267,21 @@
         .get-started li.done .step-title { text-decoration: line-through; opacity: 0.7; }
         .get-started .step-detail { font-size: 0.85rem; color: var(--muted); margin-top: 0.15rem; }
 
+        .activity-tools { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; margin-bottom: 0.75rem; }
+        .activity-tools input[type="search"] { flex: 1 1 14rem; max-width: 22rem; width: auto; padding: 0.7rem 1rem; border: 1.5px solid var(--line); border-radius: 11px; font: inherit; font-size: 0.9rem; }
+        .activity-tools input[type="search"]:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px rgba(45, 122, 95, 0.12); }
+        .chip-row { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+        .chip { border: 1.5px solid var(--line); background: #fff; color: var(--green); border-radius: 999px; padding: 0.4rem 0.9rem; font: inherit; font-size: 0.82rem; font-weight: 600; cursor: pointer; }
+        .chip[aria-pressed="true"] { background: var(--green); border-color: var(--green); color: #fff; }
+        .call-row td { padding: 1.1rem 1.25rem; border-top: 1px solid #e5e5e5; vertical-align: top; }
+        .call-row:hover { background: var(--ivory); }
+        .call-what { font-weight: 700; color: var(--green); }
+        .call-sub { font-size: 0.82rem; color: var(--muted); margin-top: 0.15rem; overflow-wrap: anywhere; }
+        .call-badge { display: inline-block; padding: 0.4rem 0.85rem; border-radius: 20px; font-size: 0.8rem; font-weight: 700; }
+        .call-badge.bad { background: #fee2e2; color: #991b1b; }
+        .call-badge.wait { background: #fef3c7; color: #92400e; }
+        .call-badge.good { background: #d1fae5; color: #065f46; }
+
         @media (max-width: 1024px) {
             .dashboard-main-grid { grid-template-columns: 1fr; }
         }
@@ -1563,15 +1578,25 @@
                             <i class="fas fa-download"></i> Export CSV
                         </button>
                     </div>
+                    <div class="activity-tools">
+                        <label class="sr-only" for="activity-search" style="position:absolute;left:-9999px;">Search calls</label>
+                        <input type="search" id="activity-search" placeholder="Search by number or caller name" autocomplete="off">
+                        <div class="chip-row" role="group" aria-label="Filter calls">
+                            <button type="button" class="chip" data-filter="all" aria-pressed="true">All</button>
+                            <button type="button" class="chip" data-filter="trusted" aria-pressed="false">Trusted</button>
+                            <button type="button" class="chip" data-filter="screened" aria-pressed="false">Screened</button>
+                            <button type="button" class="chip" data-filter="blocked" aria-pressed="false">Blocked</button>
+                        </div>
+                    </div>
+                    <p class="field-hint" id="activity-count" role="status" style="margin: 0 0 0.75rem;"></p>
                     <div style="overflow-x: auto;">
                         <table class="data-table">
                             <thead>
                                 <tr>
-                                    <th>Time</th>
-                                    <th>From</th>
+                                    <th>When</th>
                                     <th>Caller</th>
-                                    <th>Call handling</th>
-                                    <th>Status</th>
+                                    <th>What happened</th>
+                                    <th>Result</th>
                                 </tr>
                             </thead>
                             <tbody id="call-history"></tbody>
@@ -2056,6 +2081,7 @@
         }
 
         async function init() {
+            setupCallControls();
             const token = getToken();
             if (!token) {
                 window.location.href = '/login.html';
@@ -2149,6 +2175,121 @@
             section.hidden = remaining === 0;
         }
 
+        let ALL_CALLS = [];
+        let callFilter = 'all';
+        let callQuery = '';
+
+        const CALL_STATUS_LABELS = {
+            completed: ['Completed', 'good'], ended: ['Completed', 'good'], forwarded: ['Connected', 'good'],
+            blocked: ['Blocked', 'good'], failed: ['Failed', 'bad'], missed: ['Missed', 'wait'],
+            screening: ['In progress', 'wait'], 'in-progress': ['In progress', 'wait'], live: ['In progress', 'wait'],
+            initiated: ['Ringing', 'wait'], pending: ['Pending', 'wait'], unknown: ['Unknown', 'wait'],
+        };
+
+        function describeCall(call) {
+            const action = String(call.action || '').toLowerCase();
+            const status = String(call.status || 'unknown').toLowerCase();
+            let what = 'Call received';
+            let kind = 'screened';
+            if (action.startsWith('trusted')) {
+                what = status === 'failed' ? 'Trusted contact. Could not connect you' : 'Trusted contact, connected to you';
+                kind = 'trusted';
+            } else if (action.includes('block') || status === 'blocked') {
+                what = 'Blocked by your shield';
+                kind = 'blocked';
+            } else if (action.includes('forward') || action.includes('transfer')) {
+                what = 'Screened, then connected to you';
+            } else if (action.includes('screen')) {
+                what = 'Screened by your assistant';
+            } else if (action && action !== 'received') {
+                what = action.replace(/[_-]/g, ' ').replace(/^./, c => c.toUpperCase());
+            }
+            const [label, tone] = CALL_STATUS_LABELS[status] || [status.replace(/[-_]/g, ' ').replace(/^./, c => c.toUpperCase()), 'wait'];
+            return { what, kind, statusLabel: label, tone };
+        }
+
+        function formatCallTime(value) {
+            if (!value) return 'Not available';
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) return 'Not available';
+            const time = date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+            const startOfDay = d => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+            const days = Math.round((startOfDay(new Date()) - startOfDay(date)) / 86400000);
+            if (days === 0) return `Today, ${time}`;
+            if (days === 1) return `Yesterday, ${time}`;
+            return `${date.toLocaleDateString([], { month: 'short', day: 'numeric' })}, ${time}`;
+        }
+
+        function renderCalls() {
+            const body = document.getElementById('call-history');
+            const count = document.getElementById('activity-count');
+            if (!body) return;
+            body.textContent = '';
+            if (!ALL_CALLS.length) {
+                count.textContent = '';
+                body.innerHTML = '<tr><td colspan="4"><div class="empty-state"><i class="fas fa-phone-volume" aria-hidden="true"></i><p class="empty-state-title">No saved call activity yet</p><p>Call your Shield number from a phone that is not in your trusted contacts to see how screening works.</p><button type="button" class="btn btn-outline" onclick="showPage(\'numbers\')">View my Shield number</button></div></td></tr>';
+                return;
+            }
+            const query = callQuery.trim().toLowerCase();
+            const rows = ALL_CALLS.filter(call => {
+                const info = describeCall(call);
+                if (callFilter !== 'all' && info.kind !== callFilter) return false;
+                if (!query) return true;
+                const digits = query.replace(/\D/g, '');
+                const haystack = `${call.caller_name || ''} ${call.from_number || ''} ${info.what}`.toLowerCase();
+                return haystack.includes(query) || (digits.length >= 3 && String(call.from_number || '').replace(/\D/g, '').includes(digits));
+            });
+            count.textContent = rows.length === ALL_CALLS.length
+                ? `Showing your ${rows.length} most recent call${rows.length === 1 ? '' : 's'}.`
+                : `${rows.length} of ${ALL_CALLS.length} recent calls match.`;
+            if (!rows.length) {
+                const cell = document.createElement('td');
+                cell.colSpan = 4;
+                cell.innerHTML = '<div class="empty-state"><i class="fas fa-search" aria-hidden="true"></i><p class="empty-state-title">No calls match</p><p>Try a different search or filter.</p></div>';
+                const row = document.createElement('tr');
+                row.append(cell);
+                body.append(row);
+                return;
+            }
+            rows.forEach(call => {
+                const info = describeCall(call);
+                const row = document.createElement('tr');
+                row.className = 'call-row';
+                const when = document.createElement('td');
+                when.textContent = formatCallTime(call.timestamp);
+                if (call.timestamp) when.title = new Date(call.timestamp).toLocaleString();
+                const who = document.createElement('td');
+                const name = document.createElement('div');
+                name.className = 'call-what';
+                name.textContent = call.caller_name || 'Unknown caller';
+                const number = document.createElement('div');
+                number.className = 'call-sub';
+                number.textContent = call.from_number ? formatPhoneNumber(call.from_number) : 'Private / unknown';
+                who.append(name, number);
+                const what = document.createElement('td');
+                what.textContent = info.what;
+                const result = document.createElement('td');
+                const badge = document.createElement('span');
+                badge.className = `call-badge ${info.tone}`;
+                badge.textContent = info.statusLabel;
+                result.append(badge);
+                row.append(when, who, what, result);
+                body.append(row);
+            });
+        }
+
+        function setupCallControls() {
+            const search = document.getElementById('activity-search');
+            if (search) search.addEventListener('input', () => { callQuery = search.value; renderCalls(); });
+            document.querySelectorAll('.activity-tools .chip').forEach(chip => {
+                chip.addEventListener('click', () => {
+                    callFilter = chip.dataset.filter;
+                    document.querySelectorAll('.activity-tools .chip').forEach(other => other.setAttribute('aria-pressed', String(other === chip)));
+                    renderCalls();
+                });
+            });
+        }
+
         let dashboardLoading = false;
         async function loadData(background = false) {
             if (dashboardLoading || !CLIENT_ID) return;
@@ -2225,26 +2366,8 @@
                 if (!callsResponse.ok) throw new Error('Unable to load call history. Retry to refresh your dashboard.');
                 if (callsResponse.ok) {
                     const calls = await callsResponse.json();
-                    const tbody = document.getElementById('call-history');
-                    if (calls.length > 0) {
-                        tbody.innerHTML = calls.map(call => `
-                            <tr style="border-top: 1px solid #e5e5e5; transition: all 0.3s ease;" onmouseover="this.style.background='var(--ivory)'" onmouseout="this.style.background='white'">
-                                <td style="padding: 1.25rem; font-weight: 600;">${call.timestamp ? new Date(call.timestamp).toLocaleString() : 'Not available'}</td>
-                                <td style="padding: 1.25rem; font-weight: 700; color: var(--green);">${escapeHTML(call.from_number || 'Private / unknown')}</td>
-                                <td style="padding: 1.25rem;">${escapeHTML(call.caller_name || 'Unknown')}</td>
-                                <td style="padding: 1.25rem; font-weight: 600;">${escapeHTML((call.action || 'received').replace(/_/g, ' '))}</td>
-                                <td style="padding: 1.25rem;">
-                                    <span style="padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: 700; ${
-                                        ['blocked', 'failed'].includes(call.status) ? 'background: #fee2e2; color: #991b1b;' :
-                                        ['screening', 'in-progress', 'initiated', 'unknown'].includes(call.status || 'unknown') ? 'background: #fef3c7; color: #92400e;' :
-                                        'background: #d1fae5; color: #065f46;'
-                                    }">${escapeHTML((call.status || 'unknown').replace(/[-_]/g, ' ').toUpperCase())}</span>
-                                </td>
-                            </tr>
-                        `).join('');
-                    } else {
-                        tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><i class="fas fa-phone-volume" aria-hidden="true"></i><p class="empty-state-title">No saved call activity yet</p><p>Call your Shield number from a phone that is not in your trusted contacts to see how screening works.</p><button type="button" class="btn btn-outline" onclick="showPage(\'numbers\')">View my Shield number</button></div></td></tr>';
-                    }
+                    ALL_CALLS = Array.isArray(calls) ? calls : [];
+                    renderCalls();
                 }
                 renderGetStarted(setupState);
                 document.getElementById('dashboard-error').hidden = true;

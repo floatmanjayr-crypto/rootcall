@@ -252,6 +252,15 @@
     }
     .message.error{background:#fee;color:#c00;border:1px solid #fcc}
     .message.success{background:#efe;color:#060;border:1px solid #cfc}
+    .message a{color:inherit;font-weight:700;text-decoration:underline}
+    button.close-modal{background:none;border:0;padding:4px 10px;line-height:1;border-radius:8px}
+    button.close-modal:focus-visible,.toggle-password:focus-visible{outline:3px solid var(--green);outline-offset:2px}
+    .field-help{margin:6px 0 0;color:var(--muted);font-size:.82rem}
+    .password-row{position:relative}
+    .password-row input{padding-right:84px}
+    .toggle-password{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:0;color:var(--green);font-weight:700;font-size:.85rem;cursor:pointer;padding:6px 8px;border-radius:6px}
+    .terms-note{margin:12px 0 0;color:var(--muted);font-size:.8rem;text-align:center}
+    .terms-note a{color:var(--green);font-weight:600}
     
     .section-title{color:var(--green);margin:0 0 14px}
     .flow{list-style:none;margin:0 0 18px;padding:0 0 18px;border-bottom:1px solid #eee}
@@ -462,16 +471,17 @@
   </section>
 
   <!-- Signup Modal -->
-  <div id="signup-modal" class="modal">
+  <div id="signup-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="signup-title">
     <div class="modal-content" style="position:relative">
-      <span class="close-modal" onclick="closeSignup()">&times;</span>
-      <h3>Get Protected with RootCall</h3>
-      <div id="modal-message" class="message"></div>
+      <button type="button" class="close-modal" onclick="closeSignup()" aria-label="Close">&times;</button>
+      <h3 id="signup-title">Get Protected with RootCall</h3>
+      <div id="modal-message" class="message" role="alert"></div>
       <form onsubmit="handleSignup(event)">
         <p style="color:var(--muted);font-size:14px">Create your account, then complete secure payment with Stripe.</p>
         <div class="form-group">
-          <label for="signup-name">Full Name</label>
-          <input type="text" id="signup-name" required autocomplete="name">
+          <label for="signup-name">Full name</label>
+          <input type="text" id="signup-name" required autocomplete="name" placeholder="First Last" aria-describedby="signup-name-help">
+          <p class="field-help" id="signup-name-help">Use your first and last name. Your assistant listens for it when callers ask for you.</p>
         </div>
         <div class="form-group">
           <label for="signup-email">Email</label>
@@ -479,7 +489,11 @@
         </div>
         <div class="form-group">
           <label for="signup-password">Password</label>
-          <input type="password" id="signup-password" required minlength="8" autocomplete="new-password">
+          <div class="password-row">
+            <input type="password" id="signup-password" required minlength="8" autocomplete="new-password" aria-describedby="signup-password-help">
+            <button type="button" class="toggle-password" id="toggle-password" aria-controls="signup-password" aria-pressed="false">Show</button>
+          </div>
+          <p class="field-help" id="signup-password-help">At least 8 characters.</p>
         </div>
         <div class="form-group">
           <label for="signup-plan">Select Plan</label>
@@ -493,6 +507,7 @@
           Create Account &amp; Subscribe
         </button>
         <p class="fine-print">You’ll pay securely with Stripe next.</p>
+        <p class="terms-note">By continuing you agree to our <a href="/static/terms.html">Terms</a> and <a href="/static/privacy.html">Privacy Policy</a>.</p>
       </form>
       <p style="text-align:center;margin-top:15px;color:var(--muted);font-size:14px">
         Already have an account?
@@ -527,13 +542,18 @@
     const API = window.location.origin;
     document.getElementById('y').textContent = new Date().getFullYear();
 
+    let signupOpener = null;
+
     function openSignup(e) {
       if (e) e.preventDefault();
+      signupOpener = document.activeElement;
       document.getElementById('signup-modal').classList.add('active');
+      setTimeout(() => document.getElementById('signup-name').focus(), 0);
     }
 
     function closeSignup() {
       document.getElementById('signup-modal').classList.remove('active');
+      if (signupOpener && typeof signupOpener.focus === 'function') signupOpener.focus();
     }
 
     function selectPlan(plan) {
@@ -567,12 +587,19 @@
     async function handleSignup(e) {
       e.preventDefault();
       
-      const name = document.getElementById('signup-name').value;
-      const email = document.getElementById('signup-email').value;
+      const name = document.getElementById('signup-name').value.trim().replace(/\s+/g, ' ');
+      const email = document.getElementById('signup-email').value.trim();
       const password = document.getElementById('signup-password').value;
       const plan = document.getElementById('signup-plan').value;
+      if (name.split(' ').length < 2) {
+        showMessage('Please enter your first and last name. Your assistant uses it to recognize calls meant for you.', true);
+        document.getElementById('signup-name').focus();
+        return;
+      }
       const button = e.target.querySelector('button[type="submit"]');
+      const buttonLabel = button.textContent;
       button.disabled = true;
+      button.textContent = 'Creating your account...';
       let redirecting = false;
 
       try {
@@ -589,7 +616,18 @@
         const signupData = await readJson(signupResponse);
         
         if (!signupResponse.ok) {
-          showMessage(errorDetail(signupData, signupResponse, 'Signup failed'), true);
+          const problem = errorDetail(signupData, signupResponse, 'Signup failed');
+          showMessage(problem, true);
+          if (/already|exists|registered/i.test(problem)) {
+            const box = document.getElementById('modal-message');
+            const signIn = document.createElement('a');
+            signIn.href = '/static/login.html';
+            signIn.textContent = 'Sign in';
+            const reset = document.createElement('a');
+            reset.href = '/static/forgot-password.html';
+            reset.textContent = 'Reset your password';
+            box.append(document.createElement('br'), signIn, ' · ', reset);
+          }
           return;
         }
 
@@ -623,9 +661,26 @@
       } catch (err) {
         showMessage('We could not reach RootCall. Check your connection and try again.', true);
       } finally {
-        if (!redirecting) button.disabled = false;
+        if (!redirecting) {
+          button.disabled = false;
+          button.textContent = buttonLabel;
+        }
       }
     }
+
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && document.getElementById('signup-modal').classList.contains('active')) closeSignup();
+    });
+    document.getElementById('signup-modal').addEventListener('click', event => {
+      if (event.target === event.currentTarget) closeSignup();
+    });
+    document.getElementById('toggle-password').addEventListener('click', event => {
+      const field = document.getElementById('signup-password');
+      const showing = field.type === 'text';
+      field.type = showing ? 'password' : 'text';
+      event.currentTarget.textContent = showing ? 'Show' : 'Hide';
+      event.currentTarget.setAttribute('aria-pressed', String(!showing));
+    });
 
     // Smooth scroll for internal links
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {

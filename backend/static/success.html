@@ -322,37 +322,29 @@
     </div>
 
     <div class="card-body">
-      <p id="status">Setting up your AI-powered scam protection...</p>
-
-      <div class="progress-track" id="progress-track">
-        <div class="progress-bar" id="progress-bar"></div>
-      </div>
-
-      <div class="details" id="provision-steps">
-        <div id="step1" class="status-box">Verifying payment</div>
-        <div id="step2" class="status-box">Creating your account</div>
-        <div id="step3" class="status-box">Configuring AI screening engine</div>
-        <div id="step4" class="status-box">Finalizing setup</div>
-      </div>
-
+      <p id="status" role="status">Confirming your payment...</p>
       <div class="spinner" id="spinner"></div>
 
       <div id="success-details" style="display:none">
         <div class="success-message">
-          <div class="check">✓</div>
+          <div class="check">&#10003;</div>
           <strong>Payment received. Welcome to RootCall!</strong>
-          <span>Next, sign in and choose your Shield number to start screening calls.</span>
+          <span>Your account is ready. Here is what to do next.</span>
         </div>
 
         <div class="next-steps">
           <h3>Next steps</h3>
           <ol>
-            <li>Sign in to your dashboard</li>
-            <li>Get your AI-protected phone number</li>
-            <li>Add trusted contacts who can reach you</li>
-            <li>Start blocking scams automatically</li>
+            <li><strong>Get your Shield number</strong> in your dashboard. This is the number you give out.</li>
+            <li><strong>Add the phone that should ring.</strong> Screened calls and trusted contacts reach you there.</li>
+            <li><strong>Make a test call</strong> from a different phone, and say your name when asked who you're calling for.</li>
           </ol>
         </div>
+      </div>
+
+      <div id="delayed" class="next-steps" style="display:none">
+        <h3>We're still confirming your payment</h3>
+        <p>This can take a minute. You can go to your dashboard now, or check again. If you were charged and your account doesn't activate, email <a href="mailto:info@getrootcall.com">info@getrootcall.com</a> and we'll sort it out.</p>
       </div>
 
       <div id="actions" style="display:none">
@@ -371,40 +363,58 @@
 
   <script>
     const API = window.location.origin;
-    const progressBar = document.getElementById('progress-bar');
-
-    async function simulateProvisioning() {
-      const steps = ['step1', 'step2', 'step3', 'step4'];
-
-      for (let i = 0; i < steps.length; i++) {
-        await new Promise(resolve => setTimeout(resolve, 1800));
-        document.getElementById(steps[i]).classList.add('complete');
-        progressBar.style.width = `${((i + 1) / steps.length) * 100}%`;
-      }
-
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      document.getElementById('status').textContent = 'Your RootCall account is ready!';
-      document.getElementById('spinner').style.display = 'none';
-      document.getElementById('success-details').style.display = 'block';
-
-      await new Promise(resolve => setTimeout(resolve, 500));
-      document.getElementById('actions').style.display = 'flex';
-    }
-
-    // Check if user is logged in
-    const user = localStorage.getItem('user');
     const token = localStorage.getItem('access_token') || localStorage.getItem('token');
+    const el = id => document.getElementById(id);
 
-    if (user || token) {
-      simulateProvisioning();
-    } else {
-      document.getElementById('status').textContent = 'Please sign in to continue';
-      document.getElementById('spinner').style.display = 'none';
-      document.getElementById('progress-track').style.display = 'none';
-      document.getElementById('provision-steps').style.display = 'none';
-      document.getElementById('actions').style.display = 'flex';
+    function showActions() { el('actions').style.display = 'flex'; }
+
+    function confirmed() {
+      el('status').textContent = 'Payment confirmed. Your RootCall account is ready!';
+      el('spinner').style.display = 'none';
+      el('delayed').style.display = 'none';
+      el('success-details').style.display = 'block';
+      showActions();
     }
+
+    function delayed() {
+      el('status').textContent = "We haven't received your payment confirmation yet.";
+      el('spinner').style.display = 'none';
+      el('delayed').style.display = 'block';
+      const again = document.createElement('button');
+      again.type = 'button';
+      again.className = 'btn btn-secondary';
+      again.textContent = 'Check again';
+      again.addEventListener('click', () => { again.remove(); start(); });
+      el('actions').append(again);
+      showActions();
+    }
+
+    function signedOut() {
+      el('status').textContent = 'Please sign in to continue';
+      el('spinner').style.display = 'none';
+      showActions();
+    }
+
+    async function start() {
+      if (!token) { signedOut(); return; }
+      el('status').textContent = 'Confirming your payment...';
+      el('spinner').style.display = 'block';
+      el('delayed').style.display = 'none';
+      for (let attempt = 0; attempt < 10; attempt++) {
+        try {
+          const response = await fetch(API + '/api/payments/status', { headers: { Authorization: 'Bearer ' + token } });
+          if (response.status === 401) { signedOut(); return; }
+          if (response.ok) {
+            const state = await response.json();
+            if (state.billing_available || (state.managed && state.status === 'active')) { confirmed(); return; }
+          }
+        } catch (error) { /* network blip: try again */ }
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+      delayed();
+    }
+
+    start();
   </script>
 </body>
 </html>

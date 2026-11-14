@@ -31,3 +31,13 @@ class PortalCopyTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def test_success_page_confirms_payment_honestly():
+    from pathlib import Path
+    html = (Path(__file__).resolve().parents[1] / "static" / "success.html").read_text(encoding="utf-8")
+    assert "Welcome to RootCall" in html
+    assert "onboarding.html" not in html
+    assert "simulateProvisioning" not in html
+    assert "/api/payments/status" in html
+    assert "/api/payments/verify" not in html

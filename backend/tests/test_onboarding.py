@@ -580,8 +580,9 @@ class OnboardingTest(unittest.TestCase):
         llm_call = self.retell.create_llm.call_args
         self.assertIn("Jordan Green", llm_call.args[0])
         self.assertIn("ROOTCALL ORIGINAL HANDBOOK BEGIN", llm_call.args[0])
+        self.assertIn("# ROOTCALL — AI CALL SCREENING AGENT", llm_call.args[0])
         self.assertEqual(llm_call.kwargs["begin_message"],
-                         "Hello, you've reached RootCall AI Assistant. Who would you like to speak with?")
+                         "Hello, you've reached rootcaller ai assistance, who are you calling for?")
         self.assertEqual(config.trusted_contacts, ["+12025550145"])
         self.assertTrue(config.trusted_routing_enabled)
         self.assertEqual(config.trusted_agent_id, "agent-trusted")

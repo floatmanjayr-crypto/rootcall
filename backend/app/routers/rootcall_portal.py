@@ -29,7 +29,9 @@ from app.services.customer_onboarding import automated_onboarding_enabled, telny
 
 # Services
 from app.services.telnyx_service import TelnyxService
-from app.services.retell_service import RetellService, build_scam_screening_prompt
+from app.services.retell_service import (
+    RetellService, SCREENING_GREETING, SCREENING_HANDBOOK, build_scam_screening_prompt,
+)
 from app.services.trusted_routing import enable_trusted_routing, normalize_caller
 from app.services.customer_activity import activity_query, activity_stats, serialize_activity
 
@@ -792,11 +794,11 @@ async def provision_rootcall(
         
         # Bind the agent to the protected account holder from the authenticated account.
         owner_name = (current_user.full_name or "").strip()
-        scam_prompt = build_scam_screening_prompt(owner_name)
+        scam_prompt = build_scam_screening_prompt(owner_name, SCREENING_HANDBOOK)
 
         llm_id = retell.create_llm(
             general_prompt=scam_prompt,
-            begin_message="Hello, this is the AI scam screening service. May I ask who's calling and the reason for your call?",
+            begin_message=SCREENING_GREETING,
             start_speaker="agent",
             general_tools=RetellService.default_general_tools(),
         )

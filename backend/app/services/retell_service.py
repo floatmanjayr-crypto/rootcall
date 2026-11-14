@@ -2,12 +2,17 @@
 import logging
 import os
 import re
+from pathlib import Path
 import requests
 from typing import Any, Dict, List, Optional
 
 from app.config import settings
 
 log = logging.getLogger(__name__)
+
+# The one screening handbook every RootCall agent uses (edit screening_handbook.txt to change it).
+SCREENING_HANDBOOK = Path(__file__).with_name("screening_handbook.txt").read_text(encoding="utf-8").strip()
+SCREENING_GREETING = "Hello, you've reached rootcaller ai assistance, who are you calling for?"
 
 
 def build_scam_screening_prompt(
@@ -53,7 +58,7 @@ This is a recipient-routing rule, NOT caller identity verification. It does not 
 """ + identity_rule + """
 
 IDENTITY GATE — MUST HAPPEN BEFORE DISCUSSING THE CALL:
-- Your FIRST spoken message must be: "Hello, you've reached RootCall AI Assistant. Who would you like to speak with?"
+- Your FIRST spoken message must be: "Hello, you've reached rootcaller ai assistance, who are you calling for?"
 - Do not begin by asking who is calling or why they are calling.
 - As soon as the caller names the requested recipient, compare that name privately to the protected owner identity. This check is mandatory and must happen before asking what the call is about.
 - A match is ONLY the exact full stored name, exact stored first name alone, or exact stored last name alone, ignoring capitalization and surrounding spaces. Do not accept nicknames, middle names, similar-sounding names, partial fragments, or any other name.
@@ -330,8 +335,9 @@ class RetellService:
         # Updating the attached LLM takes effect without changing voice or
         # publishing a new Agent version.
         fields = {
-            "general_prompt": build_scam_screening_prompt(owner_name, existing_prompt),
-            "begin_message": "Hello, you've reached RootCall AI Assistant. Who would you like to speak with?",
+            # Always the canonical handbook, so every agent ends up with the same prompt.
+            "general_prompt": build_scam_screening_prompt(owner_name, SCREENING_HANDBOOK),
+            "begin_message": SCREENING_GREETING,
         }
         try:
             return self.update_llm(llm_id=llm_id, **fields)

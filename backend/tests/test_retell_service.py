@@ -44,6 +44,16 @@ class RetellPublishingTest(unittest.TestCase):
         self.assertIn('If the protected owner is "Jordan Example" and the caller says "Michael"', prompt)
         self.assertIn("do not say \"what would you like to speak to michael about?\"", prompt.lower())
 
+    def test_every_agent_prompt_uses_the_one_handbook_and_greeting(self):
+        handbook = self.module.SCREENING_HANDBOOK
+        self.assertTrue(handbook.startswith("# ROOTCALL — AI CALL SCREENING AGENT"))
+        self.assertIn("RECIPIENT VERIFICATION", handbook)
+        prompt = self.module.build_scam_screening_prompt("Jordan Example", handbook)
+        self.assertEqual(prompt.count(handbook), 1)
+        self.assertEqual(prompt.count(self.module.SCREENING_GREETING), 1 + handbook.count(self.module.SCREENING_GREETING))
+        self.assertNotIn("RootCall AI Assistant", prompt)
+        self.assertNotIn("Who would you like to speak with", prompt)
+
     def test_screening_prompt_fails_closed_without_owner_identity(self):
         prompt = self.module.build_scam_screening_prompt(None)
         self.assertIn("OWNER IDENTITY IS NOT CONFIGURED", prompt)
@@ -53,7 +63,7 @@ class RetellPublishingTest(unittest.TestCase):
         handbook = "ROOT CALL — ADVANCED SCAM SHIELD\\nOriginal greeting and screening rules."
         first_sync = self.module.build_scam_screening_prompt("Jordan Example", handbook)
         self.assertIn(handbook, first_sync)
-        self.assertIn("Who would you like to speak with?", first_sync)
+        self.assertIn("who are you calling for?", first_sync)
         second_sync = self.module.build_scam_screening_prompt("Jordan Example", first_sync)
         self.assertEqual(second_sync.count("ROOTCALL ORIGINAL HANDBOOK BEGIN"), 1)
         self.assertEqual(second_sync.count(handbook), 1)
@@ -68,10 +78,11 @@ class RetellPublishingTest(unittest.TestCase):
         self.assertEqual(get.call_args_list[1].args[0], "/get-retell-llm/llm-test")
         self.assertEqual(update_llm.call_args.kwargs["llm_id"], "llm-test")
         self.assertIn("Jordan Example", update_llm.call_args.kwargs["general_prompt"])
-        self.assertIn("Original master handbook text", update_llm.call_args.kwargs["general_prompt"])
+        self.assertIn(self.module.SCREENING_HANDBOOK, update_llm.call_args.kwargs["general_prompt"])
+        self.assertNotIn("Original master handbook text", update_llm.call_args.kwargs["general_prompt"])
         self.assertEqual(
             update_llm.call_args.kwargs["begin_message"],
-            "Hello, you've reached RootCall AI Assistant. Who would you like to speak with?"
+            "Hello, you've reached rootcaller ai assistance, who are you calling for?"
         )
         publish.assert_not_called()
 

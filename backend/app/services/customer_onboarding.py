@@ -15,20 +15,14 @@ from app.models.onboarding import CustomerOnboarding
 from app.models.phone_number import PhoneNumber
 from app.models.rootcall_config import RootCallConfig
 from app.models.user import User
-from app.services.retell_service import RetellService, build_scam_screening_prompt
+from app.services.retell_service import (
+    RetellService, SCREENING_GREETING, SCREENING_HANDBOOK, build_scam_screening_prompt,
+)
 from app.services.telnyx_service import TelnyxService
 from app.services.trusted_routing import enable_trusted_routing
 from app.services.activation_recovery import ActivationPending, activation_lock, resource_creation
 
 log = logging.getLogger(__name__)
-
-SCREENING_PROMPT = """You are RootCall, an AI scam screening assistant.
-Ask callers their name and reason for calling. Never disclose the user's private
-forwarding number. Reject fraud, requests for passwords or money, threats, gift
-cards, and government or tech-support impersonation using end_call.
-For legitimate callers, say "Thank you, let me connect you now" and use transfer_call.
-Do not claim a call was connected if the tool fails. Be polite and concise."""
-
 
 def automated_onboarding_enabled() -> bool:
     return bool(settings.AUTOMATED_ONBOARDING)
@@ -202,8 +196,8 @@ def _provision_customer(db: Session, user: User):
         if not onboarding.llm_id:
             with resource_creation(db, onboarding, "screening_llm"):
                 onboarding.llm_id = retell.create_llm(
-                    build_scam_screening_prompt(user.full_name, SCREENING_PROMPT),
-                    begin_message="Hello, you've reached RootCall AI Assistant. Who would you like to speak with?",
+                    build_scam_screening_prompt(user.full_name, SCREENING_HANDBOOK),
+                    begin_message=SCREENING_GREETING,
                 )
                 if not onboarding.llm_id:
                     raise RuntimeError("Retell did not return an LLM ID")

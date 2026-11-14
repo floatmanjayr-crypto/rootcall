@@ -69,8 +69,10 @@ const shots = process.env.ROOTCALL_SHOTS || '';
                 assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'no horizontal overflow');
                 if (shots && hasNumber) {
                     await page.evaluate(() => showPage('dashboard'));
+                    await page.waitForTimeout(500);
                     await page.screenshot({ path: `${shots}/home-${width}.png`, fullPage: true });
                     await page.evaluate(() => showPage('settings'));
+                    await page.waitForTimeout(500);
                     await page.screenshot({ path: `${shots}/settings-${width}.png`, fullPage: true });
                 }
                 assert.deepEqual(errors, []);

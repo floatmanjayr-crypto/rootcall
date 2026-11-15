@@ -34,6 +34,14 @@ def new_onboarding(user_id: int) -> CustomerOnboarding:
 
 def next_url(db: Session, user_id: int) -> str:
     if not automated_onboarding_enabled():
+        # Paid customers without a Shield number go through guided setup first.
+        user = db.get(User, user_id)
+        if user is not None and user.stripe_customer_id:
+            has_number = db.query(PhoneNumber).filter(
+                PhoneNumber.user_id == user_id, PhoneNumber.is_active.is_(True)
+            ).first()
+            if not has_number:
+                return "/static/setup.html"
         return "/static/client-portal.html"
     onboarding = db.get(CustomerOnboarding, user_id)
     if onboarding and onboarding.status != "completed":

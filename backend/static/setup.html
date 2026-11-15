@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0c3b2e">
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <title>Set up your RootCall line</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{--pine:#0c3b2e;--pine-600:#11493a;--signal:#1f8a5b;--paper:#f2f5f1;--line:#dde5df;--ink:#14201a;--muted:#56655d;--alarm:#b3382c;--amber:#b7791f}
+    *{box-sizing:border-box}
+    [hidden]{display:none!important}
+    html{font-size:106.25%}
+    body{margin:0;background:var(--paper);color:var(--ink);font-family:'Atkinson Hyperlegible Next','Atkinson Hyperlegible',system-ui,-apple-system,'Segoe UI',sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+    a{color:var(--signal)}
+    .skip{position:absolute;left:-9999px;top:0;background:#fff;padding:.6rem 1rem;z-index:10}
+    .skip:focus{left:1rem;top:1rem}
+    header.bar{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1rem 1.5rem;background:#fff;border-bottom:1px solid var(--line)}
+    header.bar img{width:132px;height:auto;display:block}
+    .linkish{background:none;border:0;color:var(--pine);font:inherit;font-weight:600;text-decoration:underline;cursor:pointer;padding:.5rem}
+    main{max-width:1080px;margin:0 auto;padding:2rem 1.5rem 4rem;display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:2rem;align-items:start}
+    .steps{list-style:none;margin:0 0 1.5rem;padding:0;display:flex;flex-wrap:wrap;gap:.4rem .5rem}
+    .steps li{display:flex;align-items:center;gap:.45rem;padding:.35rem .8rem;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--muted);font-size:.9rem;font-weight:600}
+    .steps li[aria-current="step"]{background:var(--pine);border-color:var(--pine);color:#fff}
+    .steps li.done{color:var(--pine);border-color:#bcd8c8;background:#e7f2eb}
+    .steps li.done::before{content:"\2713";font-weight:800}
+    .panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:2rem}
+    h1{margin:0 0 .5rem;font-size:clamp(1.6rem,4vw,2.2rem);line-height:1.15;letter-spacing:-.015em;color:var(--pine)}
+    h1:focus{outline:none}
+    .lead{margin:0 0 1.5rem;color:var(--muted);font-size:1.05rem;max-width:56ch}
+    label{display:block;font-weight:700;margin:1.1rem 0 .35rem}
+    input,select{width:100%;font:inherit;padding:.8rem 1rem;border:1.5px solid #c9d5cd;border-radius:10px;background:#fff;color:var(--ink);min-height:48px}
+    input:focus,select:focus{outline:3px solid rgba(31,138,91,.35);border-color:var(--signal)}
+    .hint{margin:.4rem 0 0;color:var(--muted);font-size:.9rem}
+    .row{display:flex;flex-wrap:wrap;gap:.75rem;align-items:flex-end}
+    .row>*{flex:1 1 12rem}
+    .row>.fixed{flex:0 0 auto}
+    .btn{text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:.5rem;min-height:48px;padding:.7rem 1.4rem;border-radius:10px;border:1.5px solid var(--pine);background:var(--pine);color:#fff;font:inherit;font-weight:700;cursor:pointer}
+    .btn:hover{background:var(--pine-600)}
+    .btn.secondary{background:#fff;color:var(--pine)}
+    .btn.secondary:hover{background:#eef3ef}
+    .btn:disabled{opacity:.5;cursor:not-allowed}
+    .btn:focus-visible,.linkish:focus-visible,summary:focus-visible,.pick:focus-within{outline:3px solid var(--signal);outline-offset:2px}
+    .actions{display:flex;flex-wrap:wrap;gap:.75rem;align-items:center;margin-top:1.75rem}
+    .msg{margin:1rem 0 0;padding:.8rem 1rem;border-radius:10px;font-weight:600}
+    .msg.error{background:#fdecea;color:#8f2a20;border:1px solid #efc2bc}
+    .msg.ok{background:#e7f2eb;color:#0c5a3d;border:1px solid #bcd8c8}
+    .msg.warn{background:#fff7e6;color:#7a4b0a;border:1px solid #f0d9a8}
+    .picks{display:grid;grid-template-columns:repeat(auto-fill,minmax(15rem,1fr));gap:.6rem;margin:1.25rem 0 0;padding:0;border:0}
+    .pick{position:relative;display:flex;gap:.7rem;align-items:center;padding:.85rem 1rem;border:1.5px solid var(--line);border-radius:10px;cursor:pointer;margin:0;font-weight:500}
+    .pick input{width:auto;min-height:0;margin:0;accent-color:var(--signal)}
+    .pick strong{display:block;font-size:1.1rem;font-variant-numeric:tabular-nums;color:var(--pine)}
+    .pick small{color:var(--muted)}
+    .pick:has(input:checked){border-color:var(--signal);background:#e7f2eb}
+    .big-number{font-size:clamp(1.8rem,6vw,2.8rem);font-weight:700;color:var(--pine);font-variant-numeric:tabular-nums;margin:.25rem 0 1rem;white-space:nowrap}
+    .working{display:flex;align-items:center;gap:.8rem;margin-top:1rem;font-weight:600;color:var(--pine)}
+    .spin{width:22px;height:22px;border:3px solid #cfe4d7;border-top-color:var(--signal);border-radius:50%;animation:spin .9s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .added{margin:1rem 0 0;padding:0;list-style:none}
+    .added li{display:flex;justify-content:space-between;gap:1rem;padding:.6rem 0;border-top:1px solid var(--line)}
+    dl.summary{display:grid;grid-template-columns:max-content 1fr;gap:.5rem 1.25rem;margin:1.25rem 0 0}
+    dl.summary dt{color:var(--muted)}
+    dl.summary dd{margin:0;font-weight:700;overflow-wrap:anywhere}
+    ol.next{margin:1rem 0 0;padding-left:1.3rem}
+    ol.next li{margin:.4rem 0}
+    aside.guide{position:sticky;top:1rem;background:#fff;border:1px solid var(--line);border-radius:14px;padding:1.25rem 1.4rem}
+    aside.guide h2{margin:0 0 .5rem;font-size:1.1rem;color:var(--pine)}
+    aside.guide p{margin:.4rem 0;color:var(--ink)}
+    aside.guide ul{margin:.5rem 0;padding-left:1.2rem;color:var(--muted)}
+    aside.guide details{border-top:1px solid var(--line);padding:.6rem 0}
+    aside.guide summary{cursor:pointer;font-weight:600;color:var(--pine)}
+    aside.guide details p{color:var(--muted);font-size:.95rem}
+    .help{margin-top:.9rem;padding-top:.9rem;border-top:1px solid var(--line);font-size:.92rem;color:var(--muted)}
+    @media (max-width:860px){main{grid-template-columns:1fr;padding:1.25rem 1rem 3rem}aside.guide{position:static}.panel{padding:1.4rem 1.2rem}}
+    @media (prefers-reduced-motion:reduce){.spin{animation:none}}
+  </style>
+</head>
+<body>
+  <a class="skip" href="#step-title">Skip to setup</a>
+  <header class="bar">
+    <img src="/static/rootcall-logo.png" alt="RootCall" onerror="this.replaceWith(Object.assign(document.createElement('strong'),{textContent:'RootCall'}))">
+    <button type="button" class="linkish" id="skip-setup">Skip to dashboard</button>
+  </header>
+
+  <main>
+    <section aria-label="Setup">
+      <ol class="steps" id="steps" aria-label="Setup progress"></ol>
+      <div class="panel" id="panel" aria-live="polite"></div>
+    </section>
+    <aside class="guide" id="guide" aria-label="Setup guide"></aside>
+  </main>
+
+  <script>
+    const API = window.location.origin;
+    const STEPS = [
+      { key: 'number', label: 'Your number' },
+      { key: 'name', label: 'Your name' },
+      { key: 'voice', label: 'Voice' },
+      { key: 'phone', label: 'Your phone' },
+      { key: 'contacts', label: 'Trusted contacts' },
+    ];
+    const S = { token: null, id: null, name: '', number: '', config: {}, current: 0, voices: [], numbers: [], added: [] };
+
+    const GUIDE = {
+      number: {
+        title: 'Choosing your Shield number',
+        points: ['This is the number you give out in place of your real one. Calls to it are screened first.', 'An area code people near you recognize is a good pick, but any number works.', 'You can only have one Shield number, so take a moment to choose.'],
+        faq: [
+          ['Will my real number change?', 'No. Your real number stays the same. The Shield number is a new, separate number.'],
+          ['What if the search finds nothing?', 'Try a nearby area code. Numbers come and go, so a different code usually has plenty.'],
+          ['What if activation fails?', 'Do not pick another number. Use the button that appears to finish activating the same one, so you are not charged twice.'],
+        ],
+      },
+      name: {
+        title: 'Why your name matters',
+        points: ['Your assistant only connects callers who ask for you by name.', 'It never says your name to the caller, so scammers cannot guess it.', 'Use the name people actually call you.'],
+        faq: [
+          ['Can I use a nickname?', 'Yes, but include a full name, such as "Bob Smith". If callers might use two names, you can add the other later in your dashboard settings.'],
+          ['Can I change it later?', 'Yes. In Settings, change your name and the assistant updates automatically.'],
+        ],
+      },
+      voice: {
+        title: 'Picking a voice',
+        points: ['This is how your assistant sounds when it answers.', 'Every voice follows the same safety rules, so choose the one you like hearing.', 'Use Play sample to hear a voice before you choose.'],
+        faq: [
+          ['Can I switch voices?', 'Yes, any time from Settings in your dashboard.'],
+          ['No sample button?', 'Some voices have no preview. You can still pick one and change it later.'],
+        ],
+      },
+      phone: {
+        title: 'Where calls should ring',
+        points: ['Enter the phone you carry. Screened callers and trusted contacts are connected here.', 'Use a mobile number you answer, with the area code.', 'This must be a different number from your Shield number.'],
+        faq: [
+          ['Is this number shared with callers?', 'No. Callers only ever see your Shield number.'],
+          ['Can I change it later?', 'Yes. Update it in Settings under Call forwarding.'],
+        ],
+      },
+      contacts: {
+        title: 'Trusted contacts',
+        points: ['Family and friends you add here skip screening and ring your phone directly.', 'This step is optional. You can add people later.', 'Add the number they call from, with the area code.'],
+        faq: [
+          ['What if someone calls from a new number?', 'They will be screened like anyone else, and the assistant will connect them once they ask for you by name.'],
+        ],
+      },
+      done: {
+        title: 'You are ready',
+        points: ['Calls to your Shield number are screened from now on.', 'Your dashboard shows every call and lets you change any of these settings.'],
+        faq: [
+          ['The test call did not ring my phone', 'Check the forwarding number in Settings, then try again. If it still fails, email support with the time of your call.'],
+        ],
+      },
+    };
+
+    function h(tag, attrs, ...kids) {
+      const node = document.createElement(tag);
+      for (const [k, v] of Object.entries(attrs || {})) {
+        if (k === 'class') node.className = v;
+        else if (k.startsWith('on')) node.addEventListener(k.slice(2), v);
+        else if (v === true) node.setAttribute(k, '');
+        else if (v !== false && v != null) node.setAttribute(k, v);
+      }
+      for (const kid of kids.flat()) {
+        if (kid == null || kid === false) continue;
+        node.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
+      }
+      return node;
+    }
+
+    function formatPhone(value) {
+      const d = String(value || '').replace(/\D/g, '');
+      if (d.length === 11 && d.startsWith('1')) return `+1 (${d.slice(1, 4)}) ${d.slice(4, 7)}-${d.slice(7)}`;
+      if (d.length === 10) return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
+      return value || '';
+    }
+
+    function normalizePhone(raw) {
+      const value = String(raw || '').trim();
+      if (!value) return '';
+      const digits = value.replace(/\D/g, '');
+      if (value.startsWith('+')) return '+' + digits;
+      if (digits.length === 10) return '+1' + digits;
+      if (digits.length === 11 && digits.startsWith('1')) return '+' + digits;
+      return value;
+    }
+
+    const PHONE_HELP = 'Enter a full phone number, like (407) 555-0100.';
+    const stepKey = () => `rootcall_setup_step_${S.id}`;
+    const pendingKey = () => `rootcall_pending_number_${S.id}`;
+
+    async function api(path, options = {}) {
+      const response = await fetch(API + path, {
+        ...options,
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + S.token, ...(options.headers || {}) },
+      });
+      if (response.status === 401) { location.replace('/static/login.html'); throw new Error('Session expired'); }
+      return response;
+    }
+
+    async function detail(response, fallback) {
+      try { const body = await response.json(); return (typeof body.detail === 'string' && body.detail) || fallback; }
+      catch (error) { return fallback; }
+    }
+
+    function remember(index) {
+      S.current = index;
+      try { localStorage.setItem(stepKey(), String(index)); } catch (error) { /* private mode */ }
+    }
+
+    function go(index) {
+      remember(index);
+      render(true);
+    }
+
+    function renderSteps() {
+      const list = document.getElementById('steps');
+      list.textContent = '';
+      STEPS.forEach((step, i) => {
+        const li = h('li', { class: i < S.current ? 'done' : '' }, step.label);
+        if (i === S.current) li.setAttribute('aria-current', 'step');
+        list.append(li);
+      });
+      list.hidden = S.current >= STEPS.length;
+    }
+
+    function renderGuide() {
+      const key = S.current >= STEPS.length ? 'done' : STEPS[S.current].key;
+      const g = GUIDE[key];
+      const box = document.getElementById('guide');
+      box.textContent = '';
+      box.append(
+        h('h2', {}, g.title),
+        h('ul', {}, g.points.map(p => h('li', {}, p))),
+        ...g.faq.map(([q, a]) => h('details', {}, h('summary', {}, q), h('p', {}, a))),
+        h('div', { class: 'help' }, 'Still stuck? Email ', h('a', { href: 'mailto:info@getrootcall.com' }, 'info@getrootcall.com'), ' and include the email you signed up with.'),
+      );
+    }
+
+    function working(text) { return h('div', { class: 'working', role: 'status' }, h('span', { class: 'spin', 'aria-hidden': 'true' }), text); }
+    function note(kind, text) { return h('p', { class: 'msg ' + kind, role: kind === 'error' ? 'alert' : 'status' }, text); }
+
+    function render(focus) {
+      const panel = document.getElementById('panel');
+      panel.textContent = '';
+      renderSteps();
+      renderGuide();
+      const key = S.current >= STEPS.length ? 'done' : STEPS[S.current].key;
+      ({ number: stepNumber, name: stepName, voice: stepVoice, phone: stepPhone, contacts: stepContacts, done: stepDone })[key](panel);
+      if (focus) { const title = document.getElementById('step-title'); if (title) title.focus(); }
+    }
+
+    // ---------- Step 1: number ----------
+    function stepNumber(panel) {
+      const pending = (() => { try { return localStorage.getItem(pendingKey()); } catch (e) { return null; } })();
+      const results = h('div', { id: 'results' });
+      const status = h('div', { id: 'status' });
+      const code = h('input', { id: 'area', inputmode: 'numeric', maxlength: '3', placeholder: '407', autocomplete: 'off', 'aria-describedby': 'area-hint' });
+      const find = h('button', { class: 'btn fixed', type: 'button', onclick: () => search() }, 'Find numbers');
+      panel.append(
+        h('h1', { id: 'step-title', tabindex: '-1' }, 'Pick your Shield number'),
+        h('p', { class: 'lead' }, 'Callers will reach your assistant at this number. Your own number stays private.'),
+      );
+      if (pending) {
+        panel.append(
+          note('warn', `A number (${formatPhone(pending)}) was purchased but setup did not finish.`),
+          h('div', { class: 'actions' }, h('button', { class: 'btn', type: 'button', onclick: () => activate(pending, true) }, `Finish activating ${formatPhone(pending)}`)),
+        );
+      }
+      panel.append(
+        h('label', { for: 'area' }, 'Area code'),
+        h('div', { class: 'row' }, code, find),
+        h('p', { class: 'hint', id: 'area-hint' }, 'Enter the 3-digit area code you would like, such as one near family.'),
+        status, results,
+      );
+      code.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); search(); } });
+
+      async function search() {
+        const area = code.value.replace(/\D/g, '');
+        status.textContent = '';
+        results.textContent = '';
+        if (area.length !== 3) { status.append(note('error', 'Enter a 3-digit area code, like 407.')); code.focus(); return; }
+        find.disabled = true;
+        status.append(working('Looking for numbers...'));
+        try {
+          const response = await api(`/api/rootcall/available-numbers?area_code=${area}`);
+          status.textContent = '';
+          if (!response.ok) throw new Error(await detail(response, 'Could not search numbers. Please try again.'));
+          const data = await response.json();
+          S.numbers = (data.numbers || []).slice(0, 12);
+          if (!S.numbers.length) { status.append(note('warn', 'No numbers are available in that area code. Try a nearby one.')); return; }
+          showPicks();
+        } catch (error) {
+          status.textContent = '';
+          if (error.message !== 'Session expired') status.append(note('error', error.message));
+        } finally { find.disabled = false; }
+      }
+
+      function showPicks() {
+        results.textContent = '';
+        const group = h('fieldset', { class: 'picks' }, h('legend', { class: 'hint' }, 'Choose one number'));
+        S.numbers.forEach((n, i) => {
+          const value = n.phone_number || n;
+          const place = [n.locality, n.region].filter(Boolean).join(', ');
+          group.append(h('label', { class: 'pick' },
+            h('input', { type: 'radio', name: 'number', value }),
+            h('span', {}, h('strong', {}, formatPhone(value)), place ? h('small', {}, place) : null)));
+        });
+        const go = h('button', { class: 'btn', type: 'button', disabled: true, onclick: () => activate(group.querySelector('input:checked').value, false) }, 'Activate this number');
+        group.addEventListener('change', () => { go.disabled = false; });
+        results.append(group, h('div', { class: 'actions' }, go), h('p', { class: 'hint' }, 'Activating takes up to a minute. Please keep this page open.'));
+      }
+
+      async function activate(value, recover) {
+        panel.querySelectorAll('button, input').forEach(el => { el.disabled = true; });
+        status.textContent = '';
+        status.append(working(recover ? 'Finishing activation...' : 'Activating your number and assistant. This can take up to a minute...'));
+        try { localStorage.setItem(pendingKey(), value); } catch (e) { /* ignore */ }
+        try {
+          const response = await api('/api/rootcall/provision', {
+            method: 'POST',
+            body: JSON.stringify({ phone_number: value, area_code: code.value.replace(/\D/g, '') || undefined, recover_existing: Boolean(recover) }),
+          });
+          if (!response.ok) {
+            const message = await detail(response, 'Activation did not finish.');
+            if (/already have active number/i.test(message)) { await loadAccountState(); try { localStorage.removeItem(pendingKey()); } catch (e) {} go(1); return; }
+            throw new Error(message);
+          }
+          const data = await response.json();
+          S.number = data.rootcall_number || data.phone_number || value;
+          try { localStorage.removeItem(pendingKey()); } catch (e) { /* ignore */ }
+          await loadAccountState();
+          go(1);
+        } catch (error) {
+          if (error.message === 'Session expired') return;
+          render(false);
+          const again = document.getElementById('status');
+          if (again) again.append(note('error', `${error.message} Your number was not lost. If it was already purchased, use the "Finish activating" button above.`));
+        }
+      }
+    }
+
+    // ---------- Step 2: name ----------
+    function stepName(panel) {
+      const input = h('input', { id: 'full-name', autocomplete: 'name', value: S.name || '', 'aria-describedby': 'name-hint' });
+      const status = h('div', { id: 'status' });
+      const save = h('button', { class: 'btn', type: 'button' }, 'Save and continue');
+      panel.append(
+        h('h1', { id: 'step-title', tabindex: '-1' }, 'What name should callers ask for?'),
+        h('p', { class: 'lead' }, 'Your assistant connects callers who ask for you by this name. It never says it out loud.'),
+        h('label', { for: 'full-name' }, 'First and last name'),
+        input,
+        h('p', { class: 'hint', id: 'name-hint' }, 'Use the name people call you, such as "Robert Smith".'),
+        status,
+        h('div', { class: 'actions' }, save),
+      );
+      let nameSaved = false;
+      save.addEventListener('click', async () => {
+        if (nameSaved) { go(2); return; }
+        status.textContent = '';
+        const value = input.value.trim().replace(/\s+/g, ' ');
+        if (value.split(' ').length < 2) { status.append(note('error', 'Please enter your first and last name.')); input.focus(); return; }
+        save.disabled = true;
+        status.append(working('Updating your assistant...'));
+        try {
+          if (value !== S.name) {
+            const response = await api(`/api/rootcall/config/${S.id}`, { method: 'PATCH', body: JSON.stringify({ full_name: value }) });
+            if (!response.ok) throw new Error(await detail(response, 'Could not save your name.'));
+            S.name = value;
+          }
+          const sync = await api(`/api/rootcall/sync-agent-identity/${S.id}`, { method: 'POST' });
+          if (!sync.ok && ![404, 409].includes(sync.status)) {
+            status.textContent = '';
+            status.append(note('warn', 'Your name is saved, but the assistant could not be updated yet. You can retry with "Update agent name" in your dashboard settings.'));
+            nameSaved = true;
+            save.disabled = false;
+            save.textContent = 'Continue anyway';
+            return;
+          }
+          go(2);
+        } catch (error) {
+          status.textContent = '';
+          if (error.message !== 'Session expired') status.append(note('error', error.message));
+          save.disabled = false;
+        }
+      });
+    }
+
+    // ---------- Step 3: voice ----------
+    function stepVoice(panel) {
+      const select = h('select', { id: 'voice', 'aria-describedby': 'voice-hint' }, h('option', { value: '' }, 'Loading voices...'));
+      const status = h('div', { id: 'status' });
+      const play = h('button', { class: 'btn secondary', type: 'button', hidden: true }, 'Play sample');
+      const save = h('button', { class: 'btn', type: 'button', disabled: true }, 'Save and continue');
+      panel.append(
+        h('h1', { id: 'step-title', tabindex: '-1' }, 'Choose your assistant\'s voice'),
+        h('p', { class: 'lead' }, 'This is how your assistant sounds when it answers your calls.'),
+        h('label', { for: 'voice' }, 'Voice'),
+        h('div', { class: 'row' }, select, play),
+        h('p', { class: 'hint', id: 'voice-hint' }, 'You can change this any time in Settings.'),
+        status,
+        h('div', { class: 'actions' }, save, h('button', { class: 'btn secondary', type: 'button', onclick: () => go(3) }, 'Keep the default voice')),
+      );
+      let audio = null;
+      const current = () => S.voices.find(v => v.voice_id === select.value);
+      select.addEventListener('change', () => { play.hidden = !(current() && /^https:\/\//.test(current().preview_audio_url || '')); });
+      play.addEventListener('click', () => { if (audio) audio.pause(); audio = new Audio(current().preview_audio_url); audio.play().catch(() => status.replaceChildren(note('warn', 'Could not play this sample. You can still choose the voice.'))); });
+      (async () => {
+        try {
+          if (!S.voices.length) {
+            const response = await api('/api/rootcall/voice-options');
+            if (!response.ok) throw new Error(await detail(response, 'Could not load voices.'));
+            S.voices = (await response.json()).voices || [];
+          }
+          select.textContent = '';
+          S.voices.forEach(v => {
+            const trait = [v.gender, v.accent].filter(Boolean).join(', ');
+            select.append(h('option', { value: v.voice_id }, trait ? `${v.voice_name} (${trait})` : v.voice_name));
+          });
+          if (S.config.voice_id && S.voices.some(v => v.voice_id === S.config.voice_id)) select.value = S.config.voice_id;
+          save.disabled = !S.voices.length;
+          select.dispatchEvent(new Event('change'));
+        } catch (error) {
+          select.textContent = '';
+          select.append(h('option', { value: '' }, 'Voices unavailable'));
+          if (error.message !== 'Session expired') status.append(note('warn', 'Voices could not be loaded right now. You can keep the default voice and change it later in Settings.'));
+        }
+      })();
+      save.addEventListener('click', async () => {
+        status.textContent = '';
+        save.disabled = true;
+        status.append(working('Saving your voice...'));
+        try {
+          const response = await api(`/api/rootcall/config/${S.id}`, { method: 'PATCH', body: JSON.stringify({ voice_id: select.value }) });
+          if (!response.ok) throw new Error(await detail(response, 'Could not save the voice.'));
+          S.config.voice_id = select.value;
+          go(3);
+        } catch (error) {
+          status.textContent = '';
+          if (error.message !== 'Session expired') status.append(note('error', error.message));
+          save.disabled = false;
+        }
+      });
+    }
+
+    // ---------- Step 4: your phone ----------
+    function stepPhone(panel) {
+      const input = h('input', { id: 'cell', type: 'tel', autocomplete: 'tel', placeholder: '(407) 555-0100', value: S.config.client_cell ? formatPhone(S.config.client_cell) : '', 'aria-describedby': 'cell-hint' });
+      const status = h('div', { id: 'status' });
+      const save = h('button', { class: 'btn', type: 'button' }, 'Save and continue');
+      panel.append(
+        h('h1', { id: 'step-title', tabindex: '-1' }, 'Which phone should ring?'),
+        h('p', { class: 'lead' }, 'Callers who pass screening, and your trusted contacts, are connected to this phone.'),
+        h('label', { for: 'cell' }, 'Your mobile number'),
+        input,
+        h('p', { class: 'hint', id: 'cell-hint' }, 'The phone you carry. Callers never see this number.'),
+        status,
+        h('div', { class: 'actions' }, save),
+      );
+      save.addEventListener('click', async () => {
+        status.textContent = '';
+        const value = normalizePhone(input.value);
+        if (!/^\+[1-9]\d{9,14}$/.test(value)) { status.append(note('error', PHONE_HELP)); input.focus(); return; }
+        if (value === S.number) { status.append(note('error', 'That is your Shield number. Enter the phone you carry.')); input.focus(); return; }
+        save.disabled = true;
+        status.append(working('Saving. This can take a few seconds while we update your assistant...'));
+        try {
+          const response = await api(`/api/rootcall/config/${S.id}`, { method: 'PATCH', body: JSON.stringify({ client_cell: value }) });
+          if (!response.ok) throw new Error(await detail(response, 'Could not save your number.'));
+          S.config.client_cell = value;
+          go(4);
+        } catch (error) {
+          status.textContent = '';
+          if (error.message !== 'Session expired') status.append(note('error', error.message));
+          save.disabled = false;
+        }
+      });
+    }
+
+    // ---------- Step 5: trusted contacts (optional) ----------
+    function stepContacts(panel) {
+      const name = h('input', { id: 'contact-name', autocomplete: 'off', placeholder: 'Mom' });
+      const phone = h('input', { id: 'contact-phone', type: 'tel', autocomplete: 'off', placeholder: '(407) 555-0123' });
+      const status = h('div', { id: 'status' });
+      const list = h('ul', { class: 'added', 'aria-label': 'Contacts added' });
+      const add = h('button', { class: 'btn secondary fixed', type: 'button' }, 'Add contact');
+      const redraw = () => { list.textContent = ''; S.added.forEach(c => list.append(h('li', {}, h('strong', {}, c.name || 'Contact'), h('span', {}, formatPhone(c.phone))))); };
+      panel.append(
+        h('h1', { id: 'step-title', tabindex: '-1' }, 'Add people who skip screening'),
+        h('p', { class: 'lead' }, 'Optional. Trusted contacts ring your phone directly. Add family or friends now, or do it later.'),
+        h('div', { class: 'row' }, h('div', {}, h('label', { for: 'contact-name' }, 'Name'), name), h('div', {}, h('label', { for: 'contact-phone' }, 'Phone number'), phone), add),
+        status, list,
+        h('div', { class: 'actions' }, h('button', { class: 'btn', type: 'button', onclick: () => finish() }, S.added.length ? 'Finish setup' : 'Skip and finish')),
+      );
+      redraw();
+      const finish = () => go(5);
+      add.addEventListener('click', async () => {
+        status.textContent = '';
+        const value = normalizePhone(phone.value);
+        if (!/^\+[1-9]\d{9,14}$/.test(value)) { status.append(note('error', PHONE_HELP)); phone.focus(); return; }
+        add.disabled = true;
+        try {
+          const response = await api(`/api/rootcall/trusted-contacts/${S.id}`, { method: 'POST', body: JSON.stringify({ phone_number: value, name: name.value.trim() || null }) });
+          if (!response.ok) throw new Error(await detail(response, 'Could not add this contact.'));
+          S.added.push({ name: name.value.trim(), phone: value });
+          name.value = ''; phone.value = '';
+          redraw();
+          status.append(note('ok', 'Contact added. You can add another.'));
+          panel.querySelector('.actions .btn').textContent = 'Finish setup';
+          name.focus();
+        } catch (error) {
+          if (error.message !== 'Session expired') status.append(note('error', error.message));
+        } finally { add.disabled = false; }
+      });
+    }
+
+    // ---------- Done ----------
+    function stepDone(panel) {
+      const voice = S.voices.find(v => v.voice_id === S.config.voice_id);
+      panel.append(
+        h('h1', { id: 'step-title', tabindex: '-1' }, 'Your line is ready'),
+        h('p', { class: 'lead' }, 'Give out this number. Your assistant screens every call before it reaches you.'),
+        h('div', { class: 'big-number' }, formatPhone(S.number)),
+        h('dl', { class: 'summary' },
+          h('dt', {}, 'Callers ask for'), h('dd', {}, S.name || 'Not set'),
+          h('dt', {}, 'Calls ring'), h('dd', {}, S.config.client_cell ? formatPhone(S.config.client_cell) : 'Not set yet'),
+          h('dt', {}, 'Voice'), h('dd', { id: 'voice-summary' }, voice ? voice.voice_name : 'Default'),
+          h('dt', {}, 'Trusted contacts'), h('dd', {}, String((S.config.trusted_contacts || []).length + S.added.length))),
+        h('p', { class: 'lead', style: 'margin-top:1.5rem;margin-bottom:.25rem' }, 'Before you go, test it:'),
+        h('ol', { class: 'next' },
+          h('li', {}, 'Call the number above from a different phone.'),
+          h('li', {}, 'When asked who you are calling for, say your name.'),
+          h('li', {}, 'Your phone should ring.')),
+        h('div', { class: 'actions' }, h('a', { class: 'btn', href: '/static/client-portal.html' }, 'Open my dashboard')),
+      );
+      if (!voice && S.config.voice_id && !S.voices.length) {
+        api('/api/rootcall/voice-options').then(r => r.ok ? r.json() : { voices: [] }).then(data => {
+          S.voices = data.voices || [];
+          const found = S.voices.find(v => v.voice_id === S.config.voice_id);
+          const target = document.getElementById('voice-summary');
+          if (found && target) target.textContent = found.voice_name;
+        }).catch(() => {});
+      }
+    }
+
+    async function loadAccountState() {
+      const numberResponse = await api('/api/rootcall/my-number');
+      const mine = numberResponse.ok ? await numberResponse.json() : {};
+      S.number = mine.has_number ? mine.number : '';
+      if (S.number) {
+        const configResponse = await api(`/api/rootcall/config/${S.id}`);
+        S.config = configResponse.ok ? await configResponse.json() : {};
+      }
+    }
+
+    function blocked(title, text, linkHref, linkText) {
+      document.getElementById('steps').hidden = true;
+      document.getElementById('guide').hidden = true;
+      document.getElementById('panel').replaceChildren(
+        h('h1', { id: 'step-title', tabindex: '-1' }, title), h('p', { class: 'lead' }, text),
+        h('div', { class: 'actions' }, h('a', { class: 'btn', href: linkHref }, linkText)));
+    }
+
+    async function init() {
+      S.token = localStorage.getItem('access_token') || localStorage.getItem('token');
+      if (!S.token) { location.replace('/static/login.html'); return; }
+      document.getElementById('skip-setup').addEventListener('click', () => { location.href = '/static/client-portal.html'; });
+      try {
+        const me = await (await api('/api/auth/me')).json();
+        S.id = me.id;
+        S.name = me.full_name || '';
+        const paymentResponse = await api('/api/payments/status');
+        const payment = paymentResponse.ok ? await paymentResponse.json() : {};
+        await loadAccountState();
+        const paid = payment.billing_available || (payment.managed && payment.status === 'active');
+        if (!paid && !S.number) {
+          blocked('We have not confirmed your payment yet', 'Setup starts once your payment is confirmed. This can take a minute after checkout.', '/static/success.html', 'Check again');
+          return;
+        }
+        let step = 0;
+        if (S.number) {
+          step = Math.max(1, Number.parseInt(localStorage.getItem(stepKey()) || '1', 10) || 1);
+          if (!S.config.client_cell && step > 3) step = 3;
+          if (step > STEPS.length) step = STEPS.length;
+        }
+        S.current = step;
+        render(false);
+      } catch (error) {
+        if (error.message !== 'Session expired') blocked('Setup could not load', 'Please reload the page. If it keeps happening, email info@getrootcall.com.', '/static/setup.html', 'Reload');
+      }
+    }
+    init();
+  </script>
+</body>
+</html>

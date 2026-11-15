@@ -34,7 +34,7 @@ async function quiet(page) {
             assert.equal(await dialog.getAttribute('aria-modal'), 'true');
             await page.locator('.hero a.btn-primary').click();
             await dialog.waitFor({ state: 'visible' });
-            assert.equal(await page.evaluate(() => document.activeElement.id), 'signup-name', 'focus moves into the form');
+            await page.waitForFunction(() => document.activeElement && document.activeElement.id === 'signup-name');
             await page.keyboard.press('Escape');
             assert.equal(await dialog.isVisible(), false, 'Escape closes');
             await page.locator('.hero a.btn-primary').click();

@@ -286,3 +286,17 @@ class TrustedTransferContractTest(unittest.TestCase):
                     self.assertEqual({column["name"] for column in inspect(connection).get_columns("rootcall_configs")}, {"id"})
         finally:
             engine.dispose()
+
+
+class SignatureProblemTest(unittest.TestCase):
+    def test_reasons_never_include_secrets(self):
+        from app.routers.trusted_inbound import describe_signature_problem
+        self.assertIn("not signed", describe_signature_problem(""))
+        self.assertIn("format", describe_signature_problem("garbage"))
+        old = "v=1,d=" + "a" * 64
+        self.assertIn("away from server time", describe_signature_problem(old))
+        import time
+        fresh = f"v={int(time.time() * 1000)},d=" + "b" * 64
+        reason = describe_signature_problem(fresh)
+        self.assertIn("Webhook", reason)
+        self.assertNotIn("b" * 64, reason)

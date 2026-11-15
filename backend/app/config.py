@@ -29,7 +29,8 @@ class Settings:
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
 
     # Retell.ai
-    RETELL_API_KEY: str = os.getenv("RETELL_API_KEY", "")
+    # Stray spaces, newlines or quotes pasted into the host dashboard would break signature checks.
+    RETELL_API_KEY: str = os.getenv("RETELL_API_KEY", "").strip().strip("\"'").strip()
 
     # Cloudflare R2 (optional)
     CLOUDFLARE_ACCOUNT_ID: str = os.getenv("CLOUDFLARE_ACCOUNT_ID", "")

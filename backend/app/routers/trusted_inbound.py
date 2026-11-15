@@ -1,5 +1,7 @@
 import json
 import logging
+import re
+import time
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from retell.lib.webhook_auth import verify
@@ -16,6 +18,20 @@ router = APIRouter(prefix="/retell", tags=["Trusted Inbound Routing"])
 log = logging.getLogger(__name__)
 
 
+def describe_signature_problem(signature: str) -> str:
+    """Say why a signature failed without revealing the key or the signature."""
+    if not signature:
+        return "no x-retell-signature header (request was not signed by Retell)"
+    match = re.fullmatch(r"v=(\d+),d=([0-9a-f]{64})", signature)
+    if not match:
+        return "x-retell-signature header is not in the expected format"
+    skew = abs(int(time.time() * 1000) - int(match.group(1))) / 1000
+    if skew > 300:
+        return f"signature timestamp is {skew:.0f}s away from server time (limit 300s)"
+    return ("signature does not match RETELL_API_KEY; use the key marked Webhook in Retell "
+            f"(configured key length: {len(settings.RETELL_API_KEY)})")
+
+
 @router.post("/rootcall-inbound")
 async def route_inbound(request: Request, db: Session = Depends(get_db)):
     if not settings.RETELL_API_KEY:
@@ -24,7 +40,9 @@ async def route_inbound(request: Request, db: Session = Depends(get_db)):
         text = (await request.body()).decode("utf-8")
     except UnicodeDecodeError:
         raise HTTPException(status_code=400, detail="Invalid inbound payload.")
-    if not verify(text, settings.RETELL_API_KEY, request.headers.get("x-retell-signature", "")):
+    signature = request.headers.get("x-retell-signature", "")
+    if not verify(text, settings.RETELL_API_KEY, signature):
+        log.warning("Inbound webhook rejected: %s", describe_signature_problem(signature))
         raise HTTPException(status_code=401, detail="Invalid webhook signature.")
     try:
         data = json.loads(text)

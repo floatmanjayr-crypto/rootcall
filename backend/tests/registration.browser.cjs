@@ -34,7 +34,7 @@ async function quiet(page) {
             assert.equal(await dialog.getAttribute('aria-modal'), 'true');
             await page.locator('.hero a.btn-primary').click();
             await dialog.waitFor({ state: 'visible' });
-            assert.equal(await page.evaluate(() => document.activeElement.id), 'signup-name', 'focus moves into the form');
+            await page.waitForFunction(() => document.activeElement && document.activeElement.id === 'signup-name');
             await page.keyboard.press('Escape');
             assert.equal(await dialog.isVisible(), false, 'Escape closes');
             await page.locator('.hero a.btn-primary').click();
@@ -72,17 +72,22 @@ async function quiet(page) {
             await page.close();
 
             // ---- Success page ----
-            for (const scenario of ['confirmed', 'late', 'never', 'signed-out']) {
+            for (const scenario of ['instant', 'confirmed', 'late', 'never', 'signed-out']) {
                 page = await browser.newPage({ viewport: { width, height: 900 } });
                 await quiet(page);
                 const failures = [];
                 page.on('pageerror', e => failures.push(e.message));
                 let calls = 0;
                 const verifyCalls = [];
+                const confirmCalls = [];
                 if (scenario !== 'signed-out') await page.addInitScript(() => localStorage.setItem('access_token', 'tok'));
                 await page.route('**/api/**', route => {
                     const path = new URL(route.request().url()).pathname;
                     if (path === '/api/payments/verify') verifyCalls.push(path);
+                    if (path === '/api/payments/confirm-session') {
+                        confirmCalls.push(route.request().postDataJSON());
+                        return scenario === 'instant' ? route.fulfill({ json: { paid: true, next_url: '/static/setup.html' } }) : route.fulfill({ status: 402, json: { detail: 'no' } });
+                    }
                     if (path !== '/api/payments/status') return route.fulfill({ status: 500, json: {} });
                     calls += 1;
                     const ok = scenario === 'confirmed' || (scenario === 'late' && calls >= 2);
@@ -101,6 +106,12 @@ async function quiet(page) {
                     assert.equal(await page.locator('#success-details').isVisible(), false, 'never claims success without payment');
                     assert.match(await page.locator('#delayed').innerText(), /info@getrootcall\.com/);
                     assert.equal(await page.getByRole('button', { name: 'Check again' }).count(), 1);
+                } else if (scenario === 'instant') {
+                    await page.locator('#success-details').waitFor({ state: 'visible' });
+                    assert.equal(calls, 0, 'no waiting on the webhook once Stripe confirms');
+                    assert.deepEqual(confirmCalls, [{ session_id: 'cs_test' }]);
+                    await page.clock.runFor(2500);
+                    await page.waitForURL(/\/static\/setup\.html/);
                 } else {
                     if (scenario === 'late') await page.clock.runFor(2100);
                     await page.locator('#success-details').waitFor({ state: 'visible' });

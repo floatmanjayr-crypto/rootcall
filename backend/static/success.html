@@ -395,11 +395,42 @@
       showActions();
     }
 
+    const sessionId = new URLSearchParams(location.search).get('session_id');
+
+    // Stripe only sends customers here after paying, but the session id in the address proves nothing,
+    // so the server asks Stripe about this exact session and answers right away.
+    async function confirmWithStripe() {
+      if (!sessionId) return 'none';
+      try {
+        const response = await fetch(API + '/api/payments/confirm-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+          body: JSON.stringify({ session_id: sessionId }),
+        });
+        if (response.status === 401) return 'signed-out';
+        if (response.status === 403) return 'other-account';
+        return response.ok ? 'paid' : 'unknown';
+      } catch (error) { return 'unknown'; }
+    }
+
     async function start() {
       if (!token) { signedOut(); return; }
       el('status').textContent = 'Confirming your payment...';
       el('spinner').style.display = 'block';
       el('delayed').style.display = 'none';
+      const result = await confirmWithStripe();
+      if (result === 'signed-out') { signedOut(); return; }
+      if (result === 'other-account') {
+        el('status').textContent = 'This payment belongs to a different account. Sign in with the account you used at checkout.';
+        el('spinner').style.display = 'none';
+        showActions();
+        return;
+      }
+      if (result === 'paid') {
+        confirmed();
+        setTimeout(() => { location.href = '/static/setup.html'; }, 2200);
+        return;
+      }
       for (let attempt = 0; attempt < 10; attempt++) {
         try {
           const response = await fetch(API + '/api/payments/status', { headers: { Authorization: 'Bearer ' + token } });

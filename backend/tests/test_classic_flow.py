@@ -168,5 +168,39 @@ class ClassicFlowTest(unittest.TestCase):
         self.assertEqual(self.db.get(User, data["user"]["id"]).stripe_customer_id, "cus_77")
 
 
+    def _session(self, **overrides):
+        base = {"id": "cs_1", "customer": "cus_9", "status": "complete", "payment_status": "paid",
+                "metadata": {"user_id": "0", "tier": "essential"}}
+        base.update(overrides)
+        return base
+
+    def test_confirm_session_trusts_stripe_not_the_url(self):
+        data, headers = self.signup()
+        uid = str(data["user"]["id"])
+        retrieve = lambda value: patch.object(stripe.checkout.Session, "retrieve", return_value=value)
+        # unpaid, other account's and unknown sessions never unlock anything
+        with retrieve(self._session(metadata={"user_id": uid}, payment_status="unpaid", status="open")):
+            self.assertEqual(self.client.post("/api/payments/confirm-session", headers=headers, json={"session_id": "cs_1"}).status_code, 402)
+        with retrieve(self._session(metadata={"user_id": "9999"})):
+            self.assertEqual(self.client.post("/api/payments/confirm-session", headers=headers, json={"session_id": "cs_1"}).status_code, 403)
+        self.assertEqual(self.client.post("/api/payments/confirm-session", headers=headers, json={"session_id": "not-a-session"}).status_code, 400)
+        with patch.object(stripe.checkout.Session, "retrieve", side_effect=stripe.InvalidRequestError("missing", "id")):
+            self.assertEqual(self.client.post("/api/payments/confirm-session", headers=headers, json={"session_id": "cs_nope"}).status_code, 404)
+        with patch.object(stripe.checkout.Session, "retrieve", side_effect=stripe.APIConnectionError("offline")):
+            self.assertEqual(self.client.post("/api/payments/confirm-session", headers=headers, json={"session_id": "cs_1"}).status_code, 502)
+        self.assertEqual(self.client.post("/api/payments/confirm-session", json={"session_id": "cs_1"}).status_code, 401)
+        self.db.expire_all()
+        self.assertIsNone(self.db.get(User, data["user"]["id"]).stripe_customer_id)
+        # a paid session that belongs to this account unlocks billing and setup immediately
+        with retrieve(self._session(metadata={"user_id": uid})):
+            ok = self.client.post("/api/payments/confirm-session", headers=headers, json={"session_id": "cs_1"})
+        self.assertEqual(ok.status_code, 200, ok.text)
+        self.assertEqual(ok.json(), {"paid": True, "next_url": "/static/setup.html"})
+        self.db.expire_all()
+        self.assertEqual(self.db.get(User, data["user"]["id"]).stripe_customer_id, "cus_9")
+        status = self.client.get("/api/payments/status", headers=headers)
+        self.assertTrue(status.json()["billing_available"])
+
+
 if __name__ == "__main__":
     unittest.main()

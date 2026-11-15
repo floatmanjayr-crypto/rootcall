@@ -189,6 +189,43 @@ def verify_payment(
     return {"paid": True, "next_url": "/static/onboarding.html"}
 
 
+class ConfirmSession(BaseModel):
+    session_id: str
+
+
+@router.post("/confirm-session")
+def confirm_session(
+    body: ConfirmSession, user: User = Depends(get_current_active_user), db: Session = Depends(get_db),
+):
+    """Ask Stripe directly whether this checkout session was paid, so access does not wait for the webhook.
+
+    Only a session that belongs to the signed-in account and that Stripe reports as complete and
+    paid is accepted; the session id in the URL alone proves nothing.
+    """
+    if not stripe.api_key:
+        raise HTTPException(status_code=503, detail="Payments are not configured.")
+    session_id = body.session_id.strip()
+    if not session_id.startswith("cs_") or len(session_id) > 200:
+        raise HTTPException(status_code=400, detail="Invalid checkout session.")
+    try:
+        session = stripe_data(stripe.checkout.Session.retrieve(session_id))
+    except stripe.InvalidRequestError:
+        raise HTTPException(status_code=404, detail="Checkout session not found.")
+    except stripe.StripeError:
+        log.exception("Could not read checkout session for user %s", user.id)
+        raise HTTPException(status_code=502, detail="Could not reach Stripe. Please retry.")
+    owner = str((session.get("metadata") or {}).get("user_id", ""))
+    if owner != str(user.id):
+        raise HTTPException(status_code=403, detail="This checkout belongs to a different account.")
+    if session.get("status") != "complete" or session.get("payment_status") not in ("paid", "no_payment_required"):
+        raise HTTPException(status_code=402, detail="Stripe has not completed this payment.")
+    customer = session.get("customer")
+    if customer and not user.stripe_customer_id:
+        user.stripe_customer_id = customer
+        db.commit()
+    return {"paid": True, "next_url": "/static/setup.html"}
+
+
 @router.post("/webhook")
 async def payment_webhook(request: Request, db: Session = Depends(get_db)):
     if not settings.STRIPE_WEBHOOK_SECRET:

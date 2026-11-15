@@ -138,6 +138,20 @@ class ClassicFlowTest(unittest.TestCase):
         owned = self.db.query(PhoneNumber).filter(PhoneNumber.user_id == user_id).all()
         self.assertEqual([item.phone_number for item in owned], ["+12025550100"])
 
+    def test_paid_customers_without_a_number_start_guided_setup_and_others_do_not(self):
+        data, _ = self.signup()
+        user_id = data["user"]["id"]
+        self.assertEqual(customer_onboarding.next_url(self.db, user_id), "/static/client-portal.html")
+        user = self.db.get(User, user_id)
+        user.stripe_customer_id = "cus_test"
+        self.db.commit()
+        self.assertEqual(customer_onboarding.next_url(self.db, user_id), "/static/setup.html")
+        login = self.client.post("/api/auth/login", data={"username": "owner@example.com", "password": "valid-password"})
+        self.assertEqual(login.json()["next_url"], "/static/setup.html")
+        self.db.add(PhoneNumber(user_id=user_id, phone_number="+12025550100", is_active=True))
+        self.db.commit()
+        self.assertEqual(customer_onboarding.next_url(self.db, user_id), "/static/client-portal.html")
+
     def test_success_page_is_the_original_page_and_the_shortcut_points_to_it(self):
         from app.services import telnyx_service
 

@@ -70,7 +70,7 @@ class CallRoutingTest(unittest.TestCase):
     def test_failed_transfer_configuration_does_not_save_forwarding_number(self):
         with patch.object(rootcall_portal, "RetellService") as service, \
                 patch.object(rootcall_portal, "TelnyxService") as telnyx:
-            service.return_value.ensure_forwarding_tool.side_effect = RuntimeError("Provider rejected")
+            service.return_value.set_forwarding_number.side_effect = RuntimeError("Provider rejected")
             response = self.client.patch("/api/rootcall/config/1", json={
                 "client_cell": "+12025550103",
             })
@@ -79,17 +79,26 @@ class CallRoutingTest(unittest.TestCase):
         self.assertEqual(self.config.client_cell, "+12025550102")
         telnyx.return_value.ensure_outbound_voice_profile.assert_called_once_with("connection-test")
 
-    def test_saving_a_number_checks_the_tool_and_webhook_but_never_edits_the_llm(self):
+    def test_saving_a_number_writes_it_into_the_agent_transfer_function(self):
         with patch.object(rootcall_portal, "RetellService") as retell, \
                 patch.object(rootcall_portal, "TelnyxService") as telnyx:
             telnyx.return_value.trunk_username.return_value = "existinglogin"
             response = self.client.patch("/api/rootcall/config/1", json={"client_cell": "+12025550103"})
         self.assertEqual(response.status_code, 200, response.text)
-        retell.return_value.ensure_forwarding_tool.assert_called_once_with("agent-test")
-        retell.return_value.configure_transfer_tool.assert_not_called()
+        retell.return_value.set_forwarding_number.assert_called_once_with("agent-test", "+12025550103")
         number, url = retell.return_value.ensure_inbound_webhook.call_args.args
         self.assertEqual(number, "+12025550100")
         self.assertTrue(url.endswith("/retell/rootcall-inbound"))
+        self.db.expire_all()
+        self.assertEqual(self.config.client_cell, "+12025550103")
+
+    def test_a_webhook_problem_does_not_block_saving_the_number(self):
+        with patch.object(rootcall_portal, "RetellService") as retell, \
+                patch.object(rootcall_portal, "TelnyxService") as telnyx:
+            telnyx.return_value.trunk_username.return_value = "existinglogin"
+            retell.return_value.ensure_inbound_webhook.side_effect = RuntimeError("nope")
+            response = self.client.patch("/api/rootcall/config/1", json={"client_cell": "+12025550103"})
+        self.assertEqual(response.status_code, 200, response.text)
         self.db.expire_all()
         self.assertEqual(self.config.client_cell, "+12025550103")
 

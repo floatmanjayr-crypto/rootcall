@@ -408,6 +408,24 @@ class RetellService:
             log.warning("LLM %s is published; editing a new agent draft instead", llm_id)
             return self._update_llm_on_new_draft(agent_id, agent, llm_id, {"general_tools": general_tools})
 
+    def set_forwarding_number(self, agent_id: str, transfer_number: Optional[str]) -> bool:
+        """Write the customer's number into the agent's transfer function.
+
+        Skips the Retell edit (and the republish it can trigger) when the function already holds
+        exactly this number. Returns True if the agent was edited.
+        """
+        agent = self._get(f"/get-agent/{agent_id}")
+        engine = agent.get("response_engine") or {}
+        llm_id = engine.get("llm_id")
+        if engine.get("type") == "retell-llm" and llm_id:
+            llm = self._get(f"/get-retell-llm/{llm_id}")
+            current = next((t for t in (llm.get("general_tools") or []) if t.get("name") == "transfer_call"), None)
+            held = ((current or {}).get("transfer_destination") or {}).get("number")
+            if held == transfer_number or (current is None and not transfer_number):
+                return False
+        self.configure_transfer_tool(agent_id, transfer_number)
+        return True
+
     def _update_llm_on_new_draft(
         self, agent_id: str, agent: Dict[str, Any], llm_id: str, fields: Dict[str, Any]
     ) -> Dict[str, Any]:
@@ -463,7 +481,6 @@ class RetellService:
                 "name": "end_call",
                 "description": "End calls that are identified as spam, scams, or unsafe.",
             },
-            cls.forwarding_transfer_tool(),
         ]
 
     def ensure_forwarding_tool(self, agent_id: str) -> bool:

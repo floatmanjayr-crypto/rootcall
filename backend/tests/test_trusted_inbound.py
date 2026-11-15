@@ -129,8 +129,7 @@ class TrustedInboundTest(unittest.TestCase):
         self.assertEqual(response.status_code, 200, response.text)
         self.assertEqual(self.inbound().json()["call_inbound"]["dynamic_variables"],
                          {"rootcall_forwarding": "+12025550109"})
-        provider.return_value.ensure_forwarding_tool.assert_called_once()
-        provider.return_value.configure_transfer_tool.assert_not_called()
+        provider.return_value.set_forwarding_number.assert_called_once_with("agent-screen", "+12025550109")
 
     def test_other_accounts_contacts_do_not_grant_bypass(self):
         self.db.add(User(id=2, email="other@example.com", hashed_password="unused"))

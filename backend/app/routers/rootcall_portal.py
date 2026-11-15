@@ -340,14 +340,17 @@ async def update_config(
         if config.retell_agent_id:
             try:
                 retell = RetellService()
+                # The number is written straight into the agent's transfer function.
+                retell.set_forwarding_number(config.retell_agent_id, transfer_number or None)
                 if transfer_number:
-                    # The number itself lives in our database and reaches Retell per call through
-                    # the inbound webhook, so saving it never edits the (possibly published) LLM.
-                    retell.ensure_forwarding_tool(config.retell_agent_id)
-                    retell.ensure_inbound_webhook(
-                        phone.phone_number,
-                        f"{settings.APP_BASE_URL.rstrip('/')}/retell/rootcall-inbound",
-                    )
+                    try:
+                        retell.ensure_inbound_webhook(
+                            phone.phone_number,
+                            f"{settings.APP_BASE_URL.rstrip('/')}/retell/rootcall-inbound",
+                        )
+                    except (RuntimeError, ValueError, requests.RequestException):
+                        # Only trusted-caller routing needs the webhook; the number is already saved.
+                        log.exception("Could not ensure inbound webhook for client %s", client_id)
             except (RuntimeError, ValueError, requests.RequestException) as exc:
                 db.rollback()
                 log.exception("Failed to update Retell transfer for client %s", client_id)

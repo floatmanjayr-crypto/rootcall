@@ -218,6 +218,23 @@ class RetellPublishingTest(unittest.TestCase):
         self.assertEqual([t["name"] for t in sent], ["end_call", "lookup", "transfer_call"])
         self.assertEqual(sent[-1]["transfer_destination"]["number"], "{{rootcall_forwarding}}")
 
+    def test_set_forwarding_number_skips_the_edit_when_the_agent_already_has_it(self):
+        agent = {"response_engine": {"type": "retell-llm", "llm_id": "llm-1"}}
+        tool = {"type": "transfer_call", "name": "transfer_call",
+                "transfer_destination": {"type": "predefined", "number": "+12025550102"}}
+        with patch.object(self.service, "_get", side_effect=[agent, {"general_tools": [tool]}]), \
+                patch.object(self.service, "configure_transfer_tool") as configure:
+            self.assertFalse(self.service.set_forwarding_number("agent-1", "+12025550102"))
+        configure.assert_not_called()
+
+    def test_set_forwarding_number_replaces_the_placeholder_with_the_real_number(self):
+        agent = {"response_engine": {"type": "retell-llm", "llm_id": "llm-1"}}
+        tool = self.module.RetellService.forwarding_transfer_tool()
+        with patch.object(self.service, "_get", side_effect=[agent, {"general_tools": [tool]}]), \
+                patch.object(self.service, "configure_transfer_tool") as configure:
+            self.assertTrue(self.service.set_forwarding_number("agent-1", "+12025550102"))
+        configure.assert_called_once_with("agent-1", "+12025550102")
+
     def test_ensure_inbound_webhook_only_changes_a_different_url(self):
         url = "https://app.example/retell/rootcall-inbound"
         with patch.object(self.service, "get_phone_number", return_value={"inbound_webhook_url": url}), \

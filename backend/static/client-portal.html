@@ -2953,6 +2953,8 @@
                 document.getElementById('new-contact-name').value = '';
                 showToast('Trusted contact added successfully!', 'success');
                 await loadData();
+                // Saved contacts only skip screening once trusted routing is connected, so do it now.
+                if (!document.getElementById('connect-trusted-routing').hidden) await connectTrustedRouting(true);
             } catch (err) {
                 showToast('Error adding contact: ' + err.message, 'error');
             } finally {
@@ -2960,7 +2962,7 @@
             }
         }
 
-        async function connectTrustedRouting() {
+        async function connectTrustedRouting(automatic = false) {
             const button = document.getElementById('connect-trusted-routing');
             if (button.disabled) return;
             button.disabled = true;
@@ -2971,7 +2973,8 @@
                 await loadData();
                 showToast('Trusted caller routing connected.', 'success');
             } catch (error) {
-                showToast(error.message || 'Unable to connect. Please retry.', 'error');
+                const reason = error.message || 'Unable to connect. Please retry.';
+                showToast(automatic ? `Contact saved, but it will not skip screening yet. ${reason} Use "Connect trusted caller routing" to retry.` : reason, 'error');
             } finally {
                 button.disabled = false;
             }

@@ -31,7 +31,7 @@ async function newPage(browser, width, world) {
             world.number = body.phone_number;
             return json({ rootcall_number: body.phone_number });
         }
-        if (path === '/api/rootcall/config/7' && method === 'GET') return json(world.number ? { client_cell: world.cell, trusted_contacts: world.contacts.map(c => c.phone_number), voice_id: world.voice } : {}, world.number ? 200 : 404);
+        if (path === '/api/rootcall/config/7' && method === 'GET') return json(world.number ? { client_cell: world.cell, trusted_contacts: world.contacts.map(c => c.phone_number), voice_id: world.voice, trusted_routing_enabled: world.routing } : {}, world.number ? 200 : 404);
         if (path === '/api/rootcall/config/7' && method === 'PATCH') {
             world.patches.push(body);
             if (body.full_name) world.fullName = body.full_name;
@@ -40,6 +40,12 @@ async function newPage(browser, width, world) {
             return json({ ok: true });
         }
         if (path === '/api/rootcall/sync-agent-identity/7') return json({ ok: true });
+        if (path === '/api/rootcall/trusted-routing/7') {
+            world.routingCalls += 1;
+            if (world.failRouting) return json({ detail: 'Trusted routing could not be connected.' }, 502);
+            world.routing = true;
+            return json({ success: true });
+        }
         if (path === '/api/rootcall/voice-options') return json({ voices: [
             { voice_id: 'v-adrian', voice_name: 'Adrian', gender: 'male', accent: 'American', preview_audio_url: 'https://example.com/a.mp3' },
             { voice_id: 'v-grace', voice_name: 'Grace', gender: 'female', accent: '', preview_audio_url: null }] });
@@ -49,7 +55,7 @@ async function newPage(browser, width, world) {
     return { page, errors, context };
 }
 
-const fresh = () => ({ paid: true, number: '', cell: '', voice: '', fullName: 'Jordan Green', contacts: [], patches: [], provisionBodies: [], calls: [], failProvision: false });
+const fresh = () => ({ paid: true, number: '', cell: '', voice: '', fullName: 'Jordan Green', contacts: [], routing: false, routingCalls: 0, failRouting: false, patches: [], provisionBodies: [], calls: [], failProvision: false });
 
 (async () => {
     const browser = await chromium.launch({ headless: true });
@@ -58,6 +64,7 @@ const fresh = () => ({ paid: true, number: '', cell: '', voice: '', fullName: 'J
             // ---- Happy path, with a failed activation first ----
             const world = fresh();
             world.failProvision = true;
+            world.failRouting = width === 390;
             let { page, errors, context } = await newPage(browser, width, world);
             await page.goto(`${baseURL}/static/setup.html`);
             await page.getByRole('heading', { name: 'Pick your Shield number' }).waitFor();
@@ -127,13 +134,20 @@ const fresh = () => ({ paid: true, number: '', cell: '', voice: '', fullName: 'J
             assert.deepEqual(world.contacts.at(-1), { phone_number: '+14075550123', name: 'Mom' });
             assert.match(await page.locator('.actions .btn').innerText(), /Finish setup/);
             await page.getByRole('button', { name: 'Finish setup' }).click();
+            if (world.failRouting) {
+                await page.getByText(/will not skip screening yet/).waitFor();
+                assert.equal(world.routingCalls, 1);
+                await page.getByRole('button', { name: 'Continue anyway' }).click();
+            }
 
             // done
+            assert.ok(world.routingCalls >= 1, 'trusted routing is connected when contacts exist');
             await page.getByRole('heading', { name: 'Your line is ready' }).waitFor();
             assert.equal(await page.locator('.big-number').innerText(), '+1 (407) 555-0102');
             const summary = await page.locator('dl.summary').innerText();
             assert.match(summary, /Jordan Q Green/);
             assert.match(summary, /\(407\) 555-0199/);
+            if (world.failRouting) assert.match(summary, /not connected yet/);
             await page.getByText('Grace').first().waitFor();
             assert.equal(await page.locator('a.btn', { hasText: 'Open my dashboard' }).getAttribute('href'), '/static/client-portal.html');
             assert.equal(await page.locator('#steps').isHidden(), true);

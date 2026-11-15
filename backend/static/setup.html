@@ -492,10 +492,32 @@
         h('p', { class: 'lead' }, 'Optional. Trusted contacts ring your phone directly. Add family or friends now, or do it later.'),
         h('div', { class: 'row' }, h('div', {}, h('label', { for: 'contact-name' }, 'Name'), name), h('div', {}, h('label', { for: 'contact-phone' }, 'Phone number'), phone), add),
         status, list,
-        h('div', { class: 'actions' }, h('button', { class: 'btn', type: 'button', onclick: () => finish() }, S.added.length ? 'Finish setup' : 'Skip and finish')),
+        h('div', { class: 'actions' }, h('button', { class: 'btn', id: 'finish-contacts', type: 'button', onclick: () => finish() }, S.added.length ? 'Finish setup' : 'Skip and finish')),
       );
       redraw();
-      const finish = () => go(5);
+      let routingFailed = false;
+      // Contacts only skip screening once trusted routing is connected, so connect it when there are any.
+      const finish = async () => {
+        const hasContacts = S.added.length || (S.config.trusted_contacts || []).length;
+        if (!hasContacts || S.config.trusted_routing_enabled || routingFailed) { go(5); return; }
+        const button = document.getElementById('finish-contacts');
+        button.disabled = true;
+        status.textContent = '';
+        status.append(working('Connecting your trusted contacts. This can take up to a minute...'));
+        try {
+          const response = await api(`/api/rootcall/trusted-routing/${S.id}`, { method: 'POST' });
+          if (!response.ok) throw new Error(await detail(response, 'Trusted routing could not be connected.'));
+          S.config.trusted_routing_enabled = true;
+          go(5);
+        } catch (error) {
+          if (error.message === 'Session expired') return;
+          status.textContent = '';
+          status.append(note('warn', `Your contacts are saved, but they will not skip screening yet. ${error.message} You can retry from Contacts in your dashboard.`));
+          routingFailed = true;
+          button.disabled = false;
+          button.textContent = 'Continue anyway';
+        }
+      };
       add.addEventListener('click', async () => {
         status.textContent = '';
         const value = normalizePhone(phone.value);
@@ -527,7 +549,10 @@
           h('dt', {}, 'Callers ask for'), h('dd', {}, S.name || 'Not set'),
           h('dt', {}, 'Calls ring'), h('dd', {}, S.config.client_cell ? formatPhone(S.config.client_cell) : 'Not set yet'),
           h('dt', {}, 'Voice'), h('dd', { id: 'voice-summary' }, voice ? voice.voice_name : 'Default'),
-          h('dt', {}, 'Trusted contacts'), h('dd', {}, String((S.config.trusted_contacts || []).length + S.added.length))),
+          h('dt', {}, 'Trusted contacts'), h('dd', {}, (() => {
+            const count = (S.config.trusted_contacts || []).length + S.added.length;
+            return count && !S.config.trusted_routing_enabled ? `${count} (not connected yet, see Contacts in your dashboard)` : String(count);
+          })())),
         h('p', { class: 'lead', style: 'margin-top:1.5rem;margin-bottom:.25rem' }, 'Before you go, test it:'),
         h('ol', { class: 'next' },
           h('li', {}, 'Call the number above from a different phone.'),
